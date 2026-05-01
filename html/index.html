@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Medalbank Aquatics — Immersive Archive (prototype v4)</title>
+<!-- 레트로 신문/매거진 감성의 이탤릭 세리프 (사진 번호용) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,500&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ─────────────────────────────────────────────────
+     디자인 토큰
+     ───────────────────────────────────────────────── */
+  :root {
+    --bg:        #07090f;
+    --tile-bg:   #0d1119;
+    --fg:        #ffffff;
+    --fg-dim:    rgba(255,255,255,0.55);
+    --fg-faint:  rgba(255,255,255,0.28);
+    --accent:    #38B6FF;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0; padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue',
+                 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    overflow: hidden;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: none;
+    position: fixed;
+    inset: 0;
+    opacity: 0;
+    animation: pageIn 0.9s 0.15s ease-out forwards;
+  }
+  @keyframes pageIn { to { opacity: 1; } }
+
+  @media (hover: none), (pointer: coarse) {
+    html, body { cursor: auto; }
+  }
+
+  /* ─────────────────────────────────────────────────
+     STAGE
+     ───────────────────────────────────────────────── */
+  #stage {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    touch-action: none;
+    --gap: 14px;              /* JS에서 갱신, 워터마크 위치에 사용 */
+  }
+
+  /* ── 타일 컨테이너 ── */
+  .tile {
+    position: absolute;
+    top: 0; left: 0;
+    background-color: var(--tile-bg);
+    overflow: hidden;
+    will-change: transform, opacity;
+    transform: translate3d(-9999px, -9999px, 0);
+    contain: layout paint;
+    opacity: 0;                                                      /* 초기 숨김 (loader 후 reveal) */
+    transition: opacity 1.1s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+  body.revealed .tile { opacity: 1; }
+
+  /* ── 사진 본체 (::before로 분리해서 grayscale이 자식 텍스트에 안 묻게) ── */
+  .tile::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--bg-img, none);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: grayscale(0.2) brightness(0.95);                  /* 베일: 살짝만 — 원본 대비 채도 -20%, 밝기 -5% */
+    transition: filter 0.6s ease-out;
+    z-index: 0;
+  }
+  /* hover — 원본 컬러로 살짝 lift */
+  .tile:hover::before {
+    filter: none;
+    transition: filter 0.35s ease-out;
+  }
+
+  /* 로고/메뉴 hover 시 갤러리 위에 한 장 깔리는 dim 오버레이
+     (per-tile 필터 애니메이션은 GPU 부담 커서 끊김 → 단일 엘리먼트로 대체) */
+  .stage-dim {
+    position: fixed;
+    inset: 0;
+    z-index: 6;                       /* tiles 위, ui/cursor 아래 */
+    pointer-events: none;
+    opacity: 0;
+    /* 흑백 + 강하게 어둡게 → 흰 메뉴 글씨/로고가 difference blend로 또렷하게 떠오름 */
+    background: rgba(0, 0, 0, 0.35);  /* 추가 검은 베일 (글씨 대비 강화) */
+    -webkit-backdrop-filter: grayscale(1) brightness(0.45) contrast(0.95);
+    backdrop-filter: grayscale(1) brightness(0.45) contrast(0.95);
+    transition: opacity 1.0s ease-in-out;
+    will-change: opacity;
+  }
+  body:has(.logo:hover) .stage-dim,
+  body:has(nav.menu:hover) .stage-dim {
+    opacity: 1;
+  }
+
+  /* ── 클릭 플래시 (filter 안 건드림 → grayscale과 충돌 X) ── */
+  .tile::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .tile.clicked::after { animation: clickFlash 0.45s ease-out; }
+  @keyframes clickFlash {
+    0%   { opacity: 0; }
+    18%  { opacity: 0.20; }
+    100% { opacity: 0; }
+  }
+
+  /* ── 사진번호 워터마크 — 레트로 신문 이탤릭 세리프 ── */
+  .tile-number {
+    position: absolute;
+    /* 폰트 박스 위 ascender 공간 보정 (-0.18em) → 시각적으로 left/top 마진 동일 */
+    top: calc(var(--gap) - 0.18em);
+    left: var(--gap);
+    color: #fff;
+    font-family: 'Playfair Display', 'Bodoni Moda', Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 50px;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    line-height: 1;
+    opacity: 0.10;                  /* 진짜 거의 안 보이게 */
+    mix-blend-mode: difference;
+    pointer-events: none;
+    z-index: 2;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+  @media (max-width: 768px) {
+    .tile-number { font-size: 32px; opacity: 0.16; }
+  }
+
+  /* ─────────────────────────────────────────────────
+     UI 오버레이 (mix-blend-mode: difference)
+     ───────────────────────────────────────────────── */
+  .ui {
+    position: fixed;
+    z-index: 10;
+    pointer-events: none;
+    color: var(--fg);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+    mix-blend-mode: difference;
+  }
+  .ui a, .ui button { pointer-events: auto; cursor: none; }
+  @media (hover: none), (pointer: coarse) {
+    .ui a, .ui button { cursor: auto; }
+  }
+
+  header.ui {
+    top: 0; left: 0; right: 0;
+    padding: 26px 32px;
+    padding-top: max(26px, env(safe-area-inset-top));
+    /* 메뉴를 우측 정렬 — 로고는 좌상단에 fixed로 따로 떠 있으므로 회피용 padding-left 불필요 */
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  /* 로고는 .ui 밖에 독립 fixed 로 빼서 자체 mix-blend-mode 토글 + 로더 morph 가능하게 */
+  .logo {
+    position: fixed;
+    top: max(26px, env(safe-area-inset-top));
+    left: 32px;
+    z-index: 2100;             /* loader(2000)/lightbox(1100) 위, cursor(3000) 아래 — 항상 브랜드 노출 */
+    pointer-events: auto;
+    display: block;
+    line-height: 0;            /* img inline-gap 제거 */
+    text-decoration: none;
+    cursor: none;
+    mix-blend-mode: difference;            /* 기본: 사진 색에 따라 자동 invert */
+    /* 로더 → UI 위치로 morph할 때 부드럽게 이동 */
+    transition:
+      top 1.1s cubic-bezier(0.7, 0, 0.2, 1),
+      left 1.1s cubic-bezier(0.7, 0, 0.2, 1),
+      transform 1.1s cubic-bezier(0.7, 0, 0.2, 1);
+  }
+  .logo:hover { mix-blend-mode: normal; }   /* hover: 원본 PNG 색상 100% */
+
+  .logo-img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 220px;
+    max-height: 40px;
+    -webkit-user-drag: none;
+    user-select: none;
+    pointer-events: none;       /* 클릭은 부모 <a>가 받음 */
+    /* 로더 → UI로 사이즈 줄어들 때 부드럽게 */
+    transition:
+      max-width 1.1s cubic-bezier(0.7, 0, 0.2, 1),
+      max-height 1.1s cubic-bezier(0.7, 0, 0.2, 1);
+  }
+
+  /* ── 로더 활성 상태: 로고가 정중앙에 BIG으로 떠 있다가 fade-in ── */
+  body.loader-active .logo {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;       /* 로더 중에는 hover/click 차단 */
+    opacity: 0;
+    animation: loaderLogoIn 0.9s 0.2s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  }
+  body.loader-active .logo-img {
+    max-width: min(380px, 60vw);
+    max-height: 80px;
+  }
+  @media (max-width: 768px) {
+    .logo { top: max(16px, env(safe-area-inset-top)); left: 18px; }
+    .logo-img { max-width: 150px; max-height: 28px; }
+  }
+  @media (hover: none), (pointer: coarse) {
+    .logo { cursor: auto; }
+  }
+
+  /* 베이스 메뉴 (인라인/풀스크린 공통) */
+  nav.menu { display: flex; gap: 22px; }
+  nav.menu a {
+    position: relative;
+    color: var(--fg);
+    text-decoration: none;
+    padding: 4px 0;
+    overflow: hidden;
+  }
+  /* 데스크탑 인라인용 underline */
+  nav.menu-inline a::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: 2px;
+    width: 100%; height: 1px;
+    background: currentColor;
+    transform-origin: right center;
+    transform: scaleX(0);
+    transition: transform 0.6s cubic-bezier(0.62, 0.05, 0, 1);
+  }
+  nav.menu-inline a:hover::after {
+    transform-origin: left center;
+    transform: scaleX(1);
+  }
+
+  footer.ui {
+    bottom: 0; left: 0; right: 0;
+    padding: 26px 32px;
+    padding-bottom: max(26px, env(safe-area-inset-bottom));
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .meta-left {
+    display: grid; gap: 6px;
+    color: var(--fg-dim);
+    font-size: 10px;
+    line-height: 1.4;
+  }
+  .meta-left .row-strong { color: var(--fg); font-variant-numeric: tabular-nums; }
+  .meta-right {
+    display: grid;
+    gap: 6px;
+    color: var(--fg-dim);
+    font-size: 10px;
+    text-align: right;
+    line-height: 1.4;
+    justify-items: end;
+  }
+  .meta-right .accent { color: var(--accent); letter-spacing: 0.12em; }
+  .meta-right .insta {
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: none;                    /* .ui의 uppercase 무력화 → 소문자 유지 */
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.35s ease;
+    pointer-events: auto;
+  }
+  .meta-right .insta:hover { border-bottom-color: currentColor; }
+
+  /* 모바일 전용 insta 링크 (meta-left 맨 아래) — 데스크탑에선 숨김 */
+  .insta-mobile { display: none; }
+  .insta-mobile { margin-top: 4px; }
+  .insta-mobile .insta {
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: none;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.35s ease;
+    pointer-events: auto;
+  }
+  .insta-mobile .insta:hover { border-bottom-color: currentColor; }
+
+  @media (max-width: 768px) {
+    header.ui {
+      padding-right: 18px;
+      padding-top: max(16px, env(safe-area-inset-top));
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      padding-left: calc(18px + 150px + 24px);   /* 모바일: 18 + 150(max logo) + 24(gap) */
+    }
+    footer.ui {
+      padding-left: 18px; padding-right: 18px;
+      padding-top: max(16px, env(safe-area-inset-top));
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+    nav.menu { gap: 16px; font-size: 10px; }
+    .logo { font-size: 12px; }
+    .logo .sub { font-size: 8px; }
+    /* 모바일 footer: 우측 메타 숨기기 + insta 노출 + 좌측 메타 흰색 */
+    .meta-right { display: none; }
+    .insta-mobile { display: block; }
+    /* meta-left 텍스트 전부 흰색 (.insta는 자체 accent 색 유지) */
+    .meta-left { color: var(--fg); }
+    /* 순서 재배치: 1,2,3,4 → 4,3,1,2
+       (4=insta, 3=SINCE 2019, 1=50+ MEETS, 2=600MM F4) */
+    .meta-left .insta-mobile      { order: 1; }   /* 4 → 위로 */
+    .meta-left .row-strong        { order: 2; }   /* 3 */
+    .meta-left > div:nth-child(1) { order: 3; }   /* 1 */
+    .meta-left > div:nth-child(2) { order: 4; }   /* 2 → 맨 아래 */
+    /* grid에서 order 작동하도록 명시 (이미 display:grid라 자동이지만 분명히) */
+    .meta-left { display: flex; flex-direction: column; }
+  }
+
+  /* ─────────────────────────────────────────────────
+     커스텀 커서  (흰 PNG + mix-blend → 사진별 자동 invert)
+     ───────────────────────────────────────────────── */
+  .cursor {
+    position: fixed;
+    top: 0; left: 0;
+    width: 32px; height: 32px;     /* PNG 크기에 맞춰 조절 */
+    pointer-events: none;
+    z-index: 3000;                 /* 항상 최상위 (loader 2000, logo 2100, lightbox 1100 모두 위) */
+    will-change: transform;
+    opacity: 0;
+    transition: opacity 0.3s;
+    mix-blend-mode: difference;    /* 이미지+라벨 둘 다 사진 위에서 자동 색반전 */
+  }
+  .cursor.visible { opacity: 1; }
+
+  /* PNG 본체 — 평소엔 BIG, 인터랙티브 위에선 small */
+  .cursor-img {
+    width: 100%; height: 100%;
+    display: block;
+    transform: scale(1.6);                 /* default = BIG (자유 부유 상태) */
+    transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
+  }
+  .cursor.over .cursor-img     { transform: scale(0.85); }   /* 사진 위 = small */
+  .cursor.dragging .cursor-img { transform: scale(0.5); }    /* 드래그 = smallest */
+
+  /* 링크(로고/메뉴/인스타) hover → small + 라벨 숨김 */
+  body:has(.logo:hover) .cursor .cursor-img,
+  body:has(.ui a:hover) .cursor .cursor-img,
+  body:has(.lightbox-close:hover) .cursor .cursor-img,
+  body:has(.menu-toggle:hover) .cursor .cursor-img,
+  body:has(nav.menu-fullscreen a:hover) .cursor .cursor-img {
+    transform: scale(0.85);
+  }
+  body:has(.logo:hover) .cursor .label,
+  body:has(.ui a:hover) .cursor .label,
+  body.lb-open .cursor .label,
+  body.menu-open .cursor .label {
+    opacity: 0;
+  }
+
+  /* 라벨 — 부모 .cursor가 mix-blend 처리하므로 여기엔 안 줌 */
+  .cursor .label {
+    position: absolute;
+    top: 50%; left: 100%;
+    margin-left: 18px;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    color: var(--fg);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-weight: 500;
+  }
+  .cursor .label.flip {
+    left: auto; right: 100%;
+    margin-left: 0; margin-right: 18px;
+  }
+  .cursor.over .label { opacity: 1; }
+  @media (hover: none), (pointer: coarse) {
+    .cursor { display: none; }
+  }
+
+  /* ─────────────────────────────────────────────────
+     필름 그레인
+     ───────────────────────────────────────────────── */
+  .grain {
+    position: fixed;
+    inset: -10%;
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.10;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.85'/></svg>");
+    background-size: 240px 240px;
+    animation: grainShift 0.5s steps(5) infinite;
+  }
+  @keyframes grainShift {
+    0%   { transform: translate(0, 0); }
+    20%  { transform: translate(-6%, 4%); }
+    40%  { transform: translate(3%, -5%); }
+    60%  { transform: translate(-3%, -3%); }
+    80%  { transform: translate(4%, 2%); }
+    100% { transform: translate(0, 0); }
+  }
+
+
+
+  /* ─────────────────────────────────────────────────
+     LOADER  — 첫 진입: 검정 배경 + 로고 페이드인 → 페이드아웃과 동시에 갤러리 reveal
+     ───────────────────────────────────────────────── */
+  .loader {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;                /* 로고(2100)보다 아래, lightbox(1100)/cursor(3000) 사이 */
+    background: #000;
+    pointer-events: none;
+    transition: opacity 1.0s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .loader.gone    { opacity: 0; }
+  .loader.removed { display: none; }
+
+  /* 로더 진입 시 로고 자체가 등장하는 fade-in (.logo에 적용됨) */
+  @keyframes loaderLogoIn {
+    to { opacity: 1; }
+  }
+
+
+  /* ─────────────────────────────────────────────────
+     HAMBURGER + 풀스크린 메뉴 오버레이 (≤1199px에서만 활성)
+     ───────────────────────────────────────────────── */
+  .menu-toggle {
+    position: fixed;
+    top: max(26px, env(safe-area-inset-top));
+    right: 32px;
+    z-index: 1950;                /* lightbox(1100)/overlay(1900) 위, loader(2000) 아래 */
+    width: 26px;
+    height: 22px;                 /* 태블릿: 데스크탑 로고 렌더 높이(~20px)에 맞춤 */
+    display: none;                /* 데스크탑에선 숨김 — 미디어쿼리에서 활성화 */
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: stretch;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: none;
+    mix-blend-mode: difference;   /* 사진 위에서 자동 invert */
+    -webkit-tap-highlight-color: transparent;
+  }
+  .menu-toggle span {
+    display: block;
+    width: 100%;
+    height: 1.5px;
+    background: var(--fg);
+    border-radius: 1px;
+    transform-origin: center;
+    transition: transform 0.45s cubic-bezier(0.7, 0, 0.2, 1),
+                opacity 0.3s ease;
+  }
+  /* 햄버거 → X 모핑 (메뉴 열렸을 때) */
+  body.menu-open .menu-toggle span:nth-child(1) {
+    transform: translateY(10px) rotate(45deg);
+  }
+  body.menu-open .menu-toggle span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  body.menu-open .menu-toggle span:nth-child(3) {
+    transform: translateY(-10px) rotate(-45deg);
+  }
+  @media (max-width: 768px) {
+    /* 모바일: 로고 렌더 높이(~14px)에 맞춰 더 작게 */
+    .menu-toggle {
+      right: 18px;
+      top: max(16px, env(safe-area-inset-top));
+      width: 22px;
+      height: 16px;
+    }
+    .menu-toggle span { height: 1.2px; }
+    body.menu-open .menu-toggle span:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+    body.menu-open .menu-toggle span:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+  }
+  @media (hover: none), (pointer: coarse) {
+    .menu-toggle { cursor: auto; }
+  }
+
+  /* 풀스크린 오버레이 — 갤러리 위에 blur backdrop */
+  .menu-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 갤러리에 blur 입힌 backdrop (라이트박스 배경과 같은 톤) */
+    background: rgba(0, 0, 0, 0.001);
+    -webkit-backdrop-filter: blur(40px) brightness(0.5) saturate(1.05);
+    backdrop-filter: blur(40px) brightness(0.5) saturate(1.05);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: none;
+  }
+  body.menu-open .menu-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  @media (hover: none), (pointer: coarse) {
+    .menu-overlay { cursor: auto; }
+  }
+
+  /* 풀스크린 메뉴 — Nanum Myeongjo 큰 글씨, 좌정렬 (좌측 점 indicator 공간 확보) */
+  nav.menu-fullscreen {
+    flex-direction: column;
+    gap: 28px;
+    align-items: flex-start;
+    padding-left: 38px;          /* 좌측 점 indicator 공간 */
+  }
+  nav.menu-fullscreen a {
+    position: relative;
+    font-family: 'Nanum Myeongjo', 'Noto Serif KR', 'Apple SD Gothic Neo', serif;
+    font-size: 38px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    text-transform: none;        /* .ui의 uppercase 무력화 */
+    color: var(--fg);
+    line-height: 1;
+    /* stagger 등장 — JS가 --menu-delay 부여 */
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) var(--menu-delay, 0ms),
+      transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) var(--menu-delay, 0ms),
+      color 0.3s ease;
+    cursor: none;
+  }
+  body.menu-open nav.menu-fullscreen a {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  /* 좌측 점 indicator (hover/active 시 등장) */
+  nav.menu-fullscreen a::before {
+    content: '';
+    position: absolute;
+    left: -28px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    transform: translateY(-50%) scale(0);
+    transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  nav.menu-fullscreen a:hover::before,
+  nav.menu-fullscreen a.active::before {
+    transform: translateY(-50%) scale(1);
+  }
+  nav.menu-fullscreen a:hover { color: var(--accent); }
+  @media (max-width: 768px) {
+    nav.menu-fullscreen { gap: 24px; padding-left: 32px; }
+    nav.menu-fullscreen a { font-size: 30px; }
+    nav.menu-fullscreen a::before { left: -22px; width: 7px; height: 7px; }
+  }
+  @media (hover: none), (pointer: coarse) {
+    nav.menu-fullscreen a { cursor: auto; }
+  }
+
+  /* ── 반응형 분기: 1200px 기준 ── */
+  @media (min-width: 1200px) {
+    .menu-toggle, .menu-overlay { display: none !important; }
+  }
+  @media (max-width: 1199px) {
+    /* 인라인 메뉴 숨김, 햄버거 활성 */
+    nav.menu-inline { display: none; }
+    .menu-toggle { display: flex; }
+    /* header.ui는 빈 채로 padding만 남으니 display:none 처리 */
+    header.ui { display: none; }
+  }
+
+  /* ─────────────────────────────────────────────────
+     LIGHTBOX  — 사진 클릭 시 풀스크린 확대 뷰
+     ───────────────────────────────────────────────── */
+  .lightbox {
+    /* 수평: 디자인 의도 (50/30/10) 유지
+       수직: 좌상단 로고 라인과 정렬 → 26(top) + 40(logo h) + 26(아래 동일) = 92px */
+    --lb-margin-x: 50px;
+    --lb-margin-y: 92px;
+    position: fixed;
+    inset: 0;
+    z-index: 1100;                /* grain(999) 위, cursor(3000) 아래 */
+    /* flex centering 제거 — frame을 absolute로 직접 배치해서 top: 92px 확실히 보장 */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    cursor: none;
+  }
+  .lightbox.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* 사진 자체의 흐릿한 배경 (full-screen) */
+  .lightbox-bg {
+    position: absolute;
+    inset: -8%;                   /* blur edge crop 방지 */
+    background-image: var(--lb-img, none);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: blur(48px) brightness(0.55) saturate(1.05);
+    transform: scale(1.1);
+    z-index: 0;
+    pointer-events: none;
+  }
+  /* 어두운 베일 한 겹 (가독성 + 사진 떠 보이게) */
+  .lightbox::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* 사진 프레임 (4:5 portrait) */
+  .lightbox-frame {
+    position: absolute;
+    top:  var(--lb-margin-y);              /* ← 정확히 92px (모바일 60px) 보장 */
+    left: 50%;
+    z-index: 2;
+    aspect-ratio: 4 / 5;
+    max-width:  calc(100vw  - 2 * var(--lb-margin-x));
+    max-height: calc(100vh  - 2 * var(--lb-margin-y));
+    max-height: calc(100dvh - 2 * var(--lb-margin-y));
+    transform: translateX(-50%) scale(0.96);
+    opacity: 0;
+    transition:
+      transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1),
+      opacity 0.4s 0.05s ease-out;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  }
+  .lightbox.open .lightbox-frame {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+
+  .lightbox-img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    background-color: var(--tile-bg);
+    -webkit-user-drag: none;
+    user-select: none;
+    pointer-events: none;          /* 클릭 무력화 (frame에서만 막음) */
+  }
+
+  /* 닫기 버튼 — 사진 우상단 안쪽 */
+  .lightbox-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 3;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+    color: #fff;
+    cursor: none;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+    padding: 0;
+  }
+  .lightbox-close:hover {
+    background: rgba(0, 0, 0, 0.7);
+    border-color: rgba(255, 255, 255, 0.45);
+    transform: scale(1.06);
+  }
+  .lightbox-close svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    fill: none;
+    stroke-linecap: round;
+  }
+
+  /* 반응형 마진 */
+  @media (max-width: 1199px) {
+    /* 태블릿: 좌우만 30px로, 수직은 데스크탑과 동일 (로고 사이즈 동일) */
+    .lightbox { --lb-margin-x: 30px; }
+    .lightbox-close { width: 36px; height: 36px; top: 12px; right: 12px; }
+  }
+  @media (max-width: 767px) {
+    /* 모바일: 좌우 10px, 수직은 16+28+16 = 60px (모바일 로고 기준) */
+    .lightbox { --lb-margin-x: 10px; --lb-margin-y: 60px; }
+    .lightbox-close { width: 34px; height: 34px; top: 10px; right: 10px; }
+    .lightbox-close svg { width: 16px; height: 16px; }
+  }
+  @media (hover: none), (pointer: coarse) {
+    .lightbox, .lightbox-close { cursor: auto; }
+  }
+
+  /* 라이트박스 열려있을 때 hint 가려져있을 수 있으니 grain만 살짝 약하게 */
+  body.lb-open .grain { opacity: 0.06; }
+
+  .vignette {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.45) 100%);
+  }
+
+  .hint {
+    position: fixed;
+    left: 50%;
+    bottom: calc(86px + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: 10;
+    color: var(--fg);
+    font-family: 'Nanum Myeongjo', 'Noto Serif KR', 'Apple SD Gothic Neo', serif;
+    font-size: 26px;
+    letter-spacing: 0.01em;
+    pointer-events: none;
+    mix-blend-mode: difference;
+    opacity: 0;
+    text-align: center;
+    white-space: nowrap;
+    font-weight: 400;
+    max-width: 95vw;
+    overflow: hidden;
+  }
+  /* loader+reveal 시퀀스 끝나면 JS가 body.hint-on을 추가 → 그때 등장 */
+  body.hint-on .hint {
+    opacity: 1;
+    transition: opacity 1.2s ease-out;
+  }
+  /* hint-dismissed 클래스가 추가되면 즉시 페이드아웃 (timeout 또는 user 액션) */
+  body.hint-on.hint-dismissed .hint {
+    opacity: 0;
+    transition: opacity 1.0s ease-in;
+  }
+  .hint .swim { font-weight: inherit; letter-spacing: inherit; }   /* 다른 부분과 동일 */
+  .hint .sep  { opacity: 0.45; margin: 0 0.5em; font-weight: 400; }
+  @keyframes fadeIn  { to { opacity: 1; } }
+  @keyframes fadeOut { to { opacity: 0; } }
+  @media (max-width: 768px) {
+    .hint {
+      /* 좌하단 메타랑 안 겹치게 화면 정중앙으로 */
+      top: 50%;
+      bottom: auto;
+      transform: translate(-50%, -50%);
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+    .hint .sep { margin: 0 0.35em; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .grain, body, .hint { animation: none; }
+    body, .hint { opacity: 1; }
+    .tile { opacity: 1 !important; transition: none !important; }
+    .tile::before { transition: none; }
+    .loader { display: none !important; }
+    /* 로고 morph 스킵 */
+    .logo, .logo-img { transition: none !important; }
+    body.loader-active .logo {
+      top: max(26px, env(safe-area-inset-top));
+      left: 32px;
+      transform: none;
+      animation: none;
+      opacity: 1;
+    }
+    body.loader-active .logo-img { max-width: 220px; max-height: 40px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader"></div>
+
+<div class="vignette"></div>
+<div class="stage-dim"></div>
+<div class="grain"></div>
+
+<div class="cursor" id="cursor">
+  <img class="cursor-img" src="./images/cursor_2.png" alt="" />
+  <div class="label" id="cursorLabel">ㅍㅇ ㅎㅇㅌ</div>
+</div>
+
+<a class="logo" href="index.html" aria-label="Medalbank Aquatics — Home">
+  <img class="logo-img" src="./images/medalbankaquatics.png" alt="Medalbank Aquatics" />
+</a>
+
+<header class="ui">
+  <nav class="menu menu-inline">
+    <a href="photos.html">사진집</a>
+    <a href="athletes.html">선수목록</a>
+    <a href="magazines.html">정기간행물</a>
+    <a href="about.html">촬영서비스</a>
+    <a href="request.html">촬영요청</a>
+    <a href="consent.html">공개요청</a>
+  </nav>
+</header>
+
+<button class="menu-toggle" id="menuToggle" type="button" aria-label="메뉴 열기" aria-expanded="false">
+  <span></span>
+  <span></span>
+  <span></span>
+</button>
+
+<div class="menu-overlay" id="menuOverlay" aria-hidden="true">
+  <nav class="menu menu-fullscreen">
+    <a href="photos.html">사진집</a>
+    <a href="athletes.html">선수목록</a>
+    <a href="magazines.html">정기간행물</a>
+    <a href="about.html">촬영서비스</a>
+    <a href="request.html">촬영요청</a>
+    <a href="consent.html">공개요청</a>
+  </nav>
+</div>
+
+<footer class="ui">
+  <div class="meta-left">
+    <div>50+ MEETS · 1,000+ ATHLETES · 1M+ FRAMES</div>
+    <div>600MM F4 · 300MM F2.8 · 70-200MM F2.8</div>
+    <div class="row-strong">SINCE 2019 · <span id="clock">KST 00:00:00</span></div>
+    <div class="insta-mobile">
+      <a class="insta" href="https://www.instagram.com/medalbankaquatics" target="_blank" rel="noopener noreferrer">@medalbankaquatics</a>
+    </div>
+  </div>
+  <div class="meta-right">
+    <div>EVERY HEAT · EVERY ATHLETE</div>
+    <div>NATIONAL · INTERNATIONAL MEETS</div>
+    <div>CHAMPIONSHIP-GRADE COVERAGE</div>
+    <div><a class="insta" href="https://www.instagram.com/medalbankaquatics" target="_blank" rel="noopener noreferrer">@medalbankaquatics</a></div>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" aria-hidden="true" role="dialog" aria-label="사진 확대 보기">
+  <div class="lightbox-bg" id="lightboxBg"></div>
+  <div class="lightbox-frame">
+    <img class="lightbox-img" id="lightboxImg" alt="" />
+    <button class="lightbox-close" id="lightboxClose" type="button" aria-label="닫기">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <line x1="6" y1="6" x2="18" y2="18"/>
+        <line x1="18" y1="6" x2="6" y2="18"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<div class="hint">드래그<span class="sep">|</span>스크롤<span class="sep">|</span>클릭<span class="sep">|</span><span class="swim">평영 화이팅</span></div>
+
+<div id="stage"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ─────────────────────────────────────────────
+  // CONFIG
+  // ─────────────────────────────────────────────
+  const CFG = {
+    desktopCols   : 5.5,      // ≥1200px (5 full + 0.25 cut each side)
+    tabletCols    : 3.5,      // 768~1199px (3 full + 0.25 cut each side)
+    mobileCols    : 3.5,      // <768px
+    tabletBreak   : 1200,
+    mobileBreak   : 768,
+    gapDesktop    : 14,
+    gapMobile     : 8,
+    aspectRatio   : 4 / 5,    // w/h
+    friction      : 0.93,
+    wheelMul      : 0.55,
+    dragMul       : 1.0,
+    maxVel        : 70,
+    curveRatio    : 0.30,     // 타일 높이의 30% 까지 휨 (강하게)
+    curveVelBoost : 1.5,      // 빠르게 움직일수록 더 휨
+    clickThreshold: 6,
+    cursorEase    : 0.20,
+    snapEase      : 0.18,     // gap 클릭 시 X 정렬 lerp 강도
+    bufferTiles   : 1,
+    imageCount    : 150,      // 150 = 6*25 (데스크탑 perRow=6 기준 깔끔한 vertical loop)
+    imgSize       : 800,
+  };
+
+  const imgUrl = (idx) => {
+    const n = String(idx + 1).padStart(3, '0');
+    return `./images/thumbs/thumb-${n}.jpg`;
+  };
+
+  // CSS background-image 형식으로 미리 캐싱
+  const URL_CACHE = [];
+  for (let i = 0; i < CFG.imageCount; i++) URL_CACHE[i] = `url("${imgUrl(i)}")`;
+
+  // ─────────────────────────────────────────────
+  // STATE
+  // ─────────────────────────────────────────────
+  const S = {
+    camX: 0, camY: 0,
+    velX: 0, velY: 0,
+    smoothVelX: 0,                // 곡률 계산용으로만 쓰는 부드러운 속도 (드래그 떨림 방지)
+    targetCamX: null,             // gap 클릭 시 스냅 목표 X (null=비활성)
+    isDown: false, isDragging: false,
+    lastPX: 0, lastPY: 0,
+    moveDist: 0,
+    pointerX: -1e4, pointerY: -1e4,
+    curX: 0, curY: 0,
+    tileW: 320, tileH: 400,
+    gap: 14,
+    cols: 8, rows: 5,
+    fullCols: 5,                  // 시각적 정중앙 정렬용 (5/3)
+    perRow: 6,                    // 가로 loop 단위 (6/4)
+    tiles: [],
+    hoveredKey: null,
+    visible: true,
+  };
+
+  const stage    = document.getElementById('stage');
+  const cursorEl = document.getElementById('cursor');
+  const labelEl  = document.getElementById('cursorLabel');
+  const clockEl  = document.getElementById('clock');
+
+  // ─────────────────────────────────────────────
+  // 사이즈
+  // ─────────────────────────────────────────────
+  function computeSize() {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    let target;
+    if (vw < CFG.mobileBreak)        target = CFG.mobileCols;
+    else if (vw < CFG.tabletBreak)   target = CFG.tabletCols;
+    else                              target = CFG.desktopCols;
+
+    S.gap = vw < CFG.mobileBreak ? CFG.gapMobile : CFG.gapDesktop;
+
+    const fullCols = Math.floor(target);   // 화면 정중앙에 들어갈 "온전한" 타일 수 (5/3)
+    S.fullCols = fullCols;                  // 정중앙 정렬용 (centerCamX에서 사용)
+    S.perRow   = Math.ceil(target);         // 가로 loop 단위 (5.5→6, 3.5→4) — 6번째 사진이 양쪽 가장자리에 split으로 나타남
+
+    // 5.5 visible = 5 full + 0.5 split → 양쪽에 0.25씩 잘림
+    //   vw = target × tileW + (fullCols+1) × gap
+    S.tileW = (vw - (fullCols + 1) * S.gap) / target;
+    S.tileH = S.tileW / CFG.aspectRatio;
+
+    // 풀 사이즈: 화면에 보이는 셀 수 + 양쪽 버퍼
+    S.cols = Math.ceil(vw / (S.tileW + S.gap)) + 1 + CFG.bufferTiles * 2;
+    S.rows = Math.ceil(vh / (S.tileH + S.gap)) + CFG.bufferTiles * 2 + 1;
+
+    stage.style.setProperty('--gap', S.gap + 'px');
+  }
+
+  // fullCols 개의 full 타일이 화면 정중앙에 오는 카메라 X
+  // (perRow가 아니라 fullCols 사용 — perRow는 loop 단위, fullCols는 시각적 정렬 단위)
+  function centerCamX() {
+    return (S.fullCols * S.tileW + (S.fullCols - 1) * S.gap - window.innerWidth) / 2;
+  }
+
+  function preloadImages() {
+    for (let i = 0; i < CFG.imageCount; i++) {
+      const im = new Image();
+      im.src = imgUrl(i);
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // 타일 풀 (각 타일에 사진번호 span 포함)
+  // ─────────────────────────────────────────────
+  function buildPool() {
+    stage.innerHTML = '';
+    S.tiles = [];
+    const total = S.cols * S.rows;
+    for (let i = 0; i < total; i++) {
+      const t = document.createElement('div');
+      t.className = 'tile';
+      t.style.width  = S.tileW + 'px';
+      t.style.height = S.tileH + 'px';
+
+      const num = document.createElement('span');
+      num.className = 'tile-number';
+      t.appendChild(num);
+
+      t.dataset.cell = '';
+      t.addEventListener('click', onTileClick);
+      stage.appendChild(t);
+      S.tiles.push(t);
+    }
+  }
+
+  function imageIndexFor(ci, cj) {
+    const perRow = S.perRow;
+    const total  = CFG.imageCount;
+    const slot   = ((ci % perRow) + perRow) % perRow;
+    const idx    = cj * perRow + slot;
+    return ((idx % total) + total) % total;
+  }
+
+  // ─────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────
+  function render() {
+    if (!S.visible) { requestAnimationFrame(render); return; }
+
+    // ── 가로 스냅 (gap 클릭 시) ──
+    if (S.targetCamX !== null && !S.isDown) {
+      const diff = S.targetCamX - S.camX;
+      if (Math.abs(diff) < 0.5) {
+        S.camX = S.targetCamX;
+        S.targetCamX = null;
+        S.velX = 0;
+      } else {
+        S.camX += diff * CFG.snapEase;
+        S.velX = 0;          // 모멘텀 무력화
+      }
+    }
+    // ── 일반 모멘텀 ──
+    else if (!S.isDragging) {
+      S.camX += S.velX;  S.camY += S.velY;
+      S.velX *= CFG.friction;  S.velY *= CFG.friction;
+      if (Math.abs(S.velX) < 0.05) S.velX = 0;
+      if (Math.abs(S.velY) < 0.05) S.velY = 0;
+    }
+
+    // 커서 lerp
+    S.curX += (S.pointerX - S.curX) * CFG.cursorEase;
+    S.curY += (S.pointerY - S.curY) * CFG.cursorEase;
+    cursorEl.style.transform =
+      `translate(${S.curX}px, ${S.curY}px) translate(-50%, -50%)`;
+
+    // 곡률 계산용 속도 스무딩 (드래그 중 mousemove 타이밍 노이즈 제거)
+    S.smoothVelX += (S.velX - S.smoothVelX) * 0.10;
+
+    const vw    = window.innerWidth;
+    const cellW = S.tileW + S.gap;
+    const cellH = S.tileH + S.gap;
+    const baseI = Math.floor(S.camX / cellW) - CFG.bufferTiles;
+    const baseJ = Math.floor(S.camY / cellH) - CFG.bufferTiles;
+
+    const speedFactor   = Math.min(1, Math.abs(S.smoothVelX) / CFG.maxVel);
+    const curveStrength = S.tileH * CFG.curveRatio * (1 + speedFactor * CFG.curveVelBoost);
+
+    let idx = 0;
+    for (let row = 0; row < S.rows; row++) {
+      for (let col = 0; col < S.cols; col++) {
+        const t = S.tiles[idx++];
+        if (!t) continue;
+        const ci = baseI + col;
+        const cj = baseJ + row;
+        const sx = ci * cellW - S.camX;
+        let   sy = cj * cellH - S.camY;
+
+        const offX    = (sx + S.tileW / 2 - vw / 2) / (vw / 2);
+        const clamped = Math.max(-1.4, Math.min(1.4, offX));
+        sy += (1 - Math.cos(clamped * Math.PI / 2)) * curveStrength;
+
+        t.style.transform = `translate3d(${sx}px, ${sy}px, 0)`;
+
+        const cellKey = ci + ',' + cj;
+        if (t.dataset.cell !== cellKey) {
+          t.dataset.cell  = cellKey;
+          const imgIdx    = imageIndexFor(ci, cj);
+          t.dataset.imgIdx = imgIdx;
+          t.style.setProperty('--bg-img', URL_CACHE[imgIdx]);
+          t.firstElementChild.textContent = (imgIdx + 1);   // # 없이 숫자만
+        }
+      }
+    }
+
+    detectHover();
+    requestAnimationFrame(render);
+  }
+
+  // ─────────────────────────────────────────────
+  // 가상 hit-test (perf 핵심)
+  // ─────────────────────────────────────────────
+  function detectHover() {
+    if (S.pointerX < 0) return;
+    const r = pointToCell(S.pointerX, S.pointerY);
+    if (r.inTile) {
+      const key = r.ci + ',' + r.cj;
+      if (S.hoveredKey !== key) {
+        S.hoveredKey = key;
+        cursorEl.classList.add('over');
+        labelEl.classList.toggle('flip', S.pointerX > window.innerWidth - 220);
+      }
+    } else if (S.hoveredKey !== null) {
+      S.hoveredKey = null;
+      cursorEl.classList.remove('over');
+    }
+  }
+
+  // 마우스 좌표 → 어떤 cell의 어디(타일 안 / gap)인지
+  function pointToCell(px, py) {
+    const vw = window.innerWidth;
+    const cellW = S.tileW + S.gap;
+    const cellH = S.tileH + S.gap;
+
+    // 곡률 역보정 (render loop과 같은 smoothVelX 사용)
+    const speedFactor   = Math.min(1, Math.abs(S.smoothVelX) / CFG.maxVel);
+    const curveStrength = S.tileH * CFG.curveRatio * (1 + speedFactor * CFG.curveVelBoost);
+    const offX = (px - vw/2) / (vw/2);
+    const clamped = Math.max(-1.4, Math.min(1.4, offX));
+    const curveOff = (1 - Math.cos(clamped * Math.PI / 2)) * curveStrength;
+
+    const wx = px + S.camX;
+    const wy = py + S.camY - curveOff;
+    const ci = Math.floor(wx / cellW);
+    const cj = Math.floor(wy / cellH);
+    const localX = wx - ci * cellW;
+    const localY = wy - cj * cellH;
+    const inTile = localX >= 0 && localX < S.tileW &&
+                   localY >= 0 && localY < S.tileH;
+    return { ci, cj, inTile };
+  }
+
+  // ─────────────────────────────────────────────
+  // 포인터
+  // ─────────────────────────────────────────────
+  const getPoint = (e) => e.touches && e.touches[0]
+    ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    : { x: e.clientX, y: e.clientY };
+  const clamp = (v, mn, mx) => Math.max(mn, Math.min(mx, v));
+
+  function onDown(e) {
+    const p = getPoint(e);
+    S.isDown = true; S.isDragging = false;
+    S.lastPX = p.x; S.lastPY = p.y;
+    S.moveDist = 0;
+    S.velX = 0; S.velY = 0;
+    S.targetCamX = null;       // 사용자 입력 들어오면 스냅 취소
+    cursorEl.classList.add('dragging');
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function onMove(e) {
+    const p = getPoint(e);
+    S.pointerX = p.x; S.pointerY = p.y;
+    if (!cursorEl.classList.contains('visible')) {
+      S.curX = p.x; S.curY = p.y;
+      cursorEl.classList.add('visible');
+    }
+    if (S.isDown) {
+      const dx = p.x - S.lastPX;
+      const dy = p.y - S.lastPY;
+      S.moveDist += Math.abs(dx) + Math.abs(dy);
+      if (S.moveDist > CFG.clickThreshold) S.isDragging = true;
+      if (S.isDragging) {
+        S.camX -= dx * CFG.dragMul;
+        S.camY -= dy * CFG.dragMul;
+        S.velX = clamp(-dx * CFG.dragMul * 0.65, -CFG.maxVel, CFG.maxVel);
+        S.velY = clamp(-dy * CFG.dragMul * 0.65, -CFG.maxVel, CFG.maxVel);
+      }
+      S.lastPX = p.x; S.lastPY = p.y;
+    }
+  }
+
+  function onUp() {
+    S.isDown = false; S.isDragging = false;
+    cursorEl.classList.remove('dragging');
+  }
+
+  function onWheel(e) {
+    e.preventDefault();
+    S.targetCamX = null;       // 휠 입력 들어오면 스냅 취소
+    S.velX = clamp(S.velX + e.deltaX * CFG.wheelMul, -CFG.maxVel, CFG.maxVel);
+    S.velY = clamp(S.velY + e.deltaY * CFG.wheelMul, -CFG.maxVel, CFG.maxVel);
+  }
+
+  function onTileClick(e) {
+    if (S.moveDist > CFG.clickThreshold) return;
+    const t = e.currentTarget;
+    t.classList.remove('clicked');
+    void t.offsetWidth;
+    t.classList.add('clicked');
+    t.addEventListener('animationend',
+      () => t.classList.remove('clicked'), { once: true });
+    const imgIdx = parseInt(t.dataset.imgIdx, 10);
+    openLightbox(imgIdx);
+  }
+
+  // ─────────────────────────────────────────────
+  // GAP 클릭 → 가로 중립 위치로 스냅 (세로는 그대로)
+  // ─────────────────────────────────────────────
+  stage.addEventListener('click', (e) => {
+    if (S.moveDist > CFG.clickThreshold) return;   // 드래그였으면 무시
+    if (e.target !== stage) return;                // 타일 클릭이면 onTileClick이 처리
+    S.targetCamX = centerCamX();                    // 5/3 full 타일 정중앙 정렬
+  });
+
+
+  // ─────────────────────────────────────────────
+  // LIGHTBOX
+  // ─────────────────────────────────────────────
+  const lightbox      = document.getElementById('lightbox');
+  const lightboxImg   = document.getElementById('lightboxImg');
+  const lightboxBg    = document.getElementById('lightboxBg');
+  const lightboxClose = document.getElementById('lightboxClose');
+
+  // 갤러리 타일은 800px, 라이트박스는 좀 더 크게 (같은 seed → 같은 사진)
+  const lightboxImgUrl = (idx) => {
+    const n = String(idx + 1).padStart(3, '0');
+    return `./images/xl/xl-${n}.jpg`;
+  };
+
+  function openLightbox(imgIdx) {
+    // 1단계: 썸네일을 즉시 표시 (이미 preloadImages()로 캐시됨 → 0ms 지연)
+    const thumbUrl = imgUrl(imgIdx);
+    const bigUrl   = lightboxImgUrl(imgIdx);
+
+    lightboxImg.src = thumbUrl;
+    lightboxImg.alt = `Photo #${imgIdx + 1}`;
+    lightboxImg.dataset.currentIdx = String(imgIdx);
+    lightbox.style.setProperty('--lb-img', `url("${thumbUrl}")`);
+    lightbox.classList.add('open');
+    lightbox.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('lb-open');
+
+    // 갤러리 모멘텀/입력 정리
+    S.velX = 0; S.velY = 0;
+    S.isDown = false; S.isDragging = false;
+    cursorEl.classList.remove('dragging', 'over');
+    S.hoveredKey = null;
+
+    // 2단계: 고해상도를 백그라운드 로드 → 준비되면 같은 자리에 슬쩍 교체
+    const hiRes = new Image();
+    hiRes.onload = () => {
+      // 같은 사진이 여전히 띄워져 있을 때만 교체 (다른 사진 클릭 후 늦게 도착하는 경우 방지)
+      if (lightbox.classList.contains('open') &&
+          lightboxImg.dataset.currentIdx === String(imgIdx)) {
+        lightboxImg.src = bigUrl;
+        lightbox.style.setProperty('--lb-img', `url("${bigUrl}")`);
+      }
+    };
+    hiRes.src = bigUrl;
+  }
+
+  function closeLightbox() {
+    if (!lightbox.classList.contains('open')) return;
+    lightbox.classList.remove('open');
+    lightbox.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('lb-open');
+    // transition 후 메모리 해제
+    setTimeout(() => {
+      if (!lightbox.classList.contains('open')) {
+        lightboxImg.removeAttribute('src');
+        lightbox.style.setProperty('--lb-img', 'none');
+      }
+    }, 500);
+  }
+
+  // 닫기 트리거 — 사진/X버튼 외부 클릭 + X버튼 클릭
+  lightbox.addEventListener('click', (e) => {
+    // 프레임 안쪽 클릭 (사진 영역) → X 버튼만 닫기, 사진 클릭은 무시
+    if (e.target.closest('.lightbox-close')) {
+      closeLightbox();
+      return;
+    }
+    if (e.target.closest('.lightbox-frame')) return;   // 사진 영역 → 닫지 않음
+    closeLightbox();                                    // 그 외 (bg) → 닫기
+  });
+
+  // ESC 키
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && lightbox.classList.contains('open')) {
+      closeLightbox();
+    }
+  });
+
+  // ─────────────────────────────────────────────
+  // 메뉴 (햄버거 + 풀스크린 오버레이)
+  // ─────────────────────────────────────────────
+  const menuToggle  = document.getElementById('menuToggle');
+  const menuOverlay = document.getElementById('menuOverlay');
+  const menuLinks   = menuOverlay.querySelectorAll('nav.menu-fullscreen a');
+
+  // 각 링크에 stagger delay 부여 (60ms 간격)
+  menuLinks.forEach((a, i) => {
+    a.style.setProperty('--menu-delay', (i * 60) + 'ms');
+  });
+
+  function openMenu() {
+    document.body.classList.add('menu-open');
+    menuOverlay.setAttribute('aria-hidden', 'false');
+    menuToggle.setAttribute('aria-expanded', 'true');
+    menuToggle.setAttribute('aria-label', '메뉴 닫기');
+  }
+  function closeMenu() {
+    document.body.classList.remove('menu-open');
+    menuOverlay.setAttribute('aria-hidden', 'true');
+    menuToggle.setAttribute('aria-expanded', 'false');
+    menuToggle.setAttribute('aria-label', '메뉴 열기');
+  }
+  function toggleMenu() {
+    if (document.body.classList.contains('menu-open')) closeMenu();
+    else openMenu();
+  }
+
+  menuToggle.addEventListener('click', toggleMenu);
+
+  // 오버레이 backdrop 클릭 → 닫기 (단, 링크 클릭은 그대로 동작)
+  menuOverlay.addEventListener('click', (e) => {
+    if (e.target.closest('nav.menu-fullscreen a')) return;
+    closeMenu();
+  });
+
+  // ESC 키 → 닫기
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.body.classList.contains('menu-open')) {
+      closeMenu();
+    }
+  });
+
+  // ─────────────────────────────────────────────
+  // 시계
+  // ─────────────────────────────────────────────
+  function tickClock() {
+    clockEl.textContent = 'KST ' + new Date().toLocaleTimeString('en-GB', {
+      hour12: false, timeZone: 'Asia/Seoul'
+    });
+  }
+  setInterval(tickClock, 1000);
+  tickClock();
+
+  // ─────────────────────────────────────────────
+  // Resize / 가시성
+  // ─────────────────────────────────────────────
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      computeSize();
+      buildPool();
+      S.camX = centerCamX();
+      S.camY = -S.gap;
+      S.targetCamX = null;
+    }, 150);
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    S.visible = !document.hidden;
+  });
+
+  // ─────────────────────────────────────────────
+  // INIT
+  // ─────────────────────────────────────────────
+  preloadImages();
+  computeSize();
+  buildPool();
+  S.camX = centerCamX();      // 첫 화면: 5(또는 3) full 타일 정중앙
+  S.camY = -S.gap;
+  S.velX = 0;
+
+  stage.addEventListener('mousedown',  onDown);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup',   onUp);
+  stage.addEventListener('touchstart', onDown,  { passive: false });
+  window.addEventListener('touchmove', onMove,  { passive: false });
+  window.addEventListener('touchend',  onUp);
+  stage.addEventListener('wheel',      onWheel, { passive: false });
+
+  document.addEventListener('touchmove', (e) => {
+    if (S.isDown) e.preventDefault();
+  }, { passive: false });
+
+  requestAnimationFrame(render);
+
+  // ─────────────────────────────────────────────
+  // LOADER SEQUENCE + 갤러리 4-row reveal
+  // ─────────────────────────────────────────────
+  const loader = document.getElementById('loader');
+
+  // 각 타일에 (row, col) 기반 transition-delay 부여 → 위→아래 wave + 중앙↔양끝 stagger
+  // 5.5 column 그리드의 실제 렌더 위치와 1:1 매칭됨
+  function startGalleryReveal() {
+    const centerCol = (S.cols - 1) / 2;
+    let idx = 0;
+    for (let row = 0; row < S.rows; row++) {
+      for (let col = 0; col < S.cols; col++) {
+        const t = S.tiles[idx++];
+        if (!t) continue;
+        const colDist = Math.abs(col - centerCol);
+        const delay = row * 160 + colDist * 30;     // ms — 위 행이 먼저, 가운데가 먼저
+        t.style.setProperty('--reveal-delay', delay + 'ms');
+      }
+    }
+    // 강제 reflow → transition 확실히 트리거
+    void document.body.offsetHeight;
+    document.body.classList.add('revealed');
+  }
+
+  function startLoaderSequence() {
+    const LOGO_DELAY    = 200;    // logo 등장 지연
+    const LOGO_FADE_IN  = 900;    // logo fade-in
+    const LOGO_HOLD     = 1300;   // logo가 BIG 상태로 머무는 시간
+    const LOGO_MORPH    = 1100;   // 로고가 center→top-left morph 시간 (CSS transition과 동일)
+    const REVEAL_OFFSET = 250;    // morph 시작 후 갤러리 reveal까지 지연
+
+    const t1 = LOGO_DELAY + LOGO_FADE_IN + LOGO_HOLD;        // ≈ 2400ms — morph & loader fade 시작
+    const t2 = t1 + REVEAL_OFFSET;                            // ≈ 2650ms — 갤러리 reveal 시작
+    const t3 = t1 + LOGO_MORPH;                               // ≈ 3500ms — morph 완료, loader 완전 제거
+    // reveal 총 길이 ≈ rows*160 + cols/2*30 + 1100(transition) ≈ 1800~2100ms
+    const t4 = t2 + 2000;                                     // ≈ 4650ms — hint 등장
+
+    setTimeout(() => {
+      // 로고 morph 트리거 (loader-active 제거 → 로고 top/left/transform/max-width 모두 transition)
+      document.body.classList.remove('loader-active');
+      // 검정 배경 페이드아웃 (로고 morph와 동시 진행 → 갤러리가 배경에서 emerge)
+      loader.classList.add('gone');
+    }, t1);
+
+    setTimeout(startGalleryReveal,                            t2);
+    setTimeout(() => loader.classList.add('removed'),         t3);
+    setTimeout(() => {
+      document.body.classList.add('hint-on');
+      // hint dismiss 트리거: 7초 후 자동 OR 사용자 첫 액션 (드래그/스크롤/클릭)
+      let dismissed = false;
+      const dismiss = () => {
+        if (dismissed) return;
+        dismissed = true;
+        document.body.classList.add('hint-dismissed');
+      };
+      setTimeout(dismiss, 7000);
+      ['mousedown', 'touchstart', 'wheel'].forEach(ev => {
+        window.addEventListener(ev, dismiss, { once: true, passive: true });
+      });
+    }, t4);
+  }
+
+  // 초기 상태: 로더 활성 → 로고가 정중앙 BIG으로 위치
+  document.body.classList.add('loader-active');
+
+  // 접근성: 모션 줄이기 켜져 있으면 즉시 표시
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (REDUCED) {
+    document.body.classList.remove('loader-active');
+    loader.classList.add('removed');
+    document.body.classList.add('revealed', 'hint-on');
+  } else {
+    startLoaderSequence();
+  }
+})();
+</script>
+</body>
+</html>

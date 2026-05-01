@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<!--
+=======================================================================
+  MEDALBANK AQUATICS — 사진 공개 요청 및 사용 동의 이메일 템플릿
+  파일명: medalbank_photo_consent_email.html
+  작성일: 2026-04-30
+  담당:   메달뱅크 아쿠아틱스
+=======================================================================
+
+■ 개요
+  사용자가 웹사이트에서 사진을 선택하고 동의 요청을 제출하면,
+  이 HTML 템플릿을 기반으로 이메일이 발송됩니다.
+  버튼 클릭 즉시 동의가 완료되는 구조입니다 (더블옵트인 불필요).
+
+■ 이메일 발송 트리거
+  POST /api/consents → 동의 레코드 생성 → Resend로 이 템플릿 발송
+  발송 주소: consent@medalbank.com (Resend 도메인 인증 필요)
+
+■ 템플릿 변수 목록 (백엔드에서 치환 필요)
+  ┌─────────────────────────┬────────────────────────────────────────────┐
+  │ 변수                    │ 설명                                       │
+  ├─────────────────────────┼────────────────────────────────────────────┤
+  │ {{SUBJECT_NAME}}        │ 수신자 이름 (예: 홍길동)                    │
+  │ {{PHOTO_COUNT}}         │ 동의 대상 사진 총 수 (예: 5)               │
+  │ {{CONSENT_URL}}         │ 동의 완료 처리 URL (토큰 포함)             │
+  │                         │ 예: https://medalbank.kr/consent/verify    │
+  │                         │     ?token=xxxxxxxx-xxxx-xxxx-xxxx         │
+  │ {{WITHDRAW_URL}}        │ 동의 철회 URL (토큰 포함)                  │
+  │                         │ 예: https://medalbank.kr/consent/withdraw  │
+  │                         │     ?token=xxxxxxxx-xxxx-xxxx-xxxx         │
+  │ {{PRIVACY_POLICY_URL}}  │ 개인정보처리방침 페이지 URL                │
+  │ {{PHOTO_GRID_HTML}}     │ 썸네일 그리드 HTML 블록 (아래 참조)        │
+  │ {{COMPETITION_NAME}}    │ 대회명 (예: 2026 수원 마스터즈 수영대회)   │
+  └─────────────────────────┴────────────────────────────────────────────┘
+
+■ {{PHOTO_GRID_HTML}} 동적 생성 방법
+  사진 1장당 아래 셀 블록을 반복 생성하여 4열 기준으로 <tr>로 묶습니다.
+  photo_id와 photo_number는 photos 테이블의 실제 값을 사용하세요.
+
+  [단일 썸네일 셀 예시]
+  <td width="25%" style="padding:0 4px 8px 0; vertical-align:top;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="background-color:#E8ECF1; border-radius:4px; height:116px; overflow:hidden;">
+          <img src="[썸네일_URL]" width="116" height="116"
+               alt="#001"
+               style="display:block; width:100%; height:116px; object-fit:cover; border-radius:4px;" />
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:3px 0 0; text-align:left; font-size:10px;
+                   color:#9AA3B0; font-weight:600;">#001</td>
+      </tr>
+    </table>
+  </td>
+
+  [4열 행 예시]
+  <tr>
+    [셀1][셀2][셀3][셀4]
+  </tr>
+  마지막 행 사진 수가 4의 배수가 아닐 경우 빈 <td width="25%"></td>로 채웁니다.
+
+■ 썸네일 URL
+  Supabase Storage public URL 사용 (흑백 1200px 썸네일)
+  형식: https://[project].supabase.co/storage/v1/object/public/thumbnails/[key]
+
+■ 참고
+  - 이메일 클라이언트 호환을 위해 table 기반 레이아웃 사용
+  - 인라인 CSS만 사용 (외부 스타일시트 지원 안 됨)
+  - 최대 너비 600px 고정
+=======================================================================
+-->
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>메달뱅크 아쿠아틱스 사진 공개 요청 및 사용 동의</title>
+  <style>
+    @keyframes softGlow {
+      0%   { box-shadow: 0 4px 16px rgba(26, 111, 196, 0.35); }
+      50%  { box-shadow: 0 4px 28px rgba(56, 182, 255, 0.6), 0 0 0 4px rgba(26, 111, 196, 0.12); }
+      100% { box-shadow: 0 4px 16px rgba(26, 111, 196, 0.35); }
+    }
+    .cta-btn {
+      animation: softGlow 2.6s ease-in-out infinite;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body style="margin:0; padding:0; background-color:#EDEFF2; font-family:'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#EDEFF2; padding: 40px 0;">
+    <tr>
+      <td align="center">
+
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#FFFFFF; border-radius:8px; overflow:hidden;">
+
+          <!-- ============================
+               HEADER
+          ============================= -->
+          <tr>
+            <td style="background-color:#0D1F3C; padding: 32px 40px 36px; text-align:left;">
+              <p style="margin:0; color:#FFFFFF; font-size:11px; letter-spacing:3px; text-transform:uppercase; font-weight:500; opacity:0.6;">MEDALBANK AQUATICS</p>
+              <p style="margin:6px 0 20px; color:#FFFFFF; font-size:15px; font-weight:500; letter-spacing:0.3px; opacity:0.85;">메달뱅크 아쿠아틱스</p>
+              <div style="border-top:1px solid rgba(255,255,255,0.15); margin-bottom:20px;"></div>
+              <p style="margin:0 0 8px; color:#FFFFFF; font-size:22px; font-weight:800; letter-spacing:0.3px; line-height:1.3;">사진 공개 요청 및 사용 동의</p>
+              <p style="margin:0; color:rgba(255,255,255,0.75); font-size:13px; font-weight:400; line-height:1.6;">아래 버튼을 눌러 동의를 완료해 주세요.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background: linear-gradient(90deg, #1A6FC4, #38B6FF); height:4px; font-size:0; line-height:0;">&nbsp;</td>
+          </tr>
+
+          <!-- ============================
+               발신 계기
+          ============================= -->
+          <tr>
+            <td style="padding: 32px 48px 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background-color:#F4F7FC; border-left:4px solid #1A6FC4; border-radius:0 6px 6px 0; padding:16px 20px;">
+                    <p style="margin:0; font-size:13px; color:#3D4A5C; line-height:1.8;">
+                      이 이메일은 메달뱅크 취재팀이 촬영한 대회 사진과 관련하여,
+                      <strong style="color:#0D1F3C;">본인</strong> 또는
+                      <strong style="color:#0D1F3C;">법적 보호자</strong>가 공개 요청을 함과 동시에
+                      사용 동의를 진행하기 위해 발송되었습니다.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ============================
+               동의 효과 1 · 2 · 3
+          ============================= -->
+          <tr>
+            <td style="padding: 0 48px 36px;">
+              <p style="margin:0 0 16px; font-size:13px; font-weight:700; color:#0D1F3C; letter-spacing:0.3px;">
+                본 이메일을 통한 &ldquo;공개 요청&rdquo; 및 &ldquo;사용 동의&rdquo;는 아래와 같은 효과가 있습니다.
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:10px;">
+                <tr>
+                  <td width="28" valign="top" style="padding-top:1px;">
+                    <span style="display:inline-block; background-color:#0D1F3C; color:#FFFFFF; font-size:11px; font-weight:700; width:20px; height:20px; border-radius:50%; text-align:center; line-height:20px;">1</span>
+                  </td>
+                  <td style="font-size:13.5px; color:#3D4A5C; line-height:1.7; padding-left:8px;">
+                    선택하신 사진에 대하여 <strong style="color:#0D1F3C;">8000px, 워터마크 없는 고화소 .jpg 파일</strong>을 즉각적으로 다운로드할 수 있습니다.
+                  </td>
+                </tr>
+              </table>
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:10px;">
+                <tr>
+                  <td width="28" valign="top" style="padding-top:1px;">
+                    <span style="display:inline-block; background-color:#0D1F3C; color:#FFFFFF; font-size:11px; font-weight:700; width:20px; height:20px; border-radius:50%; text-align:center; line-height:20px;">2</span>
+                  </td>
+                  <td style="font-size:13.5px; color:#3D4A5C; line-height:1.7; padding-left:8px;">
+                    다운로드한 사진은 본인의 취향에 맞게 마음껏 크롭하거나 변환하여, <strong style="color:#0D1F3C;">SNS에서, 비상업적인 목적 내에서</strong> 자유롭게 사용할 수 있습니다.
+                  </td>
+                </tr>
+              </table>
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="28" valign="top" style="padding-top:1px;">
+                    <span style="display:inline-block; background-color:#1A6FC4; color:#FFFFFF; font-size:11px; font-weight:700; width:20px; height:20px; border-radius:50%; text-align:center; line-height:20px;">3</span>
+                  </td>
+                  <td style="font-size:13.5px; color:#3D4A5C; line-height:1.7; padding-left:8px;">
+                    사진의 <strong style="color:#0D1F3C;">상업적 이용</strong>이 필요한 경우, 사전에 메달뱅크 관련 부서로 연락해 주시기 바랍니다.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ============================
+               비공개 다운로드 안내
+          ============================= -->
+          <tr>
+            <td style="padding: 0 48px 20px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background-color:#F0F7FF; border:1px solid #C8DFF8; border-radius:6px; padding:16px 20px;">
+                    <p style="margin:0 0 8px; font-size:12px; font-weight:700; color:#1A4A7A; letter-spacing:0.2px;">
+                      공개 없이 사진만 받고 싶으신 분들께
+                    </p>
+                    <p style="margin:0 0 10px; font-size:12px; color:#2D5A8A; line-height:1.85;">
+                      사진을 공개하지 않고 개인 소장 목적으로만 받고 싶으신 마음, 충분히 이해합니다.
+                    </p>
+                    <p style="margin:0 0 10px; font-size:11.5px; color:#4A7AAA; line-height:1.85; border-top:1px solid #C8DFF8; padding-top:10px;">
+                      메달뱅크 아쿠아틱스의 사진 서비스는 준비-출장-촬영-컬링-관리 과정 모두 전담 인력 없이, 소수의 팀원이 본업 외 시간을 할애하는 방식으로 100% 무료로 운영하고 있습니다.<br /><br />그로 인해 현재 아직은 시간적 역량이 부족하여 개별 요청에 응해드리기 어려운 상황입니다. 진심으로 죄송합니다.
+                    </p>
+                    <p style="margin:0 0 10px; font-size:11.5px; color:#1A4A7A; line-height:1.85; border-top:1px solid #C8DFF8; padding-top:10px;">
+                      이러한 한계를 조금이나마 해소하고자, 최대한 자동화된 방식으로 사진을 제공할 수 있도록 본 공개 요청 및 사전 사용 동의 서비스를 운영합니다. 부족하지만 많은 이용 부탁드립니다.
+                    </p>
+                    <p style="margin:0; font-size:11.5px; color:#1A4A7A; line-height:1.85; border-top:1px solid #C8DFF8; padding-top:10px;">
+                      <strong style="color:#0D1F3C;">대한민국 수영을 위해, 소속에 상관없이, 수영인의 마음으로만 움직이겠습니다.</strong>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ============================
+               동의 대상 사진 목록
+               {{PHOTO_GRID_HTML}} 자리에
+               백엔드에서 동적으로 생성한
+               썸네일 그리드 HTML을 삽입
+          ============================= -->
+          <tr>
+            <td style="padding: 0 48px 32px;">
+              <p style="margin:0 0 4px; font-size:13px; font-weight:700; color:#0D1F3C; letter-spacing:0.3px;">동의 대상 사진 목록</p>
+              <p style="margin:0 0 16px; font-size:11.5px; color:#9AA3B0;">아래 사진들에 대해 공개 요청 및 사용 동의가 진행됩니다. 내용을 확인한 후 동의 버튼을 눌러주세요.</p>
+
+              <!-- 총 사진 수 뱃지 — {{PHOTO_COUNT}} 치환 -->
+              <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:14px;">
+                <tr>
+                  <td style="background-color:#F4F7FC; border:1px solid #E0E6EF; border-radius:20px; padding:5px 14px;">
+                    <span style="font-size:12px; font-weight:700; color:#1A6FC4;">총 {{PHOTO_COUNT}}장</span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- 썸네일 그리드 — 백엔드에서 {{PHOTO_GRID_HTML}} 전체 치환 -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td>
+                    {{PHOTO_GRID_HTML}}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ============================
+               CTA 버튼
+               {{CONSENT_URL}} : 동의 처리 URL
+               {{PHOTO_COUNT}} : 사진 수
+          ============================= -->
+          <tr>
+            <td style="padding: 0 48px 12px; text-align:left;">
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="cta-btn" style="background-color:#1A6FC4; border-radius:6px;">
+                    <a href="{{CONSENT_URL}}" style="display:inline-block; padding:14px 40px; font-size:12px; font-weight:500; color:rgba(255,255,255,0.85); text-decoration:none; letter-spacing:0.3px; line-height:1.6; text-align:left;">
+                      총 {{PHOTO_COUNT}}장에 대한<br />
+                      <span style="font-size:16px; font-weight:800; letter-spacing:0.3px;">공개 요청 및 사용 동의하기</span>
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 48px 36px; text-align:left;">
+              <p style="margin:10px 0 0; font-size:11.5px; color:#C0392B; line-height:1.7;">
+                ※ 위 버튼을 누르는 즉시 사용 동의가 완료됩니다.<br />
+                본인이 아닌 자가 동의를 진행할 경우 관련 법령에 따라 법적 처벌을 받을 수 있습니다.
+              </p>
+            </td>
+          </tr>
+
+          <!-- DIVIDER -->
+          <tr>
+            <td style="padding: 0 48px;">
+              <hr style="border:none; border-top:1px solid #E8ECF1; margin:0;" />
+            </td>
+          </tr>
+
+          <!-- ============================
+               개인정보 수집·이용 동의
+               {{PRIVACY_POLICY_URL}} 치환
+          ============================= -->
+          <tr>
+            <td style="padding: 28px 48px 24px;">
+              <p style="margin:0 0 10px; font-size:12px; font-weight:700; color:#0D1F3C; letter-spacing:0.5px;">
+                개인정보 수집·이용 동의
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E0E6EF; border-radius:6px; overflow:hidden;">
+                <tr style="background-color:#F7F9FC;">
+                  <td width="110" style="padding:10px 14px; font-size:11.5px; font-weight:700; color:#5A6475; border-bottom:1px solid #E0E6EF; vertical-align:top;">수집 항목</td>
+                  <td style="padding:10px 14px; font-size:11.5px; color:#3D4A5C; border-bottom:1px solid #E0E6EF;">이메일 주소, 이름, 동의 일시, 동의 대상 사진 정보</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 14px; font-size:11.5px; font-weight:700; color:#5A6475; border-bottom:1px solid #E0E6EF; vertical-align:top;">수집 목적</td>
+                  <td style="padding:10px 14px; font-size:11.5px; color:#3D4A5C; border-bottom:1px solid #E0E6EF;">사진 공개 요청 처리 및 사용 동의 기록 보관</td>
+                </tr>
+                <tr style="background-color:#F7F9FC;">
+                  <td style="padding:10px 14px; font-size:11.5px; font-weight:700; color:#5A6475; border-bottom:1px solid #E0E6EF; vertical-align:top;">보유 기간</td>
+                  <td style="padding:10px 14px; font-size:11.5px; color:#3D4A5C; border-bottom:1px solid #E0E6EF;">동의 철회 시까지. 단, 관련 법령에 따라 일정 기간 보관될 수 있습니다.</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 14px; font-size:11.5px; font-weight:700; color:#5A6475; vertical-align:top;">거부 권리</td>
+                  <td style="padding:10px 14px; font-size:11.5px; color:#3D4A5C;">동의를 거부하실 권리가 있으며, 거부 시 사진 공개 및 다운로드 서비스 이용이 제한됩니다.</td>
+                </tr>
+              </table>
+              <p style="margin:10px 0 0; font-size:11px; color:#9AA3B0;">
+                자세한 내용은 <a href="{{PRIVACY_POLICY_URL}}" style="color:#1A6FC4; text-decoration:none;">개인정보처리방침</a>을 확인해 주세요.
+              </p>
+            </td>
+          </tr>
+
+          <!-- ============================
+               본인 확인 및 허위 동의 경고
+          ============================= -->
+          <tr>
+            <td style="padding: 0 48px 28px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background-color:#FFFBF2; border:1px solid #F0D98A; border-radius:6px; padding:18px 20px;">
+                    <p style="margin:0 0 10px; font-size:12px; font-weight:700; color:#7A5C00; letter-spacing:0.3px;">
+                      &#9888;&nbsp; 본인 확인 및 동의 주체에 관한 안내
+                    </p>
+                    <p style="margin:0 0 8px; font-size:12px; color:#5A4A20; line-height:1.75;">
+                      본 동의는 해당 이메일 주소의 실제 소유자, 또는 피촬영자의 <strong>법적 보호자</strong>가 직접 수행하여야 합니다.<br />
+                      타인의 이메일 주소를 무단으로 입력하거나, 본인인 것처럼 가장하여 동의를 수행하는 행위는 금지됩니다.
+                    </p>
+                    <p style="margin:0 0 6px; font-size:11.5px; color:#7A5C00; font-weight:600;">이를 위반할 경우 다음의 법적 책임이 발생할 수 있습니다.</p>
+                    <p style="margin:0 0 4px; font-size:11.5px; color:#5A4A20; line-height:1.7;">· &#12298;개인정보보호법&#12299; 제15조 위반: 타인의 개인정보 무단 수집·이용 시 5년 이하 징역 또는 5천만 원 이하 벌금</p>
+                    <p style="margin:0 0 4px; font-size:11.5px; color:#5A4A20; line-height:1.7;">· &#12298;정보통신망법&#12299; 위반: 타인 명의 동의 수행 시 형사 처벌 대상</p>
+                    <p style="margin:0 0 12px; font-size:11.5px; color:#5A4A20; line-height:1.7;">· &#12298;민법&#12299; 제750조: 타인에게 손해 발생 시 민사 손해배상 청구 대상</p>
+                    <p style="margin:0; font-size:11.5px; color:#5A4A20; line-height:1.7; border-top:1px solid #F0D98A; padding-top:10px;">
+                      당사는 허위 동의 사실이 확인된 경우 해당 동의를 즉시 무효 처리하고, 필요 시 관련 기관에 신고할 수 있습니다.<br />
+                      위 버튼을 클릭함으로써 귀하는 본인이 해당 이메일 주소의 정당한 소유자이며, 동의 권한을 보유하고 있음을 확인합니다.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- DIVIDER -->
+          <tr>
+            <td style="padding: 0 48px;">
+              <hr style="border:none; border-top:1px solid #E8ECF1; margin:0;" />
+            </td>
+          </tr>
+
+          <!-- ============================
+               동의 철회 및 효력 안내
+               (철회 페이지 미구현 — 이메일 요청으로만 처리)
+          ============================= -->
+          <tr>
+            <td style="padding: 24px 48px 28px;">
+              <p style="margin:0 0 12px; font-size:12px; font-weight:700; color:#0D1F3C; letter-spacing:0.3px;">동의 효력 및 철회 안내</p>
+
+              <!-- 동의 유효 기간 -->
+              <p style="margin:0 0 6px; font-size:12px; color:#5A6475; line-height:1.75;">
+                본 동의는 동의일로부터 <strong style="color:#0D1F3C;">약 90일간 유효</strong>하며, 해당 기간 내에 다운로드 링크를 통해 사진을 수령하실 수 있습니다.
+              </p>
+
+              <!-- 출판 후 복구 불가 + 파일 회수 불가 -->
+              <p style="margin:0 0 14px; font-size:12px; color:#9AA3B0; line-height:1.75;">
+                동의하신 사진이 매거진 또는 웹사이트에 출판된 경우, 해당 출판물의 회수는 기술적으로 불가능할 수 있습니다. 다만 동의를 철회하시면, 동일한 사진을 추후 재출판하는 일은 없습니다. 또한 동의 철회 전 이미 다운로드된 파일의 회수는 기술적으로 불가능합니다.
+              </p>
+
+              <!-- 철회 방법 -->
+              <p style="margin:0; font-size:12px; color:#5A6475; line-height:1.75;">
+                동의 철회를 원하시는 경우
+                <a href="mailto:consent@medalbank.com" style="color:#1A6FC4; text-decoration:none; font-weight:600;">consent@medalbank.com</a>으로
+                이메일 문의 주시면, 영업일 기준 <strong style="color:#0D1F3C;">1~7일 이내</strong>에 답변하겠습니다.
+              </p>
+            </td>
+          </tr>
+
+          <!-- ============================
+               사진 보관 및 자동 폐기 안내
+          ============================= -->
+          <tr>
+            <td style="padding: 0 48px 28px;">
+              <p style="margin:0 0 8px; font-size:12px; font-weight:700; color:#0D1F3C; letter-spacing:0.3px;">사진 보관 및 자동 폐기 안내</p>
+              <p style="margin:0 0 6px; font-size:12px; color:#5A6475; line-height:1.75;">
+                메달뱅크 아쿠아틱스가 촬영한 대회 사진 중 <strong style="color:#0D1F3C;">공개 요청 또는 다운로드 요청이 없는 사진</strong>은 보관 시스템 운영 정책에 따라 <strong style="color:#0D1F3C;">30~90일 내 자동으로 폐기될 수 있습니다.</strong>
+              </p>
+              <p style="margin:0; font-size:12px; color:#5A6475; line-height:1.75;">
+                대회당 수백 장의 고화소 원본 파일을 보관·관리하는 특성상, 스토리지 운영 정책에 따라 보존 기간 경과 후에는 별도 고지 없이 자동 폐기 처리될 수 있음을 사전에 안내드립니다. 폐기 이후에는 복구가 불가능하오니, 다운로드를 희망하시는 경우 반드시 기간 내에 요청해 주시기 바랍니다.
+              </p>
+            </td>
+          </tr>
+
+          <!-- ============================
+               FOOTER
+          ============================= -->
+          <tr>
+            <td style="background-color:#F4F7FC; border-top:1px solid #E0E6EF; padding:24px 48px; text-align:left;">
+              <p style="margin:0 0 4px; font-size:12px; font-weight:700; color:#0D1F3C;">메달뱅크 아쿠아틱스</p>
+              <p style="margin:0 0 4px; font-size:11px; color:#9AA3B0;">인천 부평구 주부토로 236, 인천테크노밸리U1센터 C동 2107호</p>
+              <p style="margin:0 0 12px; font-size:11px; color:#9AA3B0;">
+                <a href="mailto:consent@medalbank.com" style="color:#1A6FC4; text-decoration:none;">consent@medalbank.com</a>
+              </p>
+              <p style="margin:0; font-size:10.5px; color:#B0B8C4;">
+                &copy; 2026 Medalbank Aquatics. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

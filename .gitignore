@@ -1,0 +1,9 @@
+.env
+**/node_modules
+**/.nuxt
+**/dist
+.claude/worktrees
+.claude/settings.local.json
+*.zip
+textbooks
+ankor

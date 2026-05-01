@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>메달뱅크 아쿠아틱스 — 사진집</title>
+<link rel="icon" type="image/png" href="images/medalbankaquatics.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,500&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+  /* ── 페이지 토큰 ──────────────────────────────── */
+  :root {
+    --grid-margin: 14px;        /* 데스크탑: 양 끝 + 사진 간 동일 간격 */
+  }
+
+  body { overflow-x: hidden; }
+
+  .photos-shell {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-top: 96px;
+    padding-bottom: 40px;
+  }
+
+  /* ── 페이지 타이틀 ──────────────────────────── */
+  .photos-head {
+    padding: 8px 32px 24px;
+    display: flex;
+    align-items: baseline;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+  .photos-head h1 {
+    font-family: var(--font-myungjo);
+    font-size: 44px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+  .photos-head .vol {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 24px;
+    color: var(--fg-faint);
+    letter-spacing: -0.01em;
+  }
+  .photos-head .meta-inline {
+    margin-left: auto;
+    color: var(--fg-dim);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 768px) {
+    .photos-head { padding: 4px 18px 20px; gap: 14px; }
+    .photos-head h1 { font-size: 32px; }
+    .photos-head .vol { font-size: 18px; }
+    .photos-head .meta-inline { font-size: 10px; width: 100%; margin-left: 0; }
+  }
+
+  /* ── 대회 드롭다운 (인라인, sticky 없음) ─────── */
+  .photos-controls {
+    padding: 4px 32px 26px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .event-select { position: relative; }
+  .event-select-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color 0.3s, background 0.3s;
+    min-width: 240px;
+    text-align: left;
+  }
+  .event-select-btn:hover { border-color: var(--accent-dim); background: rgba(56,182,255,0.04); }
+  .event-select-btn .label { flex: 1; }
+  .event-select-btn .caret {
+    width: 10px; height: 10px;
+    transform: rotate(0deg);
+    transition: transform 0.3s var(--ease-out);
+  }
+  .event-select.open .event-select-btn .caret { transform: rotate(180deg); }
+  .event-select-list {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 100%;
+    max-height: 320px;
+    overflow-y: auto;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    padding: 6px 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 0.25s, transform 0.25s var(--ease-out);
+    z-index: 30;
+  }
+  .event-select.open .event-select-list {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  .event-select-list button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px 16px;
+    color: var(--fg-dim);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s;
+    background: none;
+    border: 0;
+  }
+  .event-select-list button:hover,
+  .event-select-list button.active { color: var(--fg); background: rgba(255,255,255,0.04); }
+  .event-select-list button .count {
+    float: right;
+    color: var(--fg-faint);
+    font-variant-numeric: tabular-nums;
+    margin-left: 16px;
+  }
+  @media (max-width: 768px) {
+    .photos-controls { padding: 0 18px 22px; }
+    .event-select-btn { min-width: 200px; padding: 9px 14px; font-size: 11px; }
+  }
+
+  /* ── 그리드 (6/3/3 컬럼, 양끝+사진간 동일 마진) ── */
+  .photos-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--grid-margin);
+    padding: 0 var(--grid-margin);
+  }
+  @media (max-width: 1199px) {
+    :root { --grid-margin: 10px; }
+    .photos-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 768px) {
+    :root { --grid-margin: 8px; }
+    .photos-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  /* ── 각 사진 타일 ──────────────────────────── */
+  .photo-tile {
+    position: relative;
+    aspect-ratio: 3 / 2;
+    background-color: var(--tile-bg);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border: 0;
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+    filter: grayscale(0.18) brightness(0.96);
+    transition: filter 0.5s ease-out;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .photo-tile:hover {
+    filter: none;
+    transition-duration: 0.3s;
+  }
+  .photo-tile::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .photo-tile.clicked::after { animation: photoClickFlash 0.45s ease-out; }
+  @keyframes photoClickFlash {
+    0% { opacity: 0; }
+    18% { opacity: 0.18; }
+    100% { opacity: 0; }
+  }
+  .photo-tile .num {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    color: #fff;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 36px;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    line-height: 1;
+    opacity: 0.10;
+    mix-blend-mode: difference;
+    pointer-events: none;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 1199px) {
+    .photo-tile .num { font-size: 30px; top: 10px; left: 10px; }
+  }
+  @media (max-width: 768px) {
+    .photo-tile .num { font-size: 24px; opacity: 0.14; top: 8px; left: 8px; }
+  }
+
+  /* 사진집 사진은 모두 3:2 ratio — shared.css의 4/5 override */
+  .lightbox-frame { aspect-ratio: 3 / 2; }
+  @media (hover: none), (pointer: coarse) {
+    .photo-tile { cursor: auto; }
+  }
+
+  /* ── 페이지네이션 ──────────────────────────── */
+  .pagination {
+    /* 그리드와 동일한 좌측 padding으로 첫 사진 라인과 정렬, 하단은 footer 안 겹치게 여유 */
+    margin: 56px 0 0;
+    padding: 0 var(--grid-margin) 80px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    color: var(--fg);
+  }
+  .pagination .page-numbers {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    max-width: 100%;
+  }
+  .pagination .page-num {
+    background: none;
+    border: 0;
+    color: var(--fg-dim);
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    min-width: 26px;
+    height: 30px;
+    padding: 0 5px;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.3s ease, transform 0.3s var(--ease-out);
+    position: relative;
+  }
+  .pagination .page-num:not(.active):not(:disabled):hover { color: var(--fg); }
+  .pagination .page-num.active {
+    color: var(--fg);
+    font-size: 21px;
+    transform: translateY(-1px);
+  }
+  .pagination .page-num.active::after {
+    content: '';
+    position: absolute;
+    left: 50%; bottom: -4px;
+    transform: translateX(-50%);
+    width: 12px; height: 1px;
+    background: var(--fg);
+  }
+  @media (max-width: 768px) {
+    .pagination { margin-top: 40px; padding-bottom: 60px; }
+    .pagination .page-numbers { gap: 1px; }
+    .pagination .page-num { font-size: 14px; min-width: 22px; height: 26px; padding: 0 3px; }
+    .pagination .page-num.active { font-size: 17px; }
+    .pagination .page-num.active::after { width: 9px; bottom: -3px; }
+  }
+  @media (hover: none), (pointer: coarse) {
+    .event-select-btn, .event-select-list button,
+    .pagination .page-num { cursor: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="vignette"></div>
+
+<a class="logo" href="index.html" aria-label="메달뱅크 아쿠아틱스 — 메인">
+  <img class="logo-img" src="images/medalbankaquatics.png" alt="Medalbank Aquatics" />
+</a>
+
+<header class="ui">
+  <nav class="menu menu-inline">
+    <a href="photos.html" class="active">사진집</a>
+    <a href="athletes.html">선수목록</a>
+    <a href="magazines.html">정기간행물</a>
+    <a href="about.html">촬영서비스</a>
+    <a href="request.html">촬영요청</a>
+    <a href="consent.html">공개요청</a>
+  </nav>
+</header>
+
+<button class="menu-toggle" id="menuToggle" type="button" aria-label="메뉴 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+
+<div class="menu-overlay" id="menuOverlay" aria-hidden="true">
+  <nav class="menu menu-fullscreen">
+    <a href="photos.html" class="active">사진집</a>
+    <a href="athletes.html">선수목록</a>
+    <a href="magazines.html">정기간행물</a>
+    <a href="about.html">촬영서비스</a>
+    <a href="request.html">촬영요청</a>
+    <a href="consent.html">공개요청</a>
+  </nav>
+</div>
+
+<main class="photos-shell">
+
+  <div class="photos-head">
+    <h1>사진집</h1>
+    <span class="vol">— vol. <span id="page-vol">1</span></span>
+    <span class="meta-inline" id="head-meta">전체 <span id="total-count">150</span>장 · <span id="page-of">1 / 4</span></span>
+  </div>
+
+  <div class="photos-controls">
+    <div class="event-select" id="eventSelect">
+      <button class="event-select-btn" id="eventSelectBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
+        <span class="label" id="eventLabel">전체 대회</span>
+        <svg class="caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+          <polyline points="1 1.5, 5 5, 9 1.5"/>
+        </svg>
+      </button>
+      <div class="event-select-list" id="eventSelectList" role="listbox" aria-label="대회 선택">
+        <!-- JS 채움 -->
+      </div>
+    </div>
+  </div>
+
+  <div class="photos-grid" id="grid">
+    <!-- JS 채움 -->
+  </div>
+
+  <nav class="pagination" id="pagination" aria-label="페이지 네비게이션">
+    <div class="page-numbers" id="pageNumbers"></div>
+  </nav>
+
+</main>
+
+<footer class="ui">
+  <div class="meta-left">
+    <div>50+ MEETS · 1,000+ ATHLETES · 1M+ FRAMES</div>
+    <div>600MM F4 · 300MM F2.8 · 70-200MM F2.8</div>
+    <div class="row-strong">SINCE 2019 · <span id="clock">KST 00:00:00</span></div>
+    <div class="insta-mobile">
+      <a class="insta" href="https://www.instagram.com/medalbankaquatics" target="_blank" rel="noopener noreferrer">@medalbankaquatics</a>
+    </div>
+  </div>
+  <div class="meta-right">
+    <div>EVERY HEAT · EVERY ATHLETE</div>
+    <div>NATIONAL · INTERNATIONAL MEETS</div>
+    <div>CHAMPIONSHIP-GRADE COVERAGE</div>
+    <div><a class="insta" href="https://www.instagram.com/medalbankaquatics" target="_blank" rel="noopener noreferrer">@medalbankaquatics</a></div>
+  </div>
+</footer>
+
+</div>
+
+<div class="lightbox" id="lightbox" aria-hidden="true" role="dialog" aria-label="사진 확대 보기">
+  <div class="lightbox-bg" id="lightboxBg"></div>
+  <div class="lightbox-frame">
+    <img class="lightbox-img" id="lightboxImg" alt="" />
+    <button class="lightbox-close" id="lightboxClose" type="button" aria-label="닫기">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <line x1="6" y1="6" x2="18" y2="18"/>
+        <line x1="18" y1="6" x2="6" y2="18"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script src="js/shared.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  // ─────────────────────────────────────────────
+  // 데이터 (mock)
+  // ─────────────────────────────────────────────
+  const TOTAL_PHOTOS    = 150;     // 보유한 썸네일 수
+  const PHOTOS_PER_PAGE = 100;
+  const MOCK_PAGE_COUNT = 32;      // 시뮬레이션용 — 페이지네이션 줄바꿈 확인 가능
+
+  const EVENTS = [
+    { id: 'all',     label: '전체 대회',                   count: 150 },
+    { id: 'gn-2604', label: '2026.04 · 강남 마스터즈',     count: 38 },
+    { id: 'sl-2603', label: '2026.03 · 서울시 선수권',     count: 42 },
+    { id: 'bs-2602', label: '2026.02 · 부산 오픈',          count: 28 },
+    { id: 'kr-2601', label: '2026.01 · 한국 챔피언십',      count: 24 },
+    { id: 'jp-2512', label: '2025.12 · 도쿄 인비테이셔널',  count: 18 },
+  ];
+
+  const imgUrl = (idx) => `./images/thumbs/thumb-${String((idx % TOTAL_PHOTOS) + 1).padStart(3,'0')}.jpg`;
+  // 사진집 = 모두 동의된 사진 → 라이트박스에선 최상 화질 (xl tier, 추후 8000px까지 확장)
+  const xlUrl = (idx) => `./images/xl/xl-${String((idx % TOTAL_PHOTOS) + 1).padStart(3,'0')}.jpg`;
+
+  // 페이지마다 다른 사진 시퀀스 (mock — 실제 데이터 시 교체)
+  function imgIdxFor(pageNum, slot) {
+    const offset = (pageNum - 1) * 37;     // 임의 prime offset → 페이지마다 시각적으로 다른 셔플
+    return (offset + slot) % TOTAL_PHOTOS;
+  }
+
+  // ─────────────────────────────────────────────
+  // STATE
+  // ─────────────────────────────────────────────
+  let currentPage = 1;
+  let eventId     = 'all';
+
+  const grid = document.getElementById('grid');
+
+  // ─────────────────────────────────────────────
+  // 그리드 렌더 — 100 타일을 한 번에 DOM에 붙임
+  // ─────────────────────────────────────────────
+  function renderGrid(pageNum) {
+    // DocumentFragment로 reflow 한 번만 트리거
+    const frag = document.createDocumentFragment();
+
+    for (let i = 0; i < PHOTOS_PER_PAGE; i++) {
+      const idx = imgIdxFor(pageNum, i);
+      const tile = document.createElement('button');
+      tile.type = 'button';
+      tile.className = 'photo-tile';
+      tile.style.backgroundImage = `url("${imgUrl(idx)}")`;
+      tile.dataset.imgIdx = idx;
+      tile.setAttribute('aria-label', `사진 ${idx + 1} 확대 보기`);
+
+      const num = document.createElement('span');
+      num.className = 'num';
+      num.textContent = idx + 1;
+      tile.appendChild(num);
+
+      tile.addEventListener('click', () => {
+        tile.classList.remove('clicked');
+        void tile.offsetWidth;
+        tile.classList.add('clicked');
+        tile.addEventListener('animationend',
+          () => tile.classList.remove('clicked'), { once: true });
+        if (window.MB && window.MB.openLightbox) {
+          window.MB.openLightbox(imgUrl(idx), xlUrl(idx), `Photo #${idx + 1}`);
+        }
+      });
+      frag.appendChild(tile);
+    }
+    grid.innerHTML = '';
+    grid.appendChild(frag);
+  }
+
+  // ─────────────────────────────────────────────
+  // 헤더 메타 + 페이지네이션
+  // ─────────────────────────────────────────────
+  const pageVol     = document.getElementById('page-vol');
+  const pageOf      = document.getElementById('page-of');
+  const totalCount  = document.getElementById('total-count');
+  const pageNumbers = document.getElementById('pageNumbers');
+
+  function renderHeader() {
+    pageVol.textContent = currentPage;
+    pageOf.textContent  = `${currentPage} / ${MOCK_PAGE_COUNT}`;
+  }
+
+  function renderPagination() {
+    // 1..N 전부 표시 — 줄임표 없음, flex-wrap으로 자동 줄바꿈
+    pageNumbers.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    for (let p = 1; p <= MOCK_PAGE_COUNT; p++) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'page-num' + (p === currentPage ? ' active' : '');
+      b.textContent = p;
+      b.setAttribute('aria-label', `${p} 페이지로 이동`);
+      if (p === currentPage) b.setAttribute('aria-current', 'page');
+      b.addEventListener('click', () => goToPage(p));
+      frag.appendChild(b);
+    }
+    pageNumbers.appendChild(frag);
+  }
+
+  function goToPage(n) {
+    n = Math.max(1, Math.min(MOCK_PAGE_COUNT, n));
+    if (n === currentPage) return;
+    currentPage = n;
+    renderGrid(currentPage);
+    renderHeader();
+    renderPagination();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // step 버튼 제거됨 — 숫자만으로 이동
+
+  // ─────────────────────────────────────────────
+  // 이벤트 드롭다운
+  // ─────────────────────────────────────────────
+  const eventSelect = document.getElementById('eventSelect');
+  const eventBtn    = document.getElementById('eventSelectBtn');
+  const eventList   = document.getElementById('eventSelectList');
+  const eventLabel  = document.getElementById('eventLabel');
+
+  function buildEventList() {
+    eventList.innerHTML = '';
+    EVENTS.forEach(ev => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.id = ev.id;
+      b.innerHTML = `${ev.label}<span class="count">${ev.count}장</span>`;
+      if (ev.id === eventId) b.classList.add('active');
+      b.addEventListener('click', () => {
+        eventId = ev.id;
+        eventLabel.textContent = ev.label;
+        totalCount.textContent = ev.count;
+        eventList.querySelectorAll('button').forEach(x =>
+          x.classList.toggle('active', x.dataset.id === ev.id));
+        eventSelect.classList.remove('open');
+        eventBtn.setAttribute('aria-expanded', 'false');
+        // 실제 데이터 연동 시 → 필터링된 사진 세트로 renderGrid 호출
+      });
+      eventList.appendChild(b);
+    });
+  }
+  eventBtn.addEventListener('click', () => {
+    const open = !eventSelect.classList.contains('open');
+    eventSelect.classList.toggle('open', open);
+    eventBtn.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('click', (e) => {
+    if (!eventSelect.contains(e.target)) {
+      eventSelect.classList.remove('open');
+      eventBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // ─────────────────────────────────────────────
+  // INIT
+  // ─────────────────────────────────────────────
+  buildEventList();
+  renderGrid(currentPage);
+  renderHeader();
+  renderPagination();
+})();
+</script>
+</body>
+</html>

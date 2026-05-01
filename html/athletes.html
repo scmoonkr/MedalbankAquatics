@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>메달뱅크 아쿠아틱스 — 선수목록</title>
+<link rel="icon" type="image/png" href="images/medalbankaquatics.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,500&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+  body { overflow-x: hidden; }
+
+  .ath-shell {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-top: 96px;
+    padding-bottom: 40px;
+  }
+
+  /* ── 페이지 타이틀 ─────────────────────── */
+  .ath-head {
+    padding: 8px 32px 24px;
+  }
+  .ath-head .eyebrow {
+    color: var(--fg-faint);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 22px;
+  }
+  .ath-head .eyebrow .num {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 14px;
+    margin-right: 10px;
+    color: var(--accent);
+    letter-spacing: -0.01em;
+  }
+  .ath-head h1 {
+    font-family: var(--font-myungjo);
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 400;
+    line-height: 1.18;
+    letter-spacing: -0.018em;
+    margin-bottom: 18px;
+  }
+  .ath-head h1 .em {
+    font-family: var(--font-serif);
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+  .ath-head .lead {
+    font-family: var(--font-myungjo);
+    font-size: clamp(15px, 1.3vw, 17px);
+    line-height: 1.7;
+    color: var(--fg-dim);
+    letter-spacing: -0.005em;
+    max-width: 720px;
+  }
+  .ath-head .meta-line {
+    margin-top: 18px;
+    color: var(--fg-faint);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 768px) {
+    .ath-head { padding: 4px 18px 20px; }
+    .ath-head h1 { line-height: 1.2; }
+    .ath-head .lead { font-size: 14.5px; }
+  }
+
+  /* ── 이니셜 인덱스 (sticky 상단) ─────── */
+  .index-bar {
+    padding: 14px 32px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    transition: opacity 0.3s ease, max-height 0.4s ease;
+  }
+  .index-bar.hidden {
+    display: none;
+  }
+  .index-bar::-webkit-scrollbar { display: none; }
+  .index-bar .ix {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 17px;
+    color: var(--fg-faint);
+    letter-spacing: -0.01em;
+    line-height: 1;
+    padding: 8px 11px;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    transition: color 0.25s ease, background 0.25s ease;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .index-bar .ix:hover { color: var(--fg); }
+  .index-bar .ix.active { color: var(--accent); background: rgba(56,182,255,0.08); }
+  .index-bar .ix.empty { opacity: 0.25; cursor: default; }
+  .index-bar .ix.empty:hover { color: var(--fg-faint); }
+  .index-bar .divider {
+    width: 1px; height: 16px;
+    background: var(--line);
+    margin: 0 6px;
+    flex-shrink: 0;
+  }
+  @media (max-width: 768px) {
+    .index-bar { padding: 14px 18px; }
+    .index-bar .ix { font-size: 15px; padding: 6px 9px; }
+  }
+
+  /* ── 정렬 토글 ──────────────────────── */
+  .sort-toggle {
+    padding: 0 32px 18px;
+    display: flex;
+    gap: 0;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .sort-toggle button {
+    background: none;
+    border: 0;
+    padding: 12px 22px 14px 0;
+    margin-right: 18px;
+    color: var(--fg-faint);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.3s ease;
+  }
+  .sort-toggle button:hover { color: var(--fg-dim); }
+  .sort-toggle button.active { color: var(--fg); }
+  .sort-toggle button.active::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: -1px;
+    width: 100%; height: 2px;
+    background: var(--accent);
+  }
+  @media (max-width: 768px) {
+    .sort-toggle { padding: 0 18px 14px; }
+    .sort-toggle button { font-size: 11px; padding: 10px 18px 12px 0; margin-right: 12px; }
+  }
+
+  /* ── flat list (사진보유순/최신순용) ─── */
+  .flat-section {
+    padding: 36px 32px 56px;
+  }
+  .flat-section .head {
+    margin-bottom: 24px;
+    color: var(--fg-faint);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  @media (max-width: 768px) {
+    .flat-section { padding: 24px 18px 44px; }
+  }
+
+  /* ── 그룹 섹션 ──────────────────────── */
+  .group {
+    padding: 48px 32px 56px;
+    border-bottom: 1px solid var(--line);
+  }
+  .group:last-child { border-bottom: 0; }
+  .group:target { scroll-margin-top: 78px; }
+
+  .group-head {
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+  .group-letter {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: clamp(64px, 8vw, 110px);
+    color: var(--fg);
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+  }
+  .group-count {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--fg-faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .group-count .n {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    margin-right: 4px;
+  }
+
+  .name-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px 28px;
+  }
+  @media (max-width: 1199px) {
+    .name-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 768px) {
+    .group { padding: 36px 18px 44px; }
+    .group-head { margin-bottom: 24px; gap: 16px; }
+    .name-grid { grid-template-columns: repeat(2, 1fr); gap: 2px 20px; }
+  }
+
+  .name-link {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0 12px 14px;
+    color: var(--fg);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s, color 0.3s;
+  }
+  .name-link::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 50%;
+    transform: translateY(-50%) scale(0);
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    transition: transform 0.3s var(--ease-out);
+  }
+  .name-link:hover {
+    border-bottom-color: var(--line);
+  }
+  .name-link:hover::before {
+    transform: translateY(-50%) scale(1);
+  }
+  .name-link .nm {
+    font-family: var(--font-myungjo);
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: -0.005em;
+    transition: color 0.3s;
+  }
+  .name-link:hover .nm { color: var(--accent); }
+  .name-link .ct {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--fg-faint);
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+  @media (max-width: 768px) {
+    .name-link { padding: 10px 0 10px 11px; }
+    .name-link .nm { font-size: 16px; }
+    .name-link .ct { font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<a class="logo" href="index.html" aria-label="메달뱅크 아쿠아틱스 — 메인">
+  <img class="logo-img" src="images/medalbankaquatics.png" alt="Medalbank Aquatics" />
+</a>
+
+<header class="ui">
+  <nav class="menu menu-inline">
+    <a href="photos.html">사진집</a>
+    <a href="athletes.html" class="active">선수목록</a>
+    <a href="magazines.html">정기간행물</a>
+    <a href="about.html">촬영서비스</a>
+    <a href="request.html">촬영요청</a>
+    <a href="consent.html">공개요청</a>
+  </nav>
+</header>
+
+<button class="menu-toggle" id="menuToggle" type="button" aria-label="메뉴 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+
+<div class="menu-overlay" id="menuOverlay" aria-hidden="true">
+  <nav class="menu menu-fullscreen">
+    <a href="photos.html">사진집</a>
+    <a href="athletes.html" class="active">선수목록</a>
+    <a href="magazines.html">정기간행물</a>
+    <a href="about.html">촬영서비스</a>
+    <a href="request.html">촬영요청</a>
+    <a href="consent.html">공개요청</a>
+  </nav>
+</div>
+
+<main class="ath-shell">
+
+  <div class="ath-head">
+    <div class="eyebrow"><span class="num">00</span>Athletes · 선수목록</div>
+    <h1><span class="em">선수목록.</span></h1>
+    <p class="lead">
+      본인 이름을 클릭하시면, 동의된 사진들이 <strong>대회별 또는 시간순</strong>으로 정리된 페이지로 이동합니다.
+    </p>
+    <p class="meta-line" id="metaLine">전체 0명 · 0장</p>
+  </div>
+
+  <div class="sort-toggle" role="tablist" id="sortToggle">
+    <button type="button" data-sort="name"   class="active" role="tab" aria-selected="true">이름순</button>
+    <button type="button" data-sort="photos"               role="tab" aria-selected="false">사진보유순</button>
+    <button type="button" data-sort="recent"               role="tab" aria-selected="false">최신순</button>
+  </div>
+
+  <nav class="index-bar" id="indexBar" aria-label="이니셜 인덱스"><!-- JS 채움 --></nav>
+
+  <div id="groups"><!-- JS 채움 --></div>
+
+</main>
+
+<footer class="ui">
+  <div class="meta-left">
+    <div>50+ MEETS · 1,000+ ATHLETES · 1M+ FRAMES</div>
+    <div>600MM F4 · 300MM F2.8 · 70-200MM F2.8</div>
+    <div class="row-strong">SINCE 2019 · <span id="clock">KST 00:00:00</span></div>
+    <div class="insta-mobile">
+      <a class="insta" href="https://www.instagram.com/medalbankaquatics" target="_blank" rel="noopener noreferrer">@medalbankaquatics</a>
+    </div>
+  </div>
+  <div class="meta-right">
+    <div>EVERY HEAT · EVERY ATHLETE</div>
+    <div>NATIONAL · INTERNATIONAL MEETS</div>
+    <div>CHAMPIONSHIP-GRADE COVERAGE</div>
+    <div><a class="insta" href="https://www.instagram.com/medalbankaquatics" target="_blank" rel="noopener noreferrer">@medalbankaquatics</a></div>
+  </div>
+</footer>
+
+<script src="js/shared.js"></script>
+<script src="data/athletes.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  // 한글 초성 + 영문 정렬
+  const HANGUL = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  const ENG    = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+  const data = window.ATHLETES_DATA;
+  if (!data || !data.athletes) {
+    document.getElementById('groups').innerHTML =
+      '<p style="padding: 60px 32px; color: var(--fg-faint);">선수 데이터를 불러오지 못했습니다. (data/athletes.js)</p>';
+    return;
+  }
+
+  const { athletes, meta } = data;
+
+  // 그룹별 분류
+  const byGroup = {};
+  athletes.forEach(a => {
+    if (!byGroup[a.group]) byGroup[a.group] = [];
+    byGroup[a.group].push(a);
+  });
+
+  // 메타
+  const totalRefs = athletes.reduce((s, a) => s + a.photo_count, 0);
+  document.getElementById('metaLine').innerHTML =
+    `전체 <span style="color:var(--fg)">${athletes.length}</span>명 · 동의된 사진 <span style="color:var(--fg)">${totalRefs.toLocaleString()}</span>장`;
+
+  // ─────────────────────────────────────────────
+  // 인덱스 바 (sticky)
+  // ─────────────────────────────────────────────
+  const indexBar = document.getElementById('indexBar');
+  const frag = document.createDocumentFragment();
+  HANGUL.forEach(g => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ix' + (byGroup[g] ? '' : ' empty');
+    b.textContent = g;
+    b.dataset.group = g;
+    if (byGroup[g]) b.addEventListener('click', () => jumpTo(g));
+    frag.appendChild(b);
+  });
+  // divider
+  const div = document.createElement('span');
+  div.className = 'divider';
+  frag.appendChild(div);
+  // English (실제 존재하는 것만)
+  ENG.forEach(g => {
+    if (!byGroup[g]) return;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'ix';
+    b.textContent = g;
+    b.dataset.group = g;
+    b.addEventListener('click', () => jumpTo(g));
+    frag.appendChild(b);
+  });
+  indexBar.appendChild(frag);
+
+  function jumpTo(g) {
+    const el = document.getElementById(`g-${encodeURIComponent(g)}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ─────────────────────────────────────────────
+  // 렌더 함수 — 정렬 모드별
+  // ─────────────────────────────────────────────
+  const groupsEl = document.getElementById('groups');
+  const order = [...HANGUL, ...ENG].filter(g => byGroup[g]);
+
+  function renderByName() {
+    indexBar.classList.remove('hidden');
+    groupsEl.innerHTML = '';
+    order.forEach(g => {
+      const list = byGroup[g];
+      const sec = document.createElement('section');
+      sec.className = 'group';
+      sec.id = `g-${encodeURIComponent(g)}`;
+      sec.innerHTML = `
+        <div class="group-head">
+          <span class="group-letter">${g}</span>
+          <span class="group-count"><span class="n">${list.length}</span> ${list.length === 1 ? 'name' : 'names'}</span>
+        </div>
+        <div class="name-grid">
+          ${list.map(a => `
+            <a class="name-link" href="athlete.html?id=${a.id}">
+              <span class="nm">${a.name}</span>
+              <span class="ct">${a.photo_count}</span>
+            </a>
+          `).join('')}
+        </div>
+      `;
+      groupsEl.appendChild(sec);
+    });
+  }
+
+  function renderFlat(sortKey) {
+    indexBar.classList.add('hidden');
+    let sorted;
+    let headLabel;
+    if (sortKey === 'photos') {
+      sorted = [...athletes].sort((a, b) =>
+        b.photo_count - a.photo_count || a.name.localeCompare(b.name, 'ko')
+      );
+      headLabel = `사진보유순 · ${athletes.length} names`;
+    } else { // recent
+      sorted = [...athletes].sort((a, b) =>
+        b.last_date.localeCompare(a.last_date) || (b.photo_count - a.photo_count)
+      );
+      headLabel = `최신순 · ${athletes.length} names`;
+    }
+    groupsEl.innerHTML = `
+      <section class="flat-section">
+        <div class="head">${headLabel}</div>
+        <div class="name-grid">
+          ${sorted.map(a => `
+            <a class="name-link" href="athlete.html?id=${a.id}">
+              <span class="nm">${a.name}</span>
+              <span class="ct">${a.photo_count}</span>
+            </a>
+          `).join('')}
+        </div>
+      </section>
+    `;
+  }
+
+  // 초기 렌더
+  renderByName();
+
+  // ─────────────────────────────────────────────
+  // 정렬 토글
+  // ─────────────────────────────────────────────
+  const toggleBtns = document.querySelectorAll('#sortToggle button');
+  toggleBtns.forEach(b => {
+    b.addEventListener('click', () => {
+      toggleBtns.forEach(x => {
+        x.classList.toggle('active', x === b);
+        x.setAttribute('aria-selected', x === b ? 'true' : 'false');
+      });
+      const k = b.dataset.sort;
+      if (k === 'name')   renderByName();
+      else                renderFlat(k);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>메달뱅크 아쿠아틱스 — 선수 상세</title>
+<link rel="icon" type="image/png" href="images/medalbankaquatics.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,500&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<style>
+  :root { --grid-margin: 14px; }
+  body { overflow-x: hidden; }
+
+  .ath-shell {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-top: 96px;
+    padding-bottom: 40px;
+  }
+
+  /* ── 헤더 ────────────────────────── */
+  .ath-head {
+    padding: 8px 32px 28px;
+  }
+  .ath-head h1 {
+    font-family: var(--font-myungjo);
+    font-size: clamp(48px, 7vw, 88px);
+    font-weight: 400;
+    line-height: 1.05;
+    letter-spacing: -0.018em;
+    margin-bottom: 22px;
+  }
+  .ath-head .summary {
+    color: var(--fg-dim);
+    font-family: var(--font-myungjo);
+    font-size: clamp(15px, 1.4vw, 18px);
+    line-height: 1.7;
+    letter-spacing: -0.005em;
+    max-width: 720px;
+  }
+  .ath-head .summary strong { color: var(--fg); font-weight: 400; }
+  .ath-head .meta-row {
+    margin-top: 22px;
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    color: var(--fg-faint);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+  .ath-head .meta-row .item .v {
+    display: block;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 26px;
+    color: var(--fg);
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+    text-transform: none;
+  }
+  @media (max-width: 768px) {
+    .back-link { margin: 0 18px 18px; }
+    .ath-head { padding: 4px 18px 22px; }
+    .ath-head h1 { line-height: 1.1; }
+    .ath-head .meta-row { gap: 22px; font-size: 10px; }
+    .ath-head .meta-row .item .v { font-size: 22px; }
+  }
+
+  /* ── 정렬 토글 ──────────────────────── */
+  .sort-toggle {
+    padding: 0 32px 28px;
+    display: flex;
+    gap: 0;
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 8px;
+  }
+  .sort-toggle button {
+    background: none;
+    border: 0;
+    padding: 14px 22px 16px 0;
+    margin-right: 18px;
+    color: var(--fg-faint);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.3s ease;
+  }
+  .sort-toggle button:hover { color: var(--fg-dim); }
+  .sort-toggle button.active { color: var(--fg); }
+  .sort-toggle button.active::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: -1px;
+    width: 100%; height: 2px;
+    background: var(--accent);
+  }
+  @media (max-width: 768px) {
+    .sort-toggle { padding: 0 18px 22px; }
+    .sort-toggle button { font-size: 11px; padding: 12px 18px 14px 0; margin-right: 12px; }
+  }
+
+  /* ── 대회별 그룹 헤더 ──────────────── */
+  .meet-group {
+    padding-top: 36px;
+  }
+  .meet-head {
+    padding: 0 32px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .meet-head .date {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: clamp(20px, 2.4vw, 28px);
+    color: var(--accent);
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .meet-head .label {
+    font-family: var(--font-myungjo);
+    font-size: clamp(18px, 2vw, 22px);
+    font-weight: 400;
+    color: var(--fg);
+    letter-spacing: -0.005em;
+  }
+  .meet-head .count {
+    margin-left: auto;
+    color: var(--fg-faint);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 768px) {
+    .meet-head { padding: 0 18px; margin-bottom: 14px; gap: 12px; }
+  }
+
+  /* ── 사진 그리드 (photos.html과 동일) ─── */
+  .photos-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--grid-margin);
+    padding: 0 var(--grid-margin);
+  }
+  @media (max-width: 1199px) {
+    :root { --grid-margin: 10px; }
+    .photos-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 768px) {
+    :root { --grid-margin: 8px; }
+    .photos-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .photo-tile {
+    position: relative;
+    aspect-ratio: 3 / 2;
+    background-color: var(--tile-bg);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    border: 0;
+    padding: 0;
+    overflow: hidden;
+    filter: grayscale(0.18) brightness(0.96);
+    transition: filter 0.5s ease-out;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .photo-tile:hover { filter: none; transition-duration: 0.3s; }
+  .photo-tile::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: #fff; opacity: 0; pointer-events: none;
+  }
+  .photo-tile.clicked::after { animation: photoClickFlash 0.45s ease-out; }
+  @keyframes photoClickFlash {
+    0% { opacity: 0; }
+    18% { opacity: 0.18; }
+    100% { opacity: 0; }
+  }
+  .photo-tile .num {
+    position: absolute;
+    top: 12px; left: 12px;
+    color: #fff;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 36px;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    line-height: 1;
+    opacity: 0.10;
+    mix-blend-mode: difference;
+    pointer-events: none;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 1199px) {
+    .photo-tile .num { font-size: 30px; top: 10px; left: 10px; }
+  }
+  @media (max-width: 768px) {
+    .photo-tile .num { font-size: 24px; opacity: 0.14; top: 8px; left: 8px; }
+  }
+
+  /* ── 섹션 사이 디바이더 ────────────── */
+  .meet-divider {
+    height: 1px;
+    background: var(--line);
+    margin: 48px 32px 0;
+    border: 0;
+  }
+  @media (max-width: 768px) {
+    .meet-divider { margin: 32px 18px 0; }
+  }
+
+  /* ── 빈/오류 상태 ───────────────────── */
+  .state-empty {
+    padding: 80px 32px;
+    text-align: center;
+    color: var(--fg-faint);
+  }
+  .state-empty h2 {
+    font-family: var(--font-myungjo);
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--fg);
+    margin-bottom: 12px;
+  }
+  .state-empty a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s;
+  }
+  .state-empty a:hover { border-bottom-color: currentColor; }
+
+  /* ── 라이트박스 비율 (3:2) ──────────── */
+  .lightbox-frame { aspect-ratio: 3 / 2; }
+</style>
+</head>
+<body>
+
+<a class="logo" href="index.html" aria-label="메달뱅크 아쿠아틱스 — 메인">
+  <img class="logo-img" src="images/medalbankaquatics.png" alt="Medalbank Aquatics" />
+</a>
+
+<header class="ui">
+  <nav class="menu menu-inline">
+    <a href="photos.html">사진집</a>
+    <a href="athletes.html" class="active">선수목록</a>
+    <a href="magazines.html">정기간행물</a>
+    <a href="about.html">촬영서비스</a>
+    <a href="request.html">촬영요청</a>
+    <a href="consent.html">공개요청</a>
+  </nav>
+</header>
+
+<button class="menu-toggle" id="menuToggle" type="button" aria-label="메뉴 열기" aria-expanded="false">
+  <span></span><span></span><span></span>
+</button>
+
+<div class="menu-overlay" id="menuOverlay" aria-hidden="true">
+  <nav class="menu menu-fullscreen">
+    <a href="photos.html">사진집</a>
+    <a href="athletes.html" class="active">선수목록</a>
+    <a href="magazines.html">정기간행물</a>
+    <a href="about.html">촬영서비스</a>
+    <a href="request.html">촬영요청</a>
+    <a href="consent.html">공개요청</a>
+  </nav>
+</div>
+
+<main class="ath-shell">
+
+  <div id="content">
+    <!-- JS가 채움 (header + sort toggle + photo groups) -->
+  </div>
+
+</main>
+
+<footer class="ui">
+  <div class="meta-left">
+    <div>50+ MEETS · 1,000+ ATHLETES · 1M+ FRAMES</div>
+    <div>600MM F4 · 300MM F2.8 · 70-200MM F2.8</div>
+    <div class="row-strong">SINCE 2019 · <span id="clock">KST 00:00:00</span></div>
+    <div class="insta-mobile">
+      <a class="insta" href="https://www.instagram.com/medalbankaquatics" target="_blank" rel="noopener noreferrer">@medalbankaquatics</a>
+    </div>
+  </div>
+  <div class="meta-right">
+    <div>EVERY HEAT · EVERY ATHLETE</div>
+    <div>NATIONAL · INTERNATIONAL MEETS</div>
+    <div>CHAMPIONSHIP-GRADE COVERAGE</div>
+    <div><a class="insta" href="https://www.instagram.com/medalbankaquatics" target="_blank" rel="noopener noreferrer">@medalbankaquatics</a></div>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" aria-hidden="true" role="dialog" aria-label="사진 확대 보기">
+  <div class="lightbox-bg" id="lightboxBg"></div>
+  <div class="lightbox-frame">
+    <img class="lightbox-img" id="lightboxImg" alt="" />
+    <button class="lightbox-close" id="lightboxClose" type="button" aria-label="닫기">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <line x1="6" y1="6" x2="18" y2="18"/>
+        <line x1="18" y1="6" x2="6" y2="18"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script src="js/shared.js"></script>
+<script src="data/athletes.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const TOTAL_PHOTOS = 150;
+  const imgUrl  = (idx) => `./images/thumbs/thumb-${String(((idx - 1) % TOTAL_PHOTOS) + 1).padStart(3,'0')}.jpg`;
+  const xlUrl   = (idx) => `./images/xl/xl-${String(((idx - 1) % TOTAL_PHOTOS) + 1).padStart(3,'0')}.jpg`;
+
+  // URL ?id=ath-001
+  const params = new URLSearchParams(location.search);
+  const athleteId = params.get('id');
+
+  const content = document.getElementById('content');
+
+  function showError(msg) {
+    content.innerHTML = `
+      <div class="state-empty">
+        <h2>${msg}</h2>
+        <p><a href="athletes.html">← 선수목록으로 돌아가기</a></p>
+      </div>
+    `;
+  }
+
+  if (!athleteId) {
+    showError('선수 ID가 없습니다.');
+    return;
+  }
+
+  const data = window.ATHLETES_DATA;
+  if (!data || !data.athletes) {
+    showError('데이터를 불러올 수 없습니다. (data/athletes.js 누락)');
+    return;
+  }
+
+  const athlete = data.athletes.find(a => a.id === athleteId);
+  if (!athlete) {
+    showError('해당 선수를 찾을 수 없습니다.');
+    return;
+  }
+
+  // meets 사전 (id → 메타)
+  const meetsById = Object.fromEntries(data.meets.map(m => [m.id, m]));
+
+  // 'YYYY-MM-DD' → 'YYYY.MM' (정렬용은 그대로 사용)
+  const fmtMonth = (s) => s.slice(0, 7).replace('-', '.');
+  const DAYS_KO = ['일','월','화','수','목','금','토'];
+  const fmtDate = (s) => {
+    const [y, m, d] = s.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    return `${y}.${String(m).padStart(2,'0')}.${String(d).padStart(2,'0')} (${DAYS_KO[dt.getDay()]})`;
+  };
+
+  // 메타 계산
+  const photos = athlete.photos;
+  const uniqueMeetIds = [...new Set(photos.map(p => p.meet_id))];
+  const meets = uniqueMeetIds
+    .map(id => meetsById[id])
+    .filter(Boolean)
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  // ─────────────────────────────────────────────
+  // 헤더 + 토글 + 컨테이너 렌더
+  // ─────────────────────────────────────────────
+  const firstMeet = meetsById[photos[photos.length - 1]?.meet_id];
+  const lastMeet  = meetsById[photos[0]?.meet_id];
+
+  // 활동 기간 (년)
+  const span = (() => {
+    const a = athlete.first_date.slice(0,7);
+    const b = athlete.last_date.slice(0,7);
+    if (a === b) return fmtMonth(b);
+    return `${fmtMonth(a)} ~ ${fmtMonth(b)}`;
+  })();
+
+  // 핵심 대회 라벨 (가장 최근 1개 + " 외 N개")
+  const headlineMeet = meets[0]?.label || '';
+  const otherMeets = meets.length - 1;
+  const meetSummary = otherMeets > 0
+    ? `${headlineMeet} 외 ${otherMeets}개 대회 · `
+    : (headlineMeet ? `${headlineMeet} · ` : '');
+
+  content.innerHTML = `
+    <header class="ath-head">
+      <h1>${athlete.name}</h1>
+      <p class="summary">
+        ${meetSummary}<strong>${athlete.photo_count}장</strong> 동의 · ${span}
+      </p>
+      <div class="meta-row">
+        <div class="item"><span class="v">${athlete.photo_count}</span>동의 사진</div>
+        <div class="item"><span class="v">${meets.length}</span>출전 대회</div>
+        <div class="item"><span class="v">${span.split(' ~ ')[0]}</span>첫 사진</div>
+        <div class="item"><span class="v">${span.split(' ~ ').pop()}</span>최근 사진</div>
+      </div>
+    </header>
+
+    <div class="sort-toggle" role="tablist">
+      <button type="button" data-sort="meet" class="active" role="tab" aria-selected="true">대회별</button>
+      <button type="button" data-sort="recent" role="tab" aria-selected="false">최신순</button>
+    </div>
+
+    <div id="photos"></div>
+  `;
+
+  const photosEl = document.getElementById('photos');
+
+  // ─────────────────────────────────────────────
+  // 렌더 모드: 'meet' (대회별 그룹) / 'recent' (최신순 단일 그리드)
+  // ─────────────────────────────────────────────
+  function renderByMeet() {
+    photosEl.innerHTML = '';
+    const frag = document.createDocumentFragment();
+
+    meets.forEach((m, i) => {
+      const meetPhotos = photos.filter(p => p.meet_id === m.id);
+      const grp = document.createElement('section');
+      grp.className = 'meet-group';
+      grp.innerHTML = `
+        <div class="meet-head">
+          <span class="date">${m.short}</span>
+          <span class="label">${m.label}</span>
+          <span class="count">${meetPhotos.length} ${meetPhotos.length === 1 ? 'photo' : 'photos'}</span>
+        </div>
+        <div class="photos-grid"></div>
+      `;
+      const grid = grp.querySelector('.photos-grid');
+      meetPhotos.forEach(p => grid.appendChild(makeTile(p.idx)));
+      frag.appendChild(grp);
+      if (i < meets.length - 1) {
+        const hr = document.createElement('hr');
+        hr.className = 'meet-divider';
+        frag.appendChild(hr);
+      }
+    });
+    photosEl.appendChild(frag);
+  }
+
+  function renderRecent() {
+    photosEl.innerHTML = '';
+    const sorted = [...photos].sort((a, b) =>
+      b.date.localeCompare(a.date) || (b.idx - a.idx)
+    );
+    const grp = document.createElement('section');
+    grp.className = 'meet-group';
+    grp.innerHTML = `
+      <div class="meet-head">
+        <span class="date">최신순</span>
+        <span class="label">전체 ${sorted.length}장</span>
+      </div>
+      <div class="photos-grid"></div>
+    `;
+    const grid = grp.querySelector('.photos-grid');
+    sorted.forEach(p => grid.appendChild(makeTile(p.idx)));
+    photosEl.appendChild(grp);
+  }
+
+  function makeTile(idx) {
+    const tile = document.createElement('button');
+    tile.type = 'button';
+    tile.className = 'photo-tile';
+    tile.style.backgroundImage = `url("${imgUrl(idx)}")`;
+    tile.dataset.imgIdx = idx;
+    tile.setAttribute('aria-label', `사진 ${idx} 확대 보기`);
+    const num = document.createElement('span');
+    num.className = 'num';
+    num.textContent = idx;
+    tile.appendChild(num);
+    tile.addEventListener('click', () => {
+      tile.classList.remove('clicked');
+      void tile.offsetWidth;
+      tile.classList.add('clicked');
+      tile.addEventListener('animationend',
+        () => tile.classList.remove('clicked'), { once: true });
+      if (window.MB && window.MB.openLightbox) {
+        window.MB.openLightbox(imgUrl(idx), xlUrl(idx), `Photo #${idx}`);
+      }
+    });
+    return tile;
+  }
+
+  // 토글
+  const toggleBtns = document.querySelectorAll('.sort-toggle button');
+  toggleBtns.forEach(b => {
+    b.addEventListener('click', () => {
+      toggleBtns.forEach(x => {
+        x.classList.toggle('active', x === b);
+        x.setAttribute('aria-selected', x === b ? 'true' : 'false');
+      });
+      if (b.dataset.sort === 'recent') renderRecent();
+      else renderByMeet();
+      window.scrollTo({ top: photosEl.offsetTop - 60, behavior: 'smooth' });
+    });
+  });
+
+  renderByMeet();
+})();
+</script>
+</body>
+</html>
