@@ -1,5 +1,31 @@
 import { images } from '../models/Image.js'
 import { getDB } from '../db.js'
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
+
+let _s3, _bucket
+function getS3() {
+  if (!_s3) {
+    const endpoint = process.env.idrivee2_endpoint
+    _bucket = process.env.idrivee2_bucket
+    _s3 = new S3Client({
+      endpoint: `https://${endpoint}`,
+      region: endpoint?.split('.')[1] ?? 'ap-northeast-1',
+      credentials: {
+        accessKeyId: process.env['idrivee2-access_key_id'],
+        secretAccessKey: process.env['idrivee2-access_key'],
+      },
+      forcePathStyle: false,
+    })
+  }
+  return { s3: _s3, bucket: _bucket }
+}
+
+function urlToKey(url) {
+  if (!url) return null
+  try {
+    return new URL(url).pathname.slice(1)
+  } catch { return null }
+}
 
 const PER_PAGE = 50
 
@@ -47,6 +73,17 @@ export default function (app) {
   app.delete('/api/admin/images/:id', async (req, res) => {
     try {
       const image_id = parseInt(req.params.id)
+      const doc = await images().findOne({ image_id })
+
+      if (doc?.urls) {
+        const { s3, bucket } = getS3()
+        const keys = [doc.urls.thumb, doc.urls.preview, doc.urls.xl, doc.urls.full]
+          .map(urlToKey).filter(Boolean)
+        await Promise.allSettled(keys.map(key =>
+          s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
+        ))
+      }
+
       await images().deleteOne({ image_id })
       res.json({ ok: true })
     } catch (e) {
