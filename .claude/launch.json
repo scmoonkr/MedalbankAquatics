@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "nuxt",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 6631,
+      "cwd": "C:/Develop/MedalbankAquatics/nuxt"
+    }
+  ]
+}

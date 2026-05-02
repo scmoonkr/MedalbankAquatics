@@ -1,0 +1,29 @@
+export default defineNuxtConfig({
+  devtools: { enabled: false },
+
+  devServer: { port: 6631 },
+
+  css: ['~/assets/css/shared.css'],
+
+  app: {
+    head: {
+      htmlAttrs: { lang: 'ko' },
+      link: [
+        { rel: 'icon', type: 'image/png', href: '/images/medalbankaquatics.png' },
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,500&family=Nanum+Myeongjo:wght@400;700;800&display=swap',
+        },
+      ],
+    },
+  },
+
+  nitro: {
+    publicAssets: [
+      { dir: 'C:/Develop/MedalbankAquatics/html/images', baseURL: '/images', maxAge: 0 },
+      { dir: 'C:/Develop/MedalbankAquatics/html/data',   baseURL: '/data',   maxAge: 0 },
+    ],
+  },
+})

@@ -1,0 +1,15 @@
+{
+  "name": "medalbank-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch index.js",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0",
+    "express": "^4.19.0",
+    "mongodb": "^6.21.0",
+    "nodemailer": "^8.0.7"
+  }
+}
