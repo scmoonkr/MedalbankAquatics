@@ -15,6 +15,42 @@ function getGroup(name) {
 }
 
 export default function (app) {
+  app.get('/api/admin/athletes', async (req, res) => {
+    try {
+      const docs = await athletes()
+        .find({}, { projection: { _id: 0, athlete_id: 1, name: 1, email: 1, consent_date: 1, lang: 1 } })
+        .sort({ athlete_id: 1 })
+        .toArray()
+      res.json(docs)
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
+  app.put('/api/admin/athletes/:id', async (req, res) => {
+    try {
+      const athlete_id = parseInt(req.params.id)
+      const { name, email, consent_date, lang } = req.body
+      const update = { name, email: email || '', lang: lang || '' }
+      if (consent_date) update.consent_date = new Date(consent_date)
+      else update.consent_date = null
+      await athletes().updateOne({ athlete_id }, { $set: update })
+      res.json({ ok: true })
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
+  app.delete('/api/admin/athletes/:id', async (req, res) => {
+    try {
+      const athlete_id = parseInt(req.params.id)
+      await athletes().deleteOne({ athlete_id })
+      res.json({ ok: true })
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
   app.get('/api/athletes', async (req, res) => {
     try {
       const [athleteList, stats] = await Promise.all([
