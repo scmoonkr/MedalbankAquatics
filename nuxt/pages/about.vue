@@ -196,7 +196,7 @@
     <div class="testi-grid">
       <article class="testi-card">
         <div class="testi-head">
-          <img class="testi-avatar" src="./images/avatars/avatar_011.jpeg" alt="" />
+          <img class="testi-avatar" src="/images/avatars/avatar_011.jpeg" alt="" />
           <div>
             <div class="testi-name">○○○</div>
             <div class="testi-role">수영대회 운영위원</div>
@@ -207,7 +207,7 @@
 
       <article class="testi-card">
         <div class="testi-head">
-          <img class="testi-avatar" src="./images/avatars/avatar_005.jpeg" alt="" />
+          <img class="testi-avatar" src="/images/avatars/avatar_005.jpeg" alt="" />
           <div>
             <div class="testi-name">○○○</div>
             <div class="testi-role">○○ 수영 연맹 관계자</div>
@@ -218,7 +218,7 @@
 
       <article class="testi-card">
         <div class="testi-head">
-          <img class="testi-avatar" src="./images/avatars/avatar_007.jpeg" alt="" />
+          <img class="testi-avatar" src="/images/avatars/avatar_007.jpeg" alt="" />
           <div>
             <div class="testi-name">○○○</div>
             <div class="testi-role">코치</div>
@@ -229,7 +229,7 @@
 
       <article class="testi-card">
         <div class="testi-head">
-          <img class="testi-avatar" src="./images/avatars/avatar_003.jpeg" alt="" />
+          <img class="testi-avatar" src="/images/avatars/avatar_003.jpeg" alt="" />
           <div>
             <div class="testi-name">김○○</div>
             <div class="testi-role">어린이 수영클럽 코치</div>
@@ -240,7 +240,7 @@
 
       <article class="testi-card">
         <div class="testi-head">
-          <img class="testi-avatar" src="./images/avatars/avatar_004.jpeg" alt="" />
+          <img class="testi-avatar" src="/images/avatars/avatar_004.jpeg" alt="" />
           <div>
             <div class="testi-name">○○○</div>
             <div class="testi-role">○○도 공인 심판</div>
@@ -251,7 +251,7 @@
 
       <article class="testi-card">
         <div class="testi-head">
-          <img class="testi-avatar" src="./images/avatars/avatar_001.png" alt="" />
+          <img class="testi-avatar" src="/images/avatars/avatar_001.png" alt="" />
           <div>
             <div class="testi-name">○○○</div>
             <div class="testi-role">12년차 베테랑 선수</div>
@@ -262,7 +262,7 @@
 
       <article class="testi-card">
         <div class="testi-head">
-          <img class="testi-avatar" src="./images/avatars/avatar_010.png" alt="" />
+          <img class="testi-avatar" src="/images/avatars/avatar_010.png" alt="" />
           <div>
             <div class="testi-name">박○○</div>
             <div class="testi-role">마스터즈 선수</div>
@@ -273,7 +273,7 @@
 
       <article class="testi-card">
         <div class="testi-head">
-          <img class="testi-avatar" src="./images/avatars/avatar_002.jpeg" alt="" />
+          <img class="testi-avatar" src="/images/avatars/avatar_002.jpeg" alt="" />
           <div>
             <div class="testi-name">이○○</div>
             <div class="testi-role">10년차 마스터즈 선수</div>
@@ -284,7 +284,7 @@
 
       <article class="testi-card">
         <div class="testi-head">
-          <img class="testi-avatar" src="./images/avatars/avatar_009.jpeg" alt="" />
+          <img class="testi-avatar" src="/images/avatars/avatar_009.jpeg" alt="" />
           <div>
             <div class="testi-name">○○○</div>
             <div class="testi-role">마스터즈 수영인</div>
@@ -295,7 +295,7 @@
 
       <article class="testi-card">
         <div class="testi-head">
-          <img class="testi-avatar" src="./images/avatars/avatar_012.jpeg" alt="" />
+          <img class="testi-avatar" src="/images/avatars/avatar_012.jpeg" alt="" />
           <div>
             <div class="testi-name">○○○</div>
             <div class="testi-role">수영선수 학부모</div>
@@ -306,7 +306,7 @@
 
       <article class="testi-card">
         <div class="testi-head">
-          <img class="testi-avatar" src="./images/avatars/avatar_006.jpeg" alt="" />
+          <img class="testi-avatar" src="/images/avatars/avatar_006.jpeg" alt="" />
           <div>
             <div class="testi-name">○○○</div>
             <div class="testi-role">인스타그램 팔로워, 수영인</div>
@@ -317,7 +317,7 @@
 
       <article class="testi-card">
         <div class="testi-head">
-          <img class="testi-avatar" src="./images/avatars/avatar_008.jpeg" alt="" />
+          <img class="testi-avatar" src="/images/avatars/avatar_008.jpeg" alt="" />
           <div>
             <div class="testi-name">○○○</div>
             <div class="testi-role">2년차 꿈나무 선수</div>
