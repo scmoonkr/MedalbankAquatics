@@ -21,19 +21,19 @@
 
       <!-- 대회별 -->
       <template v-if="sortMode === 'meet'">
-        <template v-for="(m, i) in meets" :key="m.id">
+        <template v-for="(m, i) in meets" :key="m.meet_id">
           <section class="meet-group">
             <div class="meet-head">
               <span class="date">{{ m.short }}</span>
               <span class="label">{{ m.label }}</span>
-              <span class="count">{{ meetPhotos(m.id).length }} photos</span>
+              <span class="count">{{ meetPhotos(m.meet_id).length }} photos</span>
             </div>
             <div class="photos-grid">
-              <button v-for="p in meetPhotos(m.id)" :key="p.idx" type="button"
-                class="photo-tile" :class="{ clicked: clickedKey === `${m.id}-${p.idx}` }"
-                :style="{ backgroundImage: `url('${thumbUrl(p.idx)}')` }"
-                @click="onTileClick(`${m.id}-${p.idx}`, p.idx)">
-                <span class="num">{{ p.idx }}</span>
+              <button v-for="p in meetPhotos(m.meet_id)" :key="p.image_id" type="button"
+                class="photo-tile" :class="{ clicked: clickedKey === `${m.meet_id}-${p.image_id}` }"
+                :style="{ backgroundImage: `url('${p.urls.thumb}')` }"
+                @click="onTileClick(`${m.meet_id}-${p.image_id}`, p)">
+                <span class="num">{{ p.image_id }}</span>
               </button>
             </div>
           </section>
@@ -49,11 +49,11 @@
             <span class="label">전체 {{ sortedPhotos.length }}장</span>
           </div>
           <div class="photos-grid">
-            <button v-for="p in sortedPhotos" :key="p.idx" type="button"
-              class="photo-tile" :class="{ clicked: clickedKey === `recent-${p.idx}` }"
-              :style="{ backgroundImage: `url('${thumbUrl(p.idx)}')` }"
-              @click="onTileClick(`recent-${p.idx}`, p.idx)">
-              <span class="num">{{ p.idx }}</span>
+            <button v-for="p in sortedPhotos" :key="p.image_id" type="button"
+              class="photo-tile" :class="{ clicked: clickedKey === `recent-${p.image_id}` }"
+              :style="{ backgroundImage: `url('${p.urls.thumb}')` }"
+              @click="onTileClick(`recent-${p.image_id}`, p)">
+              <span class="num">{{ p.image_id }}</span>
             </button>
           </div>
         </section>
@@ -74,27 +74,16 @@ useHead({ title: '메달뱅크 아쿠아틱스 — 선수 상세' })
 const route = useRoute()
 const athleteId = computed(() => route.query.id as string)
 
-const { data: raw } = await useFetch('/data/athletes.json')
-const allAthletes = computed(() => (raw.value as any)?.athletes ?? [])
-const meetsById   = computed(() => Object.fromEntries(((raw.value as any)?.meets ?? []).map((m: any) => [m.id, m])))
+const { data: athlete, error } = await useFetch<any>('/api/athlete', {
+  query: computed(() => ({ id: athleteId.value })),
+  watch: [athleteId],
+})
 
-const athlete  = computed(() => allAthletes.value.find((a: any) => a.id === athleteId.value) ?? null)
 const errorMsg = computed(() => athleteId.value ? '해당 선수를 찾을 수 없습니다.' : '선수 ID가 없습니다.')
 
-const TOTAL_PHOTOS = 150
-const thumbUrl = (idx: number) => `/images/thumbs/thumb-${String(((idx - 1) % TOTAL_PHOTOS) + 1).padStart(3,'0')}.jpg`
-const xlUrl    = (idx: number) => `/images/xl/xl-${String(((idx - 1) % TOTAL_PHOTOS) + 1).padStart(3,'0')}.jpg`
+const fmtMonth = (s: string) => s?.slice(0, 7).replace('-', '.') ?? ''
 
-const fmtMonth = (s: string) => s.slice(0, 7).replace('-', '.')
-
-const meets = computed(() => {
-  if (!athlete.value) return []
-  const uniqueIds = [...new Set(athlete.value.photos.map((p: any) => p.meet_id))] as string[]
-  return uniqueIds
-    .map(id => meetsById.value[id])
-    .filter(Boolean)
-    .sort((a: any, b: any) => b.date.localeCompare(a.date))
-})
+const meets = computed<any[]>(() => athlete.value?.meets ?? [])
 
 const span = computed(() => {
   if (!athlete.value) return ''
@@ -110,20 +99,20 @@ const meetSummary = computed(() => {
   return others > 0 ? `${headline} 외 ${others}개 대회 · ` : (headline ? `${headline} · ` : '')
 })
 
-const meetPhotos = (meetId: string) =>
-  athlete.value?.photos.filter((p: any) => p.meet_id === meetId) ?? []
+const meetPhotos = (meetId: number) =>
+  (athlete.value?.images ?? []).filter((p: any) => p.meet_id === meetId)
 
 const sortedPhotos = computed(() =>
-  [...(athlete.value?.photos ?? [])].sort((a: any, b: any) =>
-    b.date.localeCompare(a.date) || (b.idx - a.idx)))
+  [...(athlete.value?.images ?? [])].sort((a: any, b: any) =>
+    (b.date ?? '').localeCompare(a.date ?? '') || (b.image_id - a.image_id)))
 
-const sortMode  = ref('meet')
+const sortMode   = ref('meet')
 const clickedKey = ref<string | null>(null)
 
-function onTileClick(key: string, idx: number) {
+function onTileClick(key: string, photo: any) {
   clickedKey.value = key
   setTimeout(() => { clickedKey.value = null }, 500)
-  window.MB?.openLightbox(thumbUrl(idx), xlUrl(idx), `Photo #${idx}`)
+  window.MB?.openLightbox(photo.urls.thumb, photo.urls.xl, `Photo #${photo.image_id}`)
 }
 </script>
 
