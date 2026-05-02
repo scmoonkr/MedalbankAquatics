@@ -3,6 +3,43 @@ import { images } from '../models/Image.js'
 const PER_PAGE = 50
 
 export default function (app) {
+  app.get('/api/admin/images', async (req, res) => {
+    try {
+      const docs = await images()
+        .find({}, { projection: { _id: 0, image_id: 1, athlete_id: 1, meet_id: 1, date: 1, consent_date: 1, 'urls.thumb': 1 } })
+        .sort({ image_id: -1 })
+        .toArray()
+      res.json(docs)
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
+  app.put('/api/admin/images/:id', async (req, res) => {
+    try {
+      const image_id = parseInt(req.params.id)
+      const { athlete_id, meet_id, date, consent_date } = req.body
+      const update = { athlete_id: parseInt(athlete_id), meet_id: parseInt(meet_id), date }
+      if (consent_date) update.consent_date = new Date(consent_date)
+      else update.consent_date = null
+      await images().updateOne({ image_id }, { $set: update })
+      res.json({ ok: true })
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
+  app.delete('/api/admin/images/:id', async (req, res) => {
+    try {
+      const image_id = parseInt(req.params.id)
+      await images().deleteOne({ image_id })
+      res.json({ ok: true })
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
+
   app.get('/api/gallery', async (req, res) => {
     try {
       const docs = await images()
