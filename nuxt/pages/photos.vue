@@ -170,9 +170,9 @@ onMounted(() => {
 .photo-tile.skeleton { cursor: default; animation: skeletonPulse 1.4s ease-in-out infinite; }
 @keyframes photoClickFlash { 0%{opacity:0} 18%{opacity:0.18} 100%{opacity:0} }
 @keyframes skeletonPulse { 0%,100%{opacity:0.4} 50%{opacity:0.7} }
-.photo-tile .num { position: absolute; top: 12px; left: 12px; color: #fff; font-family: var(--font-serif); font-style: italic; font-size: 36px; font-weight: 400; letter-spacing: -0.015em; line-height: 1; opacity: 0.10; mix-blend-mode: difference; pointer-events: none; font-variant-numeric: tabular-nums; }
-@media (max-width: 1199px) { .photo-tile .num { font-size: 30px; top: 10px; left: 10px; } }
-@media (max-width: 768px) { .photo-tile .num { font-size: 24px; opacity: 0.14; top: 8px; left: 8px; } }
+.photo-tile .num { position: absolute; bottom: 7px; left: 9px; color: #fff; font-family: var(--font-sans); font-size: 10px; font-weight: 400; letter-spacing: 0.06em; line-height: 1; opacity: 0.55; mix-blend-mode: difference; pointer-events: none; font-variant-numeric: tabular-nums; }
+@media (max-width: 1199px) { .photo-tile .num { font-size: 9px; bottom: 6px; left: 8px; } }
+@media (max-width: 768px) { .photo-tile .num { font-size: 9px; bottom: 5px; left: 7px; } }
 :deep(.lightbox-frame) { aspect-ratio: 3/2; }
 .pagination { margin: 56px 0 0; padding: 0 14px 80px; display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; }
 .page-numbers { display: flex; align-items: baseline; gap: 2px; flex-wrap: wrap; justify-content: flex-start; }
