@@ -1,6 +1,6 @@
 # MedalbankAquatics — 작업 진행 현황
 
-> 마지막 업데이트: 2026-05-02 (3차)
+> 마지막 업데이트: 2026-05-02 (4차)
 
 ---
 
@@ -158,6 +158,17 @@
   - `medalbank-api`: Express 서버
   - `medalbank-nuxt`: Nuxt 서버 (PORT=6631)
 
+**서버 git pull 주의사항**:
+- 서버에서 직접 파일 수정 시 pull 충돌 발생 → `git stash` 후 pull
+  ```bash
+  git stash
+  git pull origin master
+  ```
+- 이후 Nuxt 재빌드 필요:
+  ```bash
+  cd nuxt && npm run build && pm2 restart medalbank-nuxt
+  ```
+
 ---
 
 ### 8. 이메일 설정
@@ -204,4 +215,5 @@ MAGAZINE_EMAIL_PASS=...
 - [ ] magazine@medalbank.com Naver Works 이메일 MX 레코드 적용 확인
 - [ ] 기존 이미지 iDrive 마이그레이션 (`migrate-images-to-idrive.mjs` 실행)
 - [ ] 백엔드 페이지 인증/접근 제한 (현재 비인증 공개 상태)
-- [ ] athlete.vue 업로드 후 athlete_id 자동 매칭
+- [ ] 이미지 업로드 후 athlete_id 매칭 (현재 0으로 저장됨)
+- [ ] 서버 `deploy.sh` 실행 → backend 페이지 반영 확인
