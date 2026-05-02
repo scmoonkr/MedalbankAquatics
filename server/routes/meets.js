@@ -2,6 +2,42 @@ import { meets } from '../models/Meet.js'
 import { images } from '../models/Image.js'
 
 export default function (app) {
+  app.get('/api/admin/meets', async (req, res) => {
+    try {
+      const docs = await meets()
+        .find({}, { projection: { _id: 0 } })
+        .sort({ date: -1 })
+        .toArray()
+      res.json(docs)
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
+  app.put('/api/admin/meets/:id', async (req, res) => {
+    try {
+      const meet_id = parseInt(req.params.id)
+      const { label, short, date, location, competition_id } = req.body
+      await meets().updateOne(
+        { meet_id },
+        { $set: { label, short: short || '', date: date ? new Date(date) : null, location: location || '', competition_id: competition_id || '' } }
+      )
+      res.json({ ok: true })
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
+  app.delete('/api/admin/meets/:id', async (req, res) => {
+    try {
+      const meet_id = parseInt(req.params.id)
+      await meets().deleteOne({ meet_id })
+      res.json({ ok: true })
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
   app.get('/api/meets', async (req, res) => {
     try {
       const [meetList, counts] = await Promise.all([
