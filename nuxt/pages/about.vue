@@ -335,7 +335,7 @@
     <p>대회 촬영 신청, 협업 문의, 또는 그냥 수영 이야기도 환영합니다.</p>
 
     <div class="cta-area">
-      <a class="cta-button" to="/request">촬영 요청</a>
+      <NuxtLink class="cta-button" to="/request">촬영 요청</NuxtLink>
       <p class="cta-tagline">그냥 수영하는, 수영 좋아하는 사람입니다.</p>
     </div>
 
