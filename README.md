@@ -1,6 +1,7 @@
 # MedalbankAquatics
 
 ## Git 사용법
+https://github.com/scmoonkr/MedalbankAquatics
 
 ### 변경사항 푸시 (Push)
 

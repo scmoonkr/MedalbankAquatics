@@ -1,0 +1,243 @@
+<template>
+<main class="mag-shell">
+
+  <div class="mag-head">
+    <h1>정기간행물</h1>
+    <span class="tagline">— Medalbank Aquatics Magazine</span>
+    <span class="meta-inline">vol. 01 ~ <span id="latest-vol">01</span> · <span id="active-count">1</span>호 발행</span>
+  </div>
+
+  <p class="mag-intro">
+    분기마다 발행하는 <strong>메달뱅크 아쿠아틱스 매거진</strong>. 한 권에 한 시즌 — 대회 현장의 표정, 선수들의 한 호흡, 그리고 물 위의 한 순간을 인쇄로 담습니다.
+  </p>
+
+  <div class="mag-grid" id="magGrid">
+    <!-- JS 채움 -->
+  </div>
+
+</main>
+</template>
+
+<script setup lang="ts">
+useHead({ title: "메달뱅크 아쿠아틱스 — 정기간행물" })
+</script>
+
+<style scoped>
+
+  :root { --grid-margin: 14px; }
+  body { overflow-x: hidden; }
+
+  .mag-shell {
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-top: 96px;
+    padding-bottom: 40px;
+  }
+
+  /* ── 페이지 타이틀 (photos와 동일 톤) ────────── */
+  .mag-head {
+    padding: 8px 32px 24px;
+    display: flex;
+    align-items: baseline;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+  .mag-head h1 {
+    font-family: var(--font-myungjo);
+    font-size: 44px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+  .mag-head .tagline {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--fg-faint);
+    letter-spacing: -0.01em;
+  }
+  .mag-head .meta-inline {
+    margin-left: auto;
+    color: var(--fg-dim);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 768px) {
+    .mag-head { padding: 4px 18px 22px; gap: 12px; }
+    .mag-head h1 { font-size: 32px; }
+    .mag-head .tagline { font-size: 16px; }
+    .mag-head .meta-inline { font-size: 10px; width: 100%; margin-left: 0; }
+  }
+
+  /* ── 인트로 짧은 문단 (잡지 소개) ─────────────── */
+  .mag-intro {
+    padding: 0 32px 36px;
+    max-width: 720px;
+    color: var(--fg-dim);
+    font-family: var(--font-myungjo);
+    font-size: 17px;
+    line-height: 1.7;
+    letter-spacing: -0.005em;
+  }
+  .mag-intro strong {
+    color: var(--fg);
+    font-weight: 400;
+  }
+  @media (max-width: 768px) {
+    .mag-intro { padding: 0 18px 28px; font-size: 15px; line-height: 1.65; }
+  }
+
+  /* ── 그리드 (6/3/3 — A4 비율 1:√2) ────────────── */
+  .mag-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--grid-margin);
+    padding: 0 var(--grid-margin);
+  }
+  @media (max-width: 1199px) {
+    :root { --grid-margin: 12px; }
+    .mag-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 768px) {
+    :root { --grid-margin: 10px; }
+    .mag-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── 잡지 표지 타일 ─────────────────────────── */
+  .mag-tile {
+    position: relative;
+    aspect-ratio: 1 / 1.4142;       /* A4 (√2) */
+    background-color: var(--bg-soft);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border: 0;
+    padding: 0;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.5s var(--ease-out);
+  }
+  .mag-tile.active {
+    filter: grayscale(0.18) brightness(0.96);
+    transition: filter 0.5s ease-out, transform 0.5s var(--ease-out);
+  }
+  .mag-tile.active {
+    cursor: default;
+  }
+  .mag-tile.active:hover {
+    /* hover 효과 최소화 — 링크 아님 */
+    filter: none;
+    transition-duration: 0.4s;
+  }
+  .mag-tile.active:hover .mag-tile-inner { box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+
+  .mag-tile-inner {
+    position: absolute;
+    inset: 0;
+    transition: box-shadow 0.4s ease-out;
+  }
+  .mag-tile-inner::after {
+    /* 표지의 미세한 종이감(상단 그림자) */
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.18) 0%,
+      transparent 8%,
+      transparent 92%,
+      rgba(0,0,0,0.12) 100%
+    );
+    pointer-events: none;
+  }
+
+  /* coming-soon 상태 */
+  .mag-tile.coming {
+    background-color: var(--bg-soft);
+    cursor: not-allowed;
+    border: 1px solid var(--line);
+  }
+  .mag-tile.coming .mag-tile-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    color: var(--fg-faint);
+  }
+  .mag-tile.coming .mag-tile-inner::after { display: none; }
+  .mag-tile.coming .vol-num {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: clamp(80px, 9vw, 140px);
+    line-height: 1;
+    color: var(--fg-ghost);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .mag-tile.coming .coming-label {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--fg-faint);
+  }
+  .mag-tile.coming .vol-date {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--fg-faint);
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 1199px) {
+    .mag-tile.coming .vol-num { font-size: 64px; }
+  }
+  @media (max-width: 768px) {
+    .mag-tile.coming .vol-num { font-size: 44px; }
+    .mag-tile.coming .vol-date { font-size: 9px; }
+  }
+
+  /* 활성 표지의 메타 (이슈번호+제목 오버레이) */
+  .mag-tile.active .vol-meta {
+    position: absolute;
+    left: 22px; bottom: 22px;
+    z-index: 2;
+    color: #fff;
+    mix-blend-mode: difference;
+    pointer-events: none;
+  }
+  .mag-tile.active .vol-meta .v {
+    display: block;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: clamp(22px, 2.4vw, 32px);
+    letter-spacing: -0.01em;
+    line-height: 1;
+    opacity: 0.9;
+    font-variant-numeric: tabular-nums;
+  }
+  .mag-tile.active .vol-meta .t {
+    display: block;
+    margin-top: 5px;
+    font-family: var(--font-sans);
+    font-size: clamp(9px, 0.9vw, 11px);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.75;
+  }
+  @media (max-width: 768px) {
+    .mag-tile.active .vol-meta { left: 8px; bottom: 8px; }
+    .mag-tile.active .vol-meta .v { font-size: 16px; }
+    .mag-tile.active .vol-meta .t { font-size: 8px; }
+  }
+
+  @media (hover: none), (pointer: coarse) {
+    .mag-tile { cursor: auto; }
+  }
+
+
+
+</style>
