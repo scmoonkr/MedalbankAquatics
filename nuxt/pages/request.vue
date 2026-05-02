@@ -74,19 +74,26 @@
     <h2>대회장에서 보내온 <span class="em">초대장.</span></h2>
     <p>수영인들로부터 받은 짤막한 메시지들.</p>
 
-    <div class="invite-feed">
-      <div v-for="r in REQUESTS" :key="r.when" class="invite-row">
+    <div v-if="reqPending" class="invite-feed">
+      <div v-for="n in 3" :key="n" class="invite-row skeleton-row" />
+    </div>
+    <div v-else class="invite-feed">
+      <div v-for="r in requests" :key="r.request_id" class="invite-row">
         <span class="invite-dot" :class="r.status" :title="STATUS_LABEL[r.status]"></span>
         <div class="invite-head">
           <span class="name">{{ r.name }}</span>
-          <span class="org">{{ r.org }}</span>
-          <span class="sep">·</span>
-          <span class="meet">{{ r.meet }} 출전 예정</span>
-          <span class="sep">·</span>
-          <span class="meet-date">{{ r.date }}</span>
+          <span class="org">{{ r.team }}</span>
+          <template v-if="r.meet">
+            <span class="sep">·</span>
+            <span class="meet">{{ r.meet }} 출전 예정</span>
+          </template>
+          <template v-if="r.date">
+            <span class="sep">·</span>
+            <span class="meet-date">{{ fmtEventDate(r.date) }}</span>
+          </template>
         </div>
-        <p class="invite-msg" :class="r.status">{{ r.msg }}</p>
-        <div class="invite-when">{{ fmtFullDate(r.when) }}</div>
+        <p class="invite-msg" :class="r.status">{{ r.message }}</p>
+        <div class="invite-when">{{ fmtFullDate(r.created_at) }}</div>
       </div>
     </div>
   </section>
@@ -112,7 +119,18 @@
         </div>
         <div class="form-field">
           <label for="f-org">소속</label>
-          <input id="f-org" v-model="form.org" name="org" type="text" placeholder="○○초등학교" />
+          <input id="f-org" v-model="form.team" name="team" type="text" placeholder="○○초등학교" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="f-meet">대회명 <span class="opt">(선택)</span></label>
+          <input id="f-meet" v-model="form.meet" name="meet" type="text" placeholder="2026 전국소년체육대회 수영" />
+        </div>
+        <div class="form-field">
+          <label for="f-date">대회 날짜 <span class="opt">(선택)</span></label>
+          <input id="f-date" v-model="form.date" name="date" type="date" />
         </div>
       </div>
 
@@ -126,11 +144,11 @@
       <div class="form-row full">
         <div class="form-field">
           <label for="f-msg">내용</label>
-          <textarea id="f-msg" v-model="form.msg" name="msg" placeholder="예) 5월 10일 서울 꿈나무 수영대회 나가요!! 와주세요~" required></textarea>
+          <textarea id="f-msg" v-model="form.message" name="message" placeholder="예) 5월 10일 서울 꿈나무 수영대회 나가요!! 와주세요~" required></textarea>
         </div>
       </div>
 
-      <button class="form-submit" type="submit">제보 남기기</button>
+      <button class="form-submit" type="submit" :disabled="submitting">{{ submitting ? '제출 중…' : '제보 남기기' }}</button>
     </form>
   </section>
 
@@ -166,30 +184,50 @@
 definePageMeta({ ssr: false })
 useHead({ title: "메달뱅크 아쿠아틱스 — 촬영 요청" })
 
-const REQUESTS = [
-  { status: 'review',  name: '이○○', org: '○○중학교 수영부',  meet: '2026 전국소년체육대회 수영',       date: '5월 23일', msg: '삼촌 저희 소년체전 나가요!! 친구들이 다 삼촌 사진 찍히고 싶다고 했어요. 꼭 와주시면 좋겠어요 🙏', when: '2026.05.01' },
-  { status: 'done',    name: '박○○', org: '○○고등학교',        meet: '2026 경기도 고등부 수영대회',       date: '4월 19일', msg: '저번에 강남 마스터즈에서 저 찍어주셨잖아요. 이번엔 고등부 대회인데 친구들도 찍어주실 수 있을까요? 다들 엄청 기대하고 있어요!', when: '2026.04.02' },
-  { status: 'waiting', name: '김○○', org: '○○ 수영클럽',        meet: '2026 배럴 스프린트 챌린지',         date: '6월 8일',  msg: '클럽 아이들이 첫 대회 나가는데 메달뱅크 사진으로 기념 남기고 싶어요. 일정 맞으시면 꼭 부탁드립니다!', when: '2026.04.28' },
-  { status: 'waiting', name: '최○○', org: '○○초등학교',        meet: '2026 서울 꿈나무 수영대회',         date: '5월 10일', msg: '카메라 삼촌!! 저 이번에 50m 자유형 나가요. 엄마 아빠한테 보여드리고 싶어서요. 와주세요!!!!!', when: '2026.04.25' },
-  { status: 'waiting', name: '정○○', org: '○○중학교',          meet: '2026 인천 마스터즈 & 청소년 오픈', date: '6월 21일', msg: '작년에 찍어주신 사진 아직도 카톡 프사로 쓰고 있어요. 이번엔 개인혼영도 나가는데 부탁드려요 ㅎㅎ', when: '2026.04.20' },
-  { status: 'done',    name: '윤○○', org: '○○고등학교 수영부', meet: '2026 서울시 고등부 선수권',         date: '3월 22일', msg: '작년에도 와주셨는데 올해도 부탁드려요. 팀 전체가 기다리고 있습니다. 감사합니다!', when: '2026.03.01' },
-] as const
-
-const STATUS_LABEL: Record<string, string> = { review: '검토중', waiting: '대기', done: '완료' }
-
-const DAYS_KO = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일']
-function fmtFullDate(s: string) {
-  const [y, m, d] = s.split('.').map(Number)
-  const dt = new Date(y, m - 1, d)
-  return `${y}년 ${m}월 ${d}일 ${DAYS_KO[dt.getDay()]}`
+interface Request {
+  request_id: number
+  status: string
+  name: string
+  team: string
+  meet: string
+  date: string
+  message: string
+  created_at: string
 }
 
-const form = reactive({ name: '', org: '', email: '', msg: '' })
+const STATUS_LABEL: Record<string, string> = { review: '검토중', waiting: '대기', done: '완료' }
+const DAYS_KO = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일']
 
-function submitForm() {
-  if (!form.msg.trim()) { alert('한마디를 남겨주세요.'); return }
-  alert('제보가 접수되었습니다. 감사합니다.\n\n(현재는 데모 — 실제 제출은 추후 연동됩니다)')
-  Object.assign(form, { name: '', org: '', email: '', msg: '' })
+const { data: requests, status: reqStatus } = useFetch<Request[]>('/api/requests')
+const reqPending = computed(() => reqStatus.value === 'pending')
+
+function fmtFullDate(s: string) {
+  const dt = new Date(s)
+  return `${dt.getFullYear()}년 ${dt.getMonth()+1}월 ${dt.getDate()}일 ${DAYS_KO[dt.getDay()]}`
+}
+
+function fmtEventDate(s: string) {
+  const [, m, d] = s.split('-')
+  return `${Number(m)}월 ${Number(d)}일`
+}
+
+const form = reactive({ name: '', team: '', email: '', meet: '', date: '', message: '' })
+const submitting = ref(false)
+
+async function submitForm() {
+  if (!form.name.trim()) { alert('이름을 입력해주세요.'); return }
+  if (!form.message.trim()) { alert('한마디를 남겨주세요.'); return }
+  submitting.value = true
+  try {
+    await $fetch('/api/requests', { method: 'POST', body: { ...form } })
+    alert('제보가 접수되었습니다. 감사합니다.')
+    Object.assign(form, { name: '', team: '', email: '', meet: '', date: '', message: '' })
+    await refreshNuxtData('requests')
+  } catch {
+    alert('제출 중 오류가 발생했습니다. 다시 시도해주세요.')
+  } finally {
+    submitting.value = false
+  }
 }
 
 onMounted(() => {
@@ -457,6 +495,8 @@ onMounted(() => {
     gap: 28px;
     max-width: 720px;
   }
+  .skeleton-row { height: 80px; background: var(--bg-soft); animation: skeletonPulse 1.4s ease-in-out infinite; border-radius: 2px; }
+  @keyframes skeletonPulse { 0%,100%{opacity:0.4} 50%{opacity:0.7} }
   .invite-row {
     display: grid;
     grid-template-columns: auto 1fr;

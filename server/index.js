@@ -9,6 +9,7 @@ import athletesRoute  from './routes/athletes.js'
 import meetsRoute     from './routes/meets.js'
 import imagesRoute    from './routes/images.js'
 import consentRoute   from './routes/consent.js'
+import requestsRoute  from './routes/requests.js'
 
 const app  = express()
 const PORT = process.env.PORT ?? 6630
@@ -25,6 +26,7 @@ athletesRoute(app)
 meetsRoute(app)
 imagesRoute(app)
 consentRoute(app)
+requestsRoute(app)
 
 connectDB().then(async () => {
   await ensureIndexes()
