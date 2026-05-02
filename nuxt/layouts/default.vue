@@ -75,3 +75,8 @@
 <script setup lang="ts">
 const route = useRoute()
 </script>
+
+<style>
+html, body, #__nuxt { background: var(--bg); }
+body { overflow-x: hidden; }
+</style>

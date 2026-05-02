@@ -382,6 +382,7 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ ssr: false })
 useHead({ title: "메달뱅크 아쿠아틱스 — 촬영서비스" })
 
 onMounted(() => {
@@ -415,8 +416,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-
-  body { overflow-x: hidden; }
 
   .about-shell {
     min-height: 100vh;

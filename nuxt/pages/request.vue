@@ -163,6 +163,7 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ ssr: false })
 useHead({ title: "메달뱅크 아쿠아틱스 — 촬영 요청" })
 
 const REQUESTS = [
@@ -206,8 +207,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-
-  body { overflow-x: hidden; }
 
   .req-shell {
     min-height: 100vh;

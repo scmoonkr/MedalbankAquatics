@@ -39,6 +39,7 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ ssr: false })
 useHead({ title: "메달뱅크 아쿠아틱스 — 정기간행물" })
 
 const MAGAZINES = [

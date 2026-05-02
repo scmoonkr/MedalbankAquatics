@@ -68,6 +68,7 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ ssr: false })
 useHead({ title: '메달뱅크 아쿠아틱스 — 선수 상세' })
 
 const route = useRoute()
