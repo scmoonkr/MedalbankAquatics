@@ -18,8 +18,8 @@
             </th>
             <th class="col-img">이미지</th>
             <th class="col-id">image_id</th>
-            <th class="col-id">athlete_id</th>
-            <th class="col-id">meet_id</th>
+            <th class="col-name">선수</th>
+            <th class="col-meet">대회</th>
             <th class="col-consent">consent_date</th>
           </tr>
         </thead>
@@ -35,8 +35,8 @@
               <div v-else class="thumb no-img">—</div>
             </td>
             <td class="col-id">{{ img.image_id }}</td>
-            <td class="col-id">{{ img.athlete_id }}</td>
-            <td class="col-id">{{ img.meet_id }}</td>
+            <td class="col-name">{{ img.athlete_name }}</td>
+            <td class="col-meet">{{ img.meet_label }}</td>
             <td class="col-consent">
               <span v-if="img.consent_date" class="badge approved">{{ fmtDate(img.consent_date) }}</span>
               <span v-else class="badge review">미동의</span>
@@ -181,9 +181,11 @@ tbody tr:hover { background: #161b22; }
 tbody tr.selected { background: #1c2a3a; }
 tbody tr.editing { background: #1a2332; outline: 1px solid #388bfd; }
 td { padding: 8px 12px; vertical-align: middle; }
-.col-chk { width: 36px; }
-.col-img { width: 96px; }
-.col-id { width: 90px; font-variant-numeric: tabular-nums; }
+.col-chk  { width: 36px; }
+.col-img  { width: 96px; }
+.col-id   { width: 80px; font-variant-numeric: tabular-nums; }
+.col-name { width: 100px; }
+.col-meet { }
 .col-consent { width: 110px; }
 input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #388bfd; }
 

@@ -1,15 +1,29 @@
 import { images } from '../models/Image.js'
+import { getDB } from '../db.js'
 
 const PER_PAGE = 50
 
 export default function (app) {
   app.get('/api/admin/images', async (req, res) => {
     try {
-      const docs = await images()
-        .find({}, { projection: { _id: 0, image_id: 1, athlete_id: 1, meet_id: 1, date: 1, consent_date: 1, urls: 1 } })
-        .sort({ image_id: -1 })
-        .toArray()
-      res.json(docs)
+      const db = getDB()
+      const [docs, athletes, meets] = await Promise.all([
+        images()
+          .find({}, { projection: { _id: 0, image_id: 1, athlete_id: 1, meet_id: 1, date: 1, consent_date: 1, urls: 1 } })
+          .sort({ image_id: -1 })
+          .toArray(),
+        db.collection('athletes').find({}, { projection: { _id: 0, athlete_id: 1, name: 1 } }).toArray(),
+        db.collection('meets').find({}, { projection: { _id: 0, meet_id: 1, label: 1 } }).toArray(),
+      ])
+
+      const athleteMap = Object.fromEntries(athletes.map(a => [a.athlete_id, a.name]))
+      const meetMap    = Object.fromEntries(meets.map(m => [m.meet_id, m.label]))
+
+      res.json(docs.map(d => ({
+        ...d,
+        athlete_name: athleteMap[d.athlete_id] ?? '',
+        meet_label:   meetMap[d.meet_id] ?? '',
+      })))
     } catch (e) {
       res.status(500).json({ error: e.message })
     }
