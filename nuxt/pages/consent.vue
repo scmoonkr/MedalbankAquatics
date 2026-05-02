@@ -98,7 +98,7 @@ async function fetchImages() {
   const query: Record<string, number | string> = { page: currentPage.value, per_page: PER_PAGE }
   if (eventId.value !== 'all') query.meet_id = eventId.value
   try {
-    const data = await $fetch<{ images: GalleryImage[]; pages: number }>('/api/images', { query })
+    const data = await $fetch<{ images: GalleryImage[]; pages: number }>('/api/images', { query: { ...query, consented: 'false' } })
     galleryImages.value = data.images
     pages.value = data.pages
   } catch {
