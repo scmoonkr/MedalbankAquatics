@@ -1,6 +1,6 @@
 # MedalbankAquatics — 작업 진행 현황
 
-> 마지막 업데이트: 2026-05-02
+> 마지막 업데이트: 2026-05-02 (2차)
 
 ---
 
@@ -90,7 +90,7 @@
 | `GET /api/athletes` | 선수 목록 (photo_count, last_date 집계 포함) |
 | `GET /api/meets` | 대회 목록 (photo_count 집계 포함) |
 | `GET /api/gallery` | 메인 갤러리용 전체 이미지 (thumb, xl URL) |
-| `GET /api/images` | 페이지네이션 이미지 (`consent_date: {$exists:false}` 필터, meet_id 옵션) |
+| `GET /api/images` | 페이지네이션 이미지 (`consent_date: {$exists:true}` 필터, meet_id 옵션) |
 | `GET /api/images/by-ids` | image_id 배열로 이미지 조회 (장바구니용) |
 | `POST /api/consent` | 동의 접수 — athlete 조회/신규등록, consent 저장, 인증 메일 발송 |
 | `GET /api/consent/verify/:token` | 인증 링크 처리 — athletes/images 업데이트 |
@@ -120,9 +120,35 @@ verify.vue → GET /api/consent/verify/:token
 
 ---
 
+---
+
+### 6. 버그 수정 및 환경 정비 (2026-05-02 2차)
+
+#### 이미지 서빙 문제 해결
+- `nuxt/public/images/` 전체 git에 추가 (avatars, cursor, full, magazine, previews, thumbs, xl — 691개)
+- `about.vue` 이미지 경로 `./images/` → `/images/` 수정 (Vite 상대경로 오류)
+- `magazines.vue` 커버 이미지(`cover-01.jpg`) 생성 (xl-001.jpg 복사)
+- `nuxt.config.ts` `nitro.publicAssets`로 `html/images/` 마운트 확인 (dev에서 이미 작동 중이었음)
+
+#### 어두운 배경 복원
+- `default.vue`에 전역 스타일 추가 → `html, body, #__nuxt { background: var(--bg) }`
+- `about.vue`, `request.vue` scoped body 스타일 제거 → default.vue로 통합
+
+#### Hydration mismatch 수정
+- `about.vue`, `request.vue`, `magazines.vue`, `athlete.vue`에 `definePageMeta({ ssr: false })` 추가
+
+#### photos.vue 이미지 필터 수정
+- `GET /api/images` 필터: `consent_date: { $exists: false }` → `{ $exists: true }`
+- photos.vue는 동의 완료된 이미지만 노출하는 것이 올바른 동작
+
+#### photos.vue UI 개선
+- image_id 좌측 하단 표시 (작은 폰트, opacity 0.55)
+
+---
+
 ## 다음 작업 (미착수)
 
 - [ ] iDrive e2 (S3 호환) 이미지 업로드 연동
 - [ ] 어드민 페이지 (이미지 업로드, 선수 관리)
-- [ ] 갤러리 공개 (consent_date 있는 이미지만 노출)
 - [ ] 선수 프로필 페이지 consent_date 표시
+- [ ] consent.vue 이미지 선택 — 비공개(consent_date 없는) 이미지 노출 로직 재검토
