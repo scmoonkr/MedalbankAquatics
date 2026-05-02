@@ -22,7 +22,7 @@ cd "$PROJECT_DIR"
 if pm2 list | grep -q "medalbank-api"; then
   pm2 restart medalbank-api
 else
-  pm2 start server/index.js --name medalbank-api --cwd "$PROJECT_DIR/server"
+  pm2 start "$PROJECT_DIR/server/index.js" --name medalbank-api --cwd "$PROJECT_DIR/server"
 fi
 
 if pm2 list | grep -q "medalbank-nuxt"; then
