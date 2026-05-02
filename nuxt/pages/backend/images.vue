@@ -66,8 +66,16 @@
           <input v-model="editing.athlete_id" type="number" />
         </div>
         <div class="field-row">
+          <label>선수명</label>
+          <input :value="editing.athlete_name" disabled />
+        </div>
+        <div class="field-row">
           <label>meet_id</label>
           <input v-model="editing.meet_id" type="number" />
+        </div>
+        <div class="field-row">
+          <label>대회명</label>
+          <input :value="editing.meet_label" disabled />
         </div>
         <div class="field-row">
           <label>date</label>
