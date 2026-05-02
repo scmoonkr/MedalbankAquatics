@@ -72,11 +72,12 @@ export default function (app) {
           resizeLongest(buf, 1600),
         ])
 
+        const prefix = `meet-${meet_id}`
         const [thumbUrl, previewUrl, fullUrl, xlUrl] = await Promise.all([
-          s3Upload(thumbBuf,   `images/thumbs/${id}.jpg`),
-          s3Upload(previewBuf, `images/previews/${id}.jpg`),
-          s3Upload(fullBuf,    `images/full/${id}.jpg`),
-          s3Upload(buf,        `images/xl/${id}.jpg`),
+          s3Upload(thumbBuf,   `${prefix}/thumbs/${id}.jpg`),
+          s3Upload(previewBuf, `${prefix}/previews/${id}.jpg`),
+          s3Upload(fullBuf,    `${prefix}/full/${id}.jpg`),
+          s3Upload(buf,        `${prefix}/xl/${id}.jpg`),
         ])
 
         await images().insertOne({
