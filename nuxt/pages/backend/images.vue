@@ -77,6 +77,23 @@
           <label>consent_date</label>
           <input v-model="editConsentDate" type="date" placeholder="비워두면 미동의" />
         </div>
+        <div class="section-label">URLs</div>
+        <div class="field-row">
+          <label>thumb</label>
+          <input v-model="editing.urls.thumb" placeholder="https://..." />
+        </div>
+        <div class="field-row">
+          <label>preview</label>
+          <input v-model="editing.urls.preview" placeholder="https://..." />
+        </div>
+        <div class="field-row">
+          <label>xl</label>
+          <input v-model="editing.urls.xl" placeholder="https://..." />
+        </div>
+        <div class="field-row">
+          <label>full</label>
+          <input v-model="editing.urls.full" placeholder="https://..." />
+        </div>
       </div>
       <div class="edit-footer">
         <button class="btn-danger" @click="deleteOne(editing.image_id)">삭제</button>
@@ -108,7 +125,7 @@ function toggleAll(e: Event) {
 }
 
 function openEdit(img: any) {
-  editing.value = { ...img }
+  editing.value = { ...img, urls: { thumb: '', preview: '', xl: '', full: '', ...img.urls } }
   editConsentDate.value = img.consent_date
     ? new Date(img.consent_date).toISOString().slice(0, 10)
     : ''
@@ -127,6 +144,7 @@ async function save() {
       meet_id:      editing.value.meet_id,
       date:         editing.value.date,
       consent_date: editConsentDate.value || null,
+      urls:         editing.value.urls,
     },
   })
   editing.value = null
@@ -194,6 +212,7 @@ input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-colo
 }
 .field-row input:focus { outline: none; border-color: #388bfd; }
 .field-row input:disabled { opacity: 0.5; cursor: not-allowed; }
+.section-label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 6px; border-top: 1px solid #30363d; }
 .edit-footer { padding: 16px 20px; border-top: 1px solid #30363d; display: flex; justify-content: space-between; gap: 10px; }
 .btn-primary { padding: 8px 20px; background: #238636; border: none; border-radius: 6px; color: #fff; font-size: 13px; cursor: pointer; }
 .btn-primary:hover { background: #2ea043; }
