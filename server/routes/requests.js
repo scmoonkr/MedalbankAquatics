@@ -1,6 +1,6 @@
 import { getDB } from '../db.js'
 
-function requests() { return getDB().collection('requests') }
+function requests() { return getDB().collection('request') }
 
 function maskName(name) {
   if (!name) return '○○○'
