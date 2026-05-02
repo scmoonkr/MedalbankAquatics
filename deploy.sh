@@ -28,9 +28,8 @@ fi
 if pm2 list | grep -q "medalbank-nuxt"; then
   pm2 restart medalbank-nuxt
 else
-  pm2 start nuxt/.output/server/index.mjs --name medalbank-nuxt \
-    --env production \
-    -- --port 6631
+  PORT=6631 pm2 start "$PROJECT_DIR/nuxt/.output/server/index.mjs" \
+    --name medalbank-nuxt --env production
 fi
 
 echo "=== [5/5] PM2 저장 ==="
