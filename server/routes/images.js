@@ -34,7 +34,7 @@ export default function (app) {
       const perPage = Math.min(200, parseInt(req.query.per_page) || PER_PAGE)
       const meetId  = req.query.meet_id ? parseInt(req.query.meet_id) : null
 
-      const filter = { consent_date: { $exists: false } }
+      const filter = { consent_date: { $exists: true } }
       if (meetId) filter.meet_id = meetId
 
       const [total, docs] = await Promise.all([
