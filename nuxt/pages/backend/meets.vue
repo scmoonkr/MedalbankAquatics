@@ -71,6 +71,36 @@
           <label>competition_id</label>
           <input v-model="editing.competition_id" />
         </div>
+
+        <div class="section-label">이미지 업로드</div>
+        <div class="upload-area" @dragover.prevent @drop.prevent="onDrop">
+          <input ref="fileInput" type="file" accept="image/*" multiple hidden @change="onFileChange" />
+          <button class="btn-upload" @click="fileInput?.click()">파일 선택</button>
+          <span class="upload-hint">또는 파일을 여기에 드래그</span>
+        </div>
+
+        <div v-if="uploadFiles.length" class="upload-queue">
+          <div v-for="(f, i) in uploadFiles" :key="i" class="upload-item">
+            <img :src="f.preview" class="upload-thumb" />
+            <span class="upload-name">{{ f.file.name }}</span>
+            <button class="remove-btn" @click="uploadFiles.splice(i, 1)">✕</button>
+          </div>
+        </div>
+
+        <div v-if="uploading" class="upload-progress">
+          업로드 중... {{ uploadDone }}/{{ uploadFiles.length }}
+        </div>
+        <div v-if="uploadResults.length" class="upload-results">
+          <div v-for="r in uploadResults" :key="r.image_id" class="result-item">
+            <img :src="r.urls.thumb" class="upload-thumb" />
+            <span>image_id: {{ r.image_id }}</span>
+          </div>
+        </div>
+
+        <button v-if="uploadFiles.length && !uploading"
+          class="btn-primary btn-full" @click="doUpload">
+          {{ uploadFiles.length }}장 업로드
+        </button>
       </div>
       <div class="edit-footer">
         <button class="btn-danger" @click="deleteOne(editing.meet_id)">삭제</button>
@@ -88,9 +118,14 @@ useHead({ title: '대회 관리 — 백엔드' })
 const { data, refresh } = await useFetch<any[]>('/api/admin/meets')
 const list = computed(() => data.value ?? [])
 
-const checkedIds = ref<number[]>([])
-const editing    = ref<any>(null)
-const editDate   = ref('')
+const checkedIds    = ref<number[]>([])
+const editing       = ref<any>(null)
+const editDate      = ref('')
+const fileInput     = ref<HTMLInputElement | null>(null)
+const uploadFiles   = ref<{ file: File, preview: string }[]>([])
+const uploading     = ref(false)
+const uploadDone    = ref(0)
+const uploadResults = ref<any[]>([])
 
 const allChecked = computed(() =>
   list.value.length > 0 && checkedIds.value.length === list.value.length)
@@ -104,6 +139,45 @@ function toggleAll(e: Event) {
 function openEdit(m: any) {
   editing.value = { ...m }
   editDate.value = m.date ? new Date(m.date).toISOString().slice(0, 10) : ''
+  uploadFiles.value = []
+  uploadResults.value = []
+}
+
+function addFiles(files: FileList | null) {
+  if (!files) return
+  for (const file of Array.from(files)) {
+    const preview = URL.createObjectURL(file)
+    uploadFiles.value.push({ file, preview })
+  }
+}
+
+function onFileChange(e: Event) {
+  addFiles((e.target as HTMLInputElement).files)
+  if (fileInput.value) fileInput.value.value = ''
+}
+
+function onDrop(e: DragEvent) {
+  addFiles(e.dataTransfer?.files ?? null)
+}
+
+async function doUpload() {
+  if (!uploadFiles.value.length || !editing.value) return
+  uploading.value = true
+  uploadDone.value = 0
+  uploadResults.value = []
+
+  const fd = new FormData()
+  fd.append('meet_id', String(editing.value.meet_id))
+  fd.append('date', editDate.value)
+  for (const { file } of uploadFiles.value) fd.append('files', file)
+
+  try {
+    const res = await $fetch<any>('/api/admin/upload-images', { method: 'POST', body: fd })
+    uploadResults.value = res.results
+    uploadFiles.value = []
+  } finally {
+    uploading.value = false
+  }
 }
 
 function fmtDate(d: string) {
@@ -184,4 +258,20 @@ input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-colo
 .btn-danger { padding: 8px 20px; background: transparent; border: 1px solid #f85149; border-radius: 6px; color: #f85149; font-size: 13px; cursor: pointer; }
 .btn-danger:hover { background: #3a1a1a; }
 .btn-danger:disabled { opacity: 0.4; cursor: default; }
+.section-label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 6px; border-top: 1px solid #30363d; }
+.upload-area { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px dashed #30363d; border-radius: 6px; }
+.btn-upload { padding: 6px 14px; background: #21262d; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.btn-upload:hover { background: #30363d; }
+.upload-hint { font-size: 11px; color: #8b949e; }
+.upload-queue { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
+.upload-item { display: flex; align-items: center; gap: 8px; padding: 4px; background: #21262d; border-radius: 4px; }
+.upload-thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 3px; flex-shrink: 0; }
+.upload-name { flex: 1; font-size: 11px; color: #8b949e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.remove-btn { background: none; border: none; color: #8b949e; cursor: pointer; font-size: 14px; line-height: 1; padding: 2px 4px; }
+.remove-btn:hover { color: #f85149; }
+.upload-progress { font-size: 12px; color: #8b949e; text-align: center; padding: 8px; }
+.upload-results { display: flex; flex-wrap: wrap; gap: 6px; }
+.result-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #8b949e; }
+.result-item .upload-thumb { width: 48px; height: 48px; }
+.btn-full { width: 100%; justify-content: center; }
 </style>
