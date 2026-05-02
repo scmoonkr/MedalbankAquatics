@@ -5,8 +5,10 @@ config({ path: resolve(dirname(fileURLToPath(import.meta.url)), '../.env') })
 import express from 'express'
 import { connectDB } from './db.js'
 import { ensureIndexes } from './models/Image.js'
-import meetsRoute  from './routes/meets.js'
-import imagesRoute from './routes/images.js'
+import athletesRoute  from './routes/athletes.js'
+import meetsRoute     from './routes/meets.js'
+import imagesRoute    from './routes/images.js'
+import consentRoute   from './routes/consent.js'
 
 const app  = express()
 const PORT = process.env.PORT ?? 6630
@@ -19,8 +21,10 @@ app.use((_, res, next) => {
 
 app.get('/health', (_, res) => res.json({ ok: true }))
 
+athletesRoute(app)
 meetsRoute(app)
 imagesRoute(app)
+consentRoute(app)
 
 connectDB().then(async () => {
   await ensureIndexes()

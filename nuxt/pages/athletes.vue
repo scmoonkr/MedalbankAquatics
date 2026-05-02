@@ -37,7 +37,7 @@
           <span class="group-count"><span class="n">{{ byGroup[g].length }}</span> {{ byGroup[g].length === 1 ? 'name' : 'names' }}</span>
         </div>
         <div class="name-grid">
-          <NuxtLink v-for="a in byGroup[g]" :key="a.id" class="name-link" :to="`/athlete?id=${a.id}`">
+          <NuxtLink v-for="a in byGroup[g]" :key="a.athlete_id" class="name-link" :to="`/athlete?id=${a.athlete_id}`">
             <span class="nm">{{ a.name }}</span>
             <span class="ct">{{ a.photo_count }}</span>
           </NuxtLink>
@@ -50,7 +50,7 @@
       <section class="flat-section">
         <div class="head">{{ sort === 'photos' ? `사진보유순 · ${athletes.length} names` : `최신순 · ${athletes.length} names` }}</div>
         <div class="name-grid">
-          <NuxtLink v-for="a in sortedAthletes" :key="a.id" class="name-link" :to="`/athlete?id=${a.id}`">
+          <NuxtLink v-for="a in sortedAthletes" :key="a.athlete_id" class="name-link" :to="`/athlete?id=${a.athlete_id}`">
             <span class="nm">{{ a.name }}</span>
             <span class="ct">{{ a.photo_count }}</span>
           </NuxtLink>
@@ -61,41 +61,52 @@
 </template>
 
 <script setup lang="ts">
+definePageMeta({ ssr: false })
 useHead({ title: '메달뱅크 아쿠아틱스 — 선수목록' })
+
+type Athlete = {
+  athlete_id: number
+  name: string
+  lang: string
+  group: string
+  photo_count: number
+  last_date: string | null
+}
 
 const HANGUL = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ']
 const ENG    = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 const sorts  = [{ key: 'name', label: '이름순' }, { key: 'photos', label: '사진보유순' }, { key: 'recent', label: '최신순' }]
 
-const { data: raw } = await useFetch('/data/athletes.json')
-const athletes = computed(() => (raw.value as any)?.athletes ?? [])
-const totalPhotos = computed(() => athletes.value.reduce((s: number, a: any) => s + a.photo_count, 0))
+const { data } = useFetch<Athlete[]>('/api/athletes')
+const athletes = computed(() => data.value ?? [])
+const totalPhotos = computed(() => athletes.value.reduce((s, a) => s + a.photo_count, 0))
 
 const byGroup = computed(() => {
-  const m: Record<string, any[]> = {}
-  athletes.value.forEach((a: any) => { if (!m[a.group]) m[a.group] = []; m[a.group].push(a) })
+  const m: Record<string, Athlete[]> = {}
+  athletes.value.forEach(a => { if (!m[a.group]) m[a.group] = []; m[a.group].push(a) })
   return m
 })
-const groupOrder  = computed(() => [...HANGUL, ...ENG].filter(g => byGroup.value[g]))
-const engGroups   = computed(() => ENG.filter(g => byGroup.value[g]))
+const groupOrder = computed(() => [...HANGUL, ...ENG].filter(g => byGroup.value[g]))
+const engGroups  = computed(() => ENG.filter(g => byGroup.value[g]))
 
-const sort = ref('name')
+const sort        = ref('name')
 const activeGroup = ref('')
 
 const sortedAthletes = computed(() => {
   const list = [...athletes.value]
-  if (sort.value === 'photos') return list.sort((a, b) => b.photo_count - a.photo_count || a.name.localeCompare(b.name, 'ko'))
-  return list.sort((a, b) => b.last_date.localeCompare(a.last_date) || b.photo_count - a.photo_count)
+  if (sort.value === 'photos')
+    return list.sort((a, b) => b.photo_count - a.photo_count || a.name.localeCompare(b.name, 'ko'))
+  return list.sort((a, b) =>
+    (b.last_date ?? '').localeCompare(a.last_date ?? '') || b.photo_count - a.photo_count
+  )
 })
 
 function jumpTo(g: string) {
-  const el = document.getElementById(`g-${encodeURIComponent(g)}`)
-  el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  document.getElementById(`g-${encodeURIComponent(g)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 </script>
 
 <style scoped>
-body { overflow-x: hidden; }
 .ath-shell { min-height: 100vh; min-height: 100dvh; padding-top: 96px; padding-bottom: 40px; }
 .ath-head { padding: 8px 32px 24px; }
 .ath-head .eyebrow { color: var(--fg-faint); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 500; margin-bottom: 22px; }

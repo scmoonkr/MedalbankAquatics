@@ -2,7 +2,7 @@
 <main class="cart-shell">
 
   <!-- ─── 동의 폼 영역 ─── -->
-  <div id="formArea">
+  <div v-if="!submitted" id="formArea">
 
     <div class="cart-head">
       <div class="eyebrow"><span class="num">00</span>Consent · 동의 신청</div>
@@ -12,11 +12,26 @@
         입력하신 이메일로 전송된 <strong>인증 링크를 누르시면 바로 사진을 다운로드</strong>하실 수 있습니다.
       </p>
       <div class="count-line">
-        선택한 사진 <span class="n" id="cartCount">0</span>장
+        선택한 사진 <span class="n">{{ cartImages.length }}</span>장
+        <NuxtLink class="back" to="/consent">← 사진 더 선택하기</NuxtLink>
       </div>
     </div>
 
-    <div class="selected-grid" id="selectedGrid"><!-- JS 채움 --></div>
+    <div class="selected-grid">
+      <div v-if="cartImages.length === 0" class="sel-empty">
+        선택한 사진이 없습니다.<br />
+        <NuxtLink to="/consent">사진을 선택하러 가기 →</NuxtLink>
+      </div>
+      <div v-for="img in cartImages" :key="img.image_id" class="sel-tile">
+        <img :src="img.urls.preview" :alt="`사진 ${img.image_id}`" class="sel-img" />
+        <button class="remove-btn" type="button" :aria-label="`사진 ${img.image_id} 제거`"
+          @click="removeFromCart(img.image_id)">
+          <svg viewBox="0 0 10 10" aria-hidden="true">
+            <line x1="2" y1="2" x2="8" y2="8"/><line x1="8" y1="2" x2="2" y2="8"/>
+          </svg>
+        </button>
+      </div>
+    </div>
 
     <form class="consent-form" id="consentForm" novalidate>
       <!-- 본인 정보 -->
@@ -28,16 +43,16 @@
         <div class="field-row">
           <div class="field">
             <label for="f-name">이름</label>
-            <input id="f-name" name="name" type="text" placeholder="홍길동" required />
+            <input id="f-name" v-model="form.name" name="name" type="text" placeholder="홍길동" required />
           </div>
           <div class="field">
             <label for="f-email">이메일</label>
-            <input id="f-email" name="email" type="email" placeholder="example@email.com" required />
+            <input id="f-email" v-model="form.email" name="email" type="email" placeholder="example@email.com" required />
           </div>
         </div>
 
         <label class="check-item" for="f-minor">
-          <input id="f-minor" name="minor" type="checkbox" />
+          <input id="f-minor" v-model="form.minor" name="minor" type="checkbox" />
           <span class="box">
             <svg viewBox="0 0 14 14" aria-hidden="true">
               <polyline points="2.5 7.5, 6 11, 11.5 3.5" />
@@ -48,7 +63,7 @@
             <span class="desc">위 이름 / 이메일은 보호자 정보로 입력해주세요.</span>
           </span>
         </label>
-        <div class="minor-warn" id="minorWarn">
+        <div class="minor-warn" :class="{ show: form.minor }">
           미성년자의 경우, 보호자(부모님 또는 법정대리인)가 직접 동의를 진행하셔야 합니다. 보호자의 이름·이메일을 정확히 입력해주세요.
         </div>
       </section>
@@ -76,7 +91,7 @@
           </label>
 
           <label class="check-item" for="c-insta">
-            <input id="c-insta" name="consent_insta" type="checkbox" checked />
+            <input id="c-insta" v-model="form.consent_insta" name="consent_insta" type="checkbox" />
             <span class="box">
               <svg viewBox="0 0 14 14" aria-hidden="true"><polyline points="2.5 7.5, 6 11, 11.5 3.5"/></svg>
             </span>
@@ -87,7 +102,7 @@
           </label>
 
           <label class="check-item" for="c-mag">
-            <input id="c-mag" name="consent_mag" type="checkbox" checked />
+            <input id="c-mag" v-model="form.consent_mag" name="consent_mag" type="checkbox" />
             <span class="box">
               <svg viewBox="0 0 14 14" aria-hidden="true"><polyline points="2.5 7.5, 6 11, 11.5 3.5"/></svg>
             </span>
@@ -100,17 +115,20 @@
       </section>
 
       <div class="submit-area">
-        <button class="submit-btn" type="submit" id="submitBtn" disabled>이메일 인증 보내기</button>
+        <button class="submit-btn" type="submit" :disabled="!canSubmit" @click.prevent="submitForm">
+          {{ submitting ? '전송 중…' : '이메일 인증 보내기' }}
+        </button>
         <p class="submit-note">
           입력하신 이메일로 인증 링크를 발송합니다. 이메일을 확인해주세요. 이메일 내에서 인증 링크 클릭 시 즉시 완료됩니다.
         </p>
       </div>
+      <p v-if="submitError" class="submit-error">{{ submitError }}</p>
     </form>
 
   </div>
 
   <!-- ─── 제출 후 화면 ─── -->
-  <div class="sent-screen" id="sentScreen">
+  <div v-if="submitted" class="sent-screen show">
     <div class="icon">
       <svg viewBox="0 0 28 28" aria-hidden="true">
         <path d="M2 8 L14 16 L26 8" />
@@ -119,20 +137,94 @@
     </div>
     <h2>인증 메일이 전송되었습니다.</h2>
     <p>
-      <span class="email" id="sentEmail">your@email.com</span>으로 인증 링크를 보냈습니다.<br/>
-      메일을 확인하시고 링크를 클릭하시면, 선택하신 <span id="sentCount">0</span>장의 사진이 즉시 공개됩니다.
+      <span class="email">{{ form.email }}</span>으로 인증 링크를 보냈습니다.<br/>
+      메일을 확인하시고 링크를 클릭하시면, 선택하신 <strong>{{ cartImages.length }}장</strong>의 사진이 즉시 공개됩니다.
     </p>
     <p style="color: var(--fg-faint); font-size: 13px;">
       메일이 도착하지 않으면 스팸 폴더를 확인해주세요. 인증 링크는 24시간 동안 유효합니다.
     </p>
-    <a class="home-link" to="/index">메인으로 돌아가기 →</a>
+    <NuxtLink class="home-link" to="/">메인으로 돌아가기 →</NuxtLink>
   </div>
 
 </main>
 </template>
 
 <script setup lang="ts">
+definePageMeta({ ssr: false })
 useHead({ title: "메달뱅크 아쿠아틱스 — 동의 신청" })
+
+const CART_KEY = 'medalbank_consent_cart'
+
+type CartImage = { image_id: number; urls: { preview: string } }
+
+const cartImages = ref<CartImage[]>([])
+const submitted  = ref(false)
+const submitting = ref(false)
+const submitError = ref('')
+const form = reactive({
+  name: '', email: '', minor: false,
+  consent_insta: true, consent_mag: true,
+})
+
+const canSubmit = computed(() =>
+  cartImages.value.length > 0 &&
+  form.name.trim() !== '' &&
+  form.email.includes('@') &&
+  !submitting.value
+)
+
+function removeFromCart(id: number) {
+  cartImages.value = cartImages.value.filter(img => img.image_id !== id)
+  try {
+    localStorage.setItem(CART_KEY, JSON.stringify(cartImages.value.map(img => img.image_id)))
+  } catch {}
+}
+
+async function submitForm() {
+  if (!canSubmit.value) return
+  submitting.value = true
+  submitError.value = ''
+  try {
+    await $fetch('/api/consent', {
+      method: 'POST',
+      body: {
+        name:      form.name,
+        email:     form.email,
+        minor:     form.minor,
+        image_ids: cartImages.value.map(img => img.image_id),
+        consents: {
+          web:   true,
+          insta: form.consent_insta,
+          mag:   form.consent_mag,
+        },
+      },
+    })
+    submitted.value = true
+    try { localStorage.removeItem(CART_KEY) } catch {}
+  } catch (e: any) {
+    submitError.value = e?.data?.error ?? '오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+  } finally {
+    submitting.value = false
+  }
+}
+
+onMounted(async () => {
+  try {
+    const raw = localStorage.getItem(CART_KEY)
+    console.log('[cart] localStorage raw:', raw)
+    if (!raw) return
+    const ids: number[] = JSON.parse(raw)
+    console.log('[cart] ids:', ids)
+    if (!Array.isArray(ids) || ids.length === 0) return
+    const result = await $fetch<CartImage[]>('/api/images-by-ids', {
+      query: { ids: ids.join(',') },
+    })
+    console.log('[cart] fetched images count:', result?.length, JSON.stringify(result?.[0]))
+    cartImages.value = result
+  } catch (e) {
+    console.error('[cart] onMounted error:', e)
+  }
+})
 </script>
 
 <style scoped>
@@ -235,12 +327,18 @@ useHead({ title: "메달뱅크 아쿠아틱스 — 동의 신청" })
     position: relative;
     aspect-ratio: 3 / 2;
     background-color: var(--bg-soft);
-    background-size: cover;
-    background-position: center;
     overflow: hidden;
     border: 0;
     padding: 0;
     -webkit-tap-highlight-color: transparent;
+  }
+  .sel-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .sel-tile .remove-btn {
     position: absolute;
@@ -577,5 +675,16 @@ useHead({ title: "메달뱅크 아쿠아틱스 — 동의 신청" })
   .sent-screen .home-link:hover { border-color: var(--fg-dim); }
 
   .form-hidden { display: none !important; }
+
+  .submit-error {
+    margin-top: 16px;
+    padding: 12px 18px;
+    background: rgba(255, 60, 60, 0.08);
+    border-left: 2px solid #ff4040;
+    color: #ff6060;
+    font-family: var(--font-myungjo);
+    font-size: 13px;
+    line-height: 1.6;
+  }
 
 </style>

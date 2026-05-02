@@ -74,7 +74,21 @@
     <h2>대회장에서 보내온 <span class="em">초대장.</span></h2>
     <p>수영인들로부터 받은 짤막한 메시지들.</p>
 
-    <div class="invite-feed" id="board"><!-- JS 채움 --></div>
+    <div class="invite-feed">
+      <div v-for="r in REQUESTS" :key="r.when" class="invite-row">
+        <span class="invite-dot" :class="r.status" :title="STATUS_LABEL[r.status]"></span>
+        <div class="invite-head">
+          <span class="name">{{ r.name }}</span>
+          <span class="org">{{ r.org }}</span>
+          <span class="sep">·</span>
+          <span class="meet">{{ r.meet }} 출전 예정</span>
+          <span class="sep">·</span>
+          <span class="meet-date">{{ r.date }}</span>
+        </div>
+        <p class="invite-msg" :class="r.status">{{ r.msg }}</p>
+        <div class="invite-when">{{ fmtFullDate(r.when) }}</div>
+      </div>
+    </div>
   </section>
 
   <!-- ─── 요청 남기기 폼 (간소화) ─── -->
@@ -86,7 +100,7 @@
       한마디 남겨주시면 충분합니다. 가볍게, 친구에게 보내듯이.
     </p>
 
-    <form class="form-wrap" id="reqForm" novalidate>
+    <form class="form-wrap" novalidate @submit.prevent="submitForm">
       <p class="form-privacy">
         이름 · 소속 · 이메일 주소는 모두 알아볼 수 없는 형태로 <strong>마스킹되어 게시</strong>됩니다.
       </p>
@@ -94,25 +108,25 @@
       <div class="form-row">
         <div class="form-field">
           <label for="f-name">이름</label>
-          <input id="f-name" name="name" type="text" placeholder="○○○" />
+          <input id="f-name" v-model="form.name" name="name" type="text" placeholder="○○○" />
         </div>
         <div class="form-field">
           <label for="f-org">소속</label>
-          <input id="f-org" name="org" type="text" placeholder="○○초등학교" />
+          <input id="f-org" v-model="form.org" name="org" type="text" placeholder="○○초등학교" />
         </div>
       </div>
 
       <div class="form-row full">
         <div class="form-field">
           <label for="f-email">이메일 <span class="opt">(답장이 필요한 경우)</span></label>
-          <input id="f-email" name="email" type="email" placeholder="example@email.com" />
+          <input id="f-email" v-model="form.email" name="email" type="email" placeholder="example@email.com" />
         </div>
       </div>
 
       <div class="form-row full">
         <div class="form-field">
           <label for="f-msg">내용</label>
-          <textarea id="f-msg" name="msg" placeholder="예) 5월 10일 서울 꿈나무 수영대회 나가요!! 와주세요~" required></textarea>
+          <textarea id="f-msg" v-model="form.msg" name="msg" placeholder="예) 5월 10일 서울 꿈나무 수영대회 나가요!! 와주세요~" required></textarea>
         </div>
       </div>
 
@@ -150,6 +164,45 @@
 
 <script setup lang="ts">
 useHead({ title: "메달뱅크 아쿠아틱스 — 촬영 요청" })
+
+const REQUESTS = [
+  { status: 'review',  name: '이○○', org: '○○중학교 수영부',  meet: '2026 전국소년체육대회 수영',       date: '5월 23일', msg: '삼촌 저희 소년체전 나가요!! 친구들이 다 삼촌 사진 찍히고 싶다고 했어요. 꼭 와주시면 좋겠어요 🙏', when: '2026.05.01' },
+  { status: 'done',    name: '박○○', org: '○○고등학교',        meet: '2026 경기도 고등부 수영대회',       date: '4월 19일', msg: '저번에 강남 마스터즈에서 저 찍어주셨잖아요. 이번엔 고등부 대회인데 친구들도 찍어주실 수 있을까요? 다들 엄청 기대하고 있어요!', when: '2026.04.02' },
+  { status: 'waiting', name: '김○○', org: '○○ 수영클럽',        meet: '2026 배럴 스프린트 챌린지',         date: '6월 8일',  msg: '클럽 아이들이 첫 대회 나가는데 메달뱅크 사진으로 기념 남기고 싶어요. 일정 맞으시면 꼭 부탁드립니다!', when: '2026.04.28' },
+  { status: 'waiting', name: '최○○', org: '○○초등학교',        meet: '2026 서울 꿈나무 수영대회',         date: '5월 10일', msg: '카메라 삼촌!! 저 이번에 50m 자유형 나가요. 엄마 아빠한테 보여드리고 싶어서요. 와주세요!!!!!', when: '2026.04.25' },
+  { status: 'waiting', name: '정○○', org: '○○중학교',          meet: '2026 인천 마스터즈 & 청소년 오픈', date: '6월 21일', msg: '작년에 찍어주신 사진 아직도 카톡 프사로 쓰고 있어요. 이번엔 개인혼영도 나가는데 부탁드려요 ㅎㅎ', when: '2026.04.20' },
+  { status: 'done',    name: '윤○○', org: '○○고등학교 수영부', meet: '2026 서울시 고등부 선수권',         date: '3월 22일', msg: '작년에도 와주셨는데 올해도 부탁드려요. 팀 전체가 기다리고 있습니다. 감사합니다!', when: '2026.03.01' },
+] as const
+
+const STATUS_LABEL: Record<string, string> = { review: '검토중', waiting: '대기', done: '완료' }
+
+const DAYS_KO = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일']
+function fmtFullDate(s: string) {
+  const [y, m, d] = s.split('.').map(Number)
+  const dt = new Date(y, m - 1, d)
+  return `${y}년 ${m}월 ${d}일 ${DAYS_KO[dt.getDay()]}`
+}
+
+const form = reactive({ name: '', org: '', email: '', msg: '' })
+
+function submitForm() {
+  if (!form.msg.trim()) { alert('한마디를 남겨주세요.'); return }
+  alert('제보가 접수되었습니다. 감사합니다.\n\n(현재는 데모 — 실제 제출은 추후 연동됩니다)')
+  Object.assign(form, { name: '', org: '', email: '', msg: '' })
+}
+
+onMounted(() => {
+  if (!('IntersectionObserver' in window)) {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'))
+    return
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) { entry.target.classList.add('in'); io.unobserve(entry.target) }
+    })
+  }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' })
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el))
+})
 </script>
 
 <style scoped>

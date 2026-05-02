@@ -15,7 +15,7 @@
 
 ### 2. Nuxt 3 프론트엔드 구성 (`/nuxt`)
 
-디자이너 HTML 목업을 Nuxt 3 페이지로 포팅 (디자인 검수용)
+디자이너 HTML 목업을 Nuxt 3 페이지로 포팅 완료
 
 | 파일 | 설명 |
 |------|------|
@@ -23,93 +23,106 @@
 | `assets/css/shared.css` | 공통 CSS |
 | `plugins/mb.client.ts` | 클라이언트 플러그인 (cursor, menu, lightbox, clock) |
 | `layouts/default.vue` | 공통 레이아웃 (로고, 헤더 nav, 햄버거 메뉴, 푸터, 라이트박스) |
-| `pages/index.vue` | 메인 — 3D 갤러리 엔진 (tile pool, drag/scroll, curve animation) |
+| `pages/index.vue` | 메인 — 3D 갤러리 엔진, MongoDB gallery API 연동 |
+| `pages/about.vue` | 소개 — IntersectionObserver reveal 애니메이션 |
 | `pages/athletes.vue` | 선수 목록 — 이름순/사진보유순/최신순 정렬 |
 | `pages/athlete.vue` | 선수 상세 — 대회별/최신순 정렬, query string `?id=` |
-| `pages/photos.vue` | 전체 사진 — 페이지네이션 (32페이지 × 100장) |
+| `pages/photos.vue` | 전체 사진 — 페이지네이션 |
+| `pages/magazines.vue` | 정기간행물 — vol별 타일 그리드 |
+| `pages/request.vue` | 제보 게시판 + 폼 |
+| `pages/consent.vue` | 공개 요청 — MongoDB 이미지/대회 연동, 장바구니 (localStorage) |
+| `pages/cart.vue` | 동의 신청 — 선택 이미지 미리보기, 폼 제출, 이메일 발송 |
+| `pages/verify.vue` | 이메일 인증 — 토큰 검증, 완료/오류 화면 |
 
 **이미지 서빙**: `nitro.publicAssets`로 `/html/images` 절대 경로 마운트
-- URL: `http://localhost:6631/images/...`
-- URL: `http://localhost:6631/data/...` (JSON 목업 데이터)
+- `/images/thumbs/`, `/images/previews/`, `/images/xl/`, `/images/full/`
 
 ---
 
-### 3. MongoDB 스키마 설계
+### 3. MongoDB 스키마
 
-컬렉션 3개. 파생/집계 필드는 모두 제거하고 조회 시 JS로 처리.
+컬렉션 3개. 파생/집계 필드는 조회 시 JS로 처리.
 
 #### `athletes`
 | 필드 | 타입 | 설명 |
 |------|------|------|
+| athlete_id | Number | 고유 ID (max+1 자동 증가) |
 | name | String | 선수 이름 |
-| email | String | 이메일 |
+| email | String | 이메일 (동의 매칭 키) |
 | lang | String (ko/en) | 언어 설정 |
-| consent_date | Date \| null | null = 미동의 |
-| first_date | Date \| null | 최초 촬영일 |
-| created_at | Date | 자동 생성 |
+| consent_date | Date | 동의 완료일 (인증 시 업데이트) |
+| first_date | Date | 최초 동의일 (1회만 세팅) |
 
-파생 처리 (JS): photo_count, last_date, email_masked, 초성 그룹
+파생 처리 (JS): photo_count, last_date, 초성 그룹
 
-#### `meets` (대회)
+#### `meets`
 | 필드 | 타입 | 설명 |
 |------|------|------|
+| meet_id | Number | 고유 ID |
 | label | String | "강남 마스터즈" |
 | short | String | "2026.04" |
 | date | Date | 대회 날짜 |
 | location | String | 장소 |
-| created_at | Date | 자동 생성 |
 
 파생 처리 (JS): photo_count
 
 #### `images`
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| athlete_id | ObjectId → Athlete | 선수 참조 (1장 = 1명) |
-| meet_id | ObjectId → Meet | 대회 참조 |
+| image_id | Number | 고유 ID |
+| athlete_id | Number | 선수 참조 (동의 인증 시 세팅) |
+| meet_id | Number | 대회 참조 |
 | date | Date | 촬영일 |
-| consent_date | Date \| null | null = 비공개 |
+| consent_date | Date | 동의 완료일 (인증 시 세팅, 없으면 비공개) |
 | urls.thumb | String | 썸네일 URL |
 | urls.preview | String | 미리보기 URL |
 | urls.xl | String | 고해상도 URL |
 | urls.full | String | 원본 URL |
 | tags | [String] | 태그 목록 |
-| created_at | Date | 자동 생성 |
-
-파생 처리 (JS): sort_order (date 기준 정렬)
 
 ---
 
-### 4. Express API 서버 구성 (`/server`)
+### 4. Express API 서버 (`/server`, 포트 6630)
 
-| 파일 | 설명 |
-|------|------|
-| `package.json` | ES Module (`"type": "module"`), mongoose/express/dotenv 의존성 |
-| `index.js` | dotenv 로드 → Express 앱 → MongoDB 연결 → 서버 시작 |
-| `db.js` | `connectDB()` — `.env` 환경변수로 MongoDB URI 구성 |
-| `models/Athlete.js` | Athlete Mongoose 모델 |
-| `models/Meet.js` | Meet Mongoose 모델 |
-| `models/Image.js` | Image Mongoose 모델 |
+| 엔드포인트 | 설명 |
+|-----------|------|
+| `GET /health` | 서버 상태 확인 |
+| `GET /api/athletes` | 선수 목록 (photo_count, last_date 집계 포함) |
+| `GET /api/meets` | 대회 목록 (photo_count 집계 포함) |
+| `GET /api/gallery` | 메인 갤러리용 전체 이미지 (thumb, xl URL) |
+| `GET /api/images` | 페이지네이션 이미지 (`consent_date: {$exists:false}` 필터, meet_id 옵션) |
+| `GET /api/images/by-ids` | image_id 배열로 이미지 조회 (장바구니용) |
+| `POST /api/consent` | 동의 접수 — athlete 조회/신규등록, consent 저장, 인증 메일 발송 |
+| `GET /api/consent/verify/:token` | 인증 링크 처리 — athletes/images 업데이트 |
 
-**포트**: 6630  
-**엔드포인트**: `GET /health` → `{ ok: true }`  
-**MongoDB 연결**: `221.143.48.153:4529` / DB: `MedalbankAquatics` ✓
+**Nuxt 서버 프록시** (`/nuxt/server/api/`): 위 엔드포인트 전부 대응
 
-`.env` 참조 변수:
+---
+
+### 5. 동의(Consent) 플로우
+
 ```
-PORT=6630
-MONGODB_ADDR
-MONGO_USERNAME
-MONGO_PWD
-MONGO_DBNAME
-idrivee2_endpoint
+consent.vue — 이미지 선택 (consent_date 없는 것만 노출)
+    ↓ 장바구니 FAB
+cart.vue — 이름/이메일 입력 → "이메일 인증 보내기"
+    ↓ POST /api/consent
+    · athletes.email 조회 → 없으면 신규 등록 (athlete_id: max+1, lang: ko)
+    · consents 컬렉션 저장 (athlete_id 포함)
+    · Naver SMTP → 썸네일 이미지 포함 인증 메일 발송
+    ↓ 이메일 인증 링크 클릭
+verify.vue → GET /api/consent/verify/:token
+    · athletes: consent_date 업데이트, first_date 최초 1회 세팅
+    · images: athlete_id, consent_date 업데이트
 ```
+
+**이메일**: Naver SMTP (`.env` — `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM`)  
+**인증 링크**: `SITE_URL/verify?token=...` (`.env` — `SITE_URL`)
 
 ---
 
 ## 다음 작업 (미착수)
 
-- [ ] REST API 라우트 작성 (`/api/athletes`, `/api/meets`, `/api/images`)
 - [ ] iDrive e2 (S3 호환) 이미지 업로드 연동
-- [ ] `athletes.json` 목업 데이터 → MongoDB 마이그레이션
-- [ ] 선수 동의 이메일 발송 기능
 - [ ] 어드민 페이지 (이미지 업로드, 선수 관리)
+- [ ] 갤러리 공개 (consent_date 있는 이미지만 노출)
+- [ ] 선수 프로필 페이지 consent_date 표시

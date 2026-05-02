@@ -383,6 +383,35 @@
 
 <script setup lang="ts">
 useHead({ title: "메달뱅크 아쿠아틱스 — 촬영서비스" })
+
+onMounted(() => {
+  // hero clock
+  const heroClock = document.getElementById('clock-hero')
+  if (heroClock) {
+    const tick = () => {
+      heroClock.textContent = 'KST ' + new Date().toLocaleTimeString('en-GB', {
+        hour12: false, timeZone: 'Asia/Seoul',
+      })
+    }
+    tick()
+    setInterval(tick, 1000)
+  }
+
+  // reveal sections fade-in
+  if (!('IntersectionObserver' in window)) {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'))
+    return
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in')
+        io.unobserve(entry.target)
+      }
+    })
+  }, { threshold: 0.12, rootMargin: '0px 0px -10% 0px' })
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el))
+})
 </script>
 
 <style scoped>
@@ -401,7 +430,7 @@ useHead({ title: "메달뱅크 아쿠아틱스 — 촬영서비스" })
     height: 100vh;
     height: 100dvh;
     min-height: 640px;
-    background-image: url('./images/xl/xl-005.jpg');
+    background-image: url('/images/xl/xl-005.jpg');
     background-size: cover;
     background-position: center;
     background-color: var(--bg-soft);

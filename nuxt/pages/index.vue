@@ -77,16 +77,22 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: false })
+definePageMeta({ layout: false, ssr: false })
 
 useHead({
   title: 'Medalbank Aquatics — Immersive Archive',
   bodyAttrs: { class: 'is-home' },
 })
 
-onMounted(() => {
-  (() => {
+type GalleryImage = { image_id: number; urls: { thumb: string; xl: string } }
+
+onMounted(async () => {
+  const galleryImages = await $fetch<GalleryImage[]>('/api/gallery').catch(() => [] as GalleryImage[])
+
+  ;(() => {
     'use strict'
+
+    const imageCount = galleryImages.length || 150
 
     const CFG = {
       desktopCols: 5.5, tabletCols: 3.5, mobileCols: 3.5,
@@ -96,11 +102,11 @@ onMounted(() => {
       friction: 0.93, wheelMul: 0.55, dragMul: 1.0, maxVel: 70,
       curveRatio: 0.30, curveVelBoost: 1.5,
       clickThreshold: 6, cursorEase: 0.20, snapEase: 0.18,
-      bufferTiles: 1, imageCount: 150,
+      bufferTiles: 1, imageCount,
     }
 
-    const imgUrl = (idx: number) => `/images/thumbs/thumb-${String(idx + 1).padStart(3, '0')}.jpg`
-    const xlUrl  = (idx: number) => `/images/xl/xl-${String(idx + 1).padStart(3, '0')}.jpg`
+    const imgUrl = (idx: number) => galleryImages[idx]?.urls?.thumb ?? `/images/thumbs/thumb-${String(idx + 1).padStart(3, '0')}.jpg`
+    const xlUrl  = (idx: number) => galleryImages[idx]?.urls?.xl   ?? `/images/xl/xl-${String(idx + 1).padStart(3, '0')}.jpg`
     const URL_CACHE: string[] = []
     for (let i = 0; i < CFG.imageCount; i++) URL_CACHE[i] = `url("${imgUrl(i)}")`
 
