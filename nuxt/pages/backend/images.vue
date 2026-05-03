@@ -21,7 +21,9 @@
       <!-- 대회 필터 -->
       <select v-model="meetFilter" class="filter-select">
         <option value="">전체 대회</option>
-        <option v-for="m in meetOptions" :key="m.meet_id" :value="m.meet_id">{{ m.meet_label }}</option>
+        <optgroup v-for="g in meetGrouped" :key="g.year" :label="g.year">
+          <option v-for="m in g.options" :key="m.meet_id" :value="m.meet_id">{{ m.meet_label }}</option>
+        </optgroup>
       </select>
 
       <!-- 월별 필터 -->
@@ -193,12 +195,26 @@ const monthFilter     = ref('')
 
 // ── Filter options (derived from loaded data) ─────────────────────────────────
 const meetOptions = computed(() => {
-  const seen = new Map<number, string>()
+  const seen = new Map<number, { meet_label: string; meet_short: string }>()
   for (const img of list.value) {
-    if (img.meet_id && !seen.has(img.meet_id)) seen.set(img.meet_id, img.meet_label ?? '')
+    if (img.meet_id && !seen.has(img.meet_id))
+      seen.set(img.meet_id, { meet_label: img.meet_label ?? '', meet_short: img.meet_short ?? '' })
   }
-  return [...seen.entries()].map(([meet_id, meet_label]) => ({ meet_id, meet_label }))
+  return [...seen.entries()]
+    .map(([meet_id, { meet_label, meet_short }]) => ({ meet_id, meet_label, meet_short }))
     .sort((a, b) => b.meet_id - a.meet_id)
+})
+
+const meetGrouped = computed(() => {
+  const groups = new Map<string, typeof meetOptions.value>()
+  for (const m of meetOptions.value) {
+    const year = m.meet_short?.slice(0, 4) || '기타'
+    if (!groups.has(year)) groups.set(year, [])
+    groups.get(year)!.push(m)
+  }
+  return [...groups.entries()]
+    .map(([year, options]) => ({ year, options }))
+    .sort((a, b) => b.year.localeCompare(a.year))
 })
 
 const monthOptions = computed(() => {

@@ -39,16 +39,17 @@ export default function (app) {
           .sort({ image_id: -1 })
           .toArray(),
         db.collection('athletes').find({}, { projection: { _id: 0, athlete_id: 1, name: 1 } }).toArray(),
-        db.collection('meets').find({}, { projection: { _id: 0, meet_id: 1, label: 1 } }).toArray(),
+        db.collection('meets').find({}, { projection: { _id: 0, meet_id: 1, label: 1, short: 1 } }).toArray(),
       ])
 
       const athleteMap = Object.fromEntries(athletes.map(a => [a.athlete_id, a.name]))
-      const meetMap    = Object.fromEntries(meets.map(m => [m.meet_id, m.label]))
+      const meetMap    = Object.fromEntries(meets.map(m => [m.meet_id, m]))
 
       res.json(docs.map(d => ({
         ...d,
         athlete_name: athleteMap[d.athlete_id] ?? '',
-        meet_label:   meetMap[d.meet_id] ?? '',
+        meet_label:   meetMap[d.meet_id]?.label ?? '',
+        meet_short:   meetMap[d.meet_id]?.short ?? '',
       })))
     } catch (e) {
       res.status(500).json({ error: e.message })

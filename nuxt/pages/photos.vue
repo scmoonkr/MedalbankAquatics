@@ -23,11 +23,14 @@
             @click="selectMeet(null)">
             전체 대회<span class="count">{{ meetsData?.total ?? 0 }}장</span>
           </button>
-          <button v-for="m in meetsData?.meets" :key="m.meet_id" type="button"
-            :class="{ active: activeMeetId === m.meet_id }"
-            @click="selectMeet(m.meet_id)">
-            {{ m.short }} · {{ m.label }}<span class="count">{{ m.photo_count }}장</span>
-          </button>
+          <template v-for="g in meetsGrouped" :key="g.year">
+            <div class="group-label">{{ g.year }}</div>
+            <button v-for="m in g.meets" :key="m.meet_id" type="button"
+              :class="{ active: activeMeetId === m.meet_id }"
+              @click="selectMeet(m.meet_id)">
+              {{ m.short }} · {{ m.label }}<span class="count">{{ m.photo_count }}장</span>
+            </button>
+          </template>
         </div>
       </div>
     </div>
@@ -95,6 +98,19 @@ const { data: imagesData, status: imagesStatus } = useFetch<{
 })
 
 // ── Computed ─────────────────────────────────────────────────────────────────
+const meetsGrouped = computed(() => {
+  const list = meetsData.value?.meets ?? []
+  const groups = new Map<string, typeof list>()
+  for (const m of list) {
+    const year = m.short?.slice(0, 4) ?? '기타'
+    if (!groups.has(year)) groups.set(year, [])
+    groups.get(year)!.push(m)
+  }
+  return [...groups.entries()]
+    .map(([year, meets]) => ({ year, meets }))
+    .sort((a, b) => b.year.localeCompare(a.year))
+})
+
 const totalPages = computed(() => imagesData.value?.pages ?? 1)
 
 const activeTotalCount = computed(() =>
@@ -158,6 +174,8 @@ onMounted(() => {
 .event-select-list button { display: block; width: 100%; text-align: left; padding: 10px 16px; color: var(--fg-dim); font-family: var(--font-sans); font-size: 12px; letter-spacing: 0.04em; cursor: pointer; transition: color 0.2s, background 0.2s; background: none; border: 0; }
 .event-select-list button:hover, .event-select-list button.active { color: var(--fg); background: rgba(255,255,255,0.04); }
 .event-select-list button .count { float: right; color: var(--fg-faint); font-variant-numeric: tabular-nums; margin-left: 16px; }
+.event-select-list .group-label { padding: 8px 16px 4px; color: var(--fg-faint); font-family: var(--font-sans); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; pointer-events: none; font-variant-numeric: tabular-nums; border-top: 1px solid rgba(255,255,255,0.06); margin-top: 4px; }
+.event-select-list .group-label:first-child { border-top: 0; margin-top: 0; }
 @media (max-width: 768px) { .photos-controls { padding: 0 18px 22px; } .event-select-btn { min-width: 200px; padding: 9px 14px; font-size: 11px; } }
 .photos-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; padding: 0 14px; }
 @media (max-width: 1199px) { .photos-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 10px; } }
