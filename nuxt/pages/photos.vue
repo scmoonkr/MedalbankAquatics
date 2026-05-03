@@ -34,6 +34,26 @@
           </template>
         </div>
       </div>
+
+      <!-- 데스크탑: 최근 10개 -->
+      <div class="quick-meets quick-meets--desktop">
+        <button v-for="m in quickMeetsDesktop" :key="m.meet_id" type="button"
+          class="quick-btn" :class="{ active: activeMeetId === m.meet_id }"
+          :title="m.label"
+          @click="selectMeet(m.meet_id)">
+          {{ m.short }}
+        </button>
+      </div>
+
+      <!-- 태블릿/모바일: 최근 30일 대회 -->
+      <div v-if="quickMeetsMobile.length" class="quick-meets quick-meets--mobile">
+        <button v-for="m in quickMeetsMobile" :key="m.meet_id" type="button"
+          class="quick-btn" :class="{ active: activeMeetId === m.meet_id }"
+          :title="m.label"
+          @click="selectMeet(m.meet_id)">
+          {{ m.short }}
+        </button>
+      </div>
     </div>
 
     <!-- 로딩 -->
@@ -99,6 +119,16 @@ const { data: imagesData, status: imagesStatus } = useFetch<{
 })
 
 // ── Computed ─────────────────────────────────────────────────────────────────
+const quickMeetsDesktop = computed(() =>
+  (meetsData.value?.meets ?? []).slice(0, 10)
+)
+
+const quickMeetsMobile = computed(() => {
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - 30)
+  return (meetsData.value?.meets ?? []).filter(m => new Date(m.date) >= cutoff)
+})
+
 const meetsGrouped = computed(() => {
   const list = meetsData.value?.meets ?? []
   const groups = new Map<string, typeof list>()
@@ -179,6 +209,12 @@ onMounted(() => {
 .event-select-list button .count { float: right; color: var(--fg-faint); font-variant-numeric: tabular-nums; margin-left: 16px; }
 .event-select-list .group-label { padding: 8px 16px 4px; color: var(--fg-faint); font-family: var(--font-sans); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; pointer-events: none; font-variant-numeric: tabular-nums; border-top: 1px solid rgba(255,255,255,0.06); margin-top: 4px; }
 .event-select-list .group-label:first-child { border-top: 0; margin-top: 0; }
+.quick-meets { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.quick-meets--mobile { display: none; }
+@media (max-width: 1199px) { .quick-meets--desktop { display: none; } .quick-meets--mobile { display: flex; } }
+.quick-btn { padding: 7px 12px; background: none; border: 1px solid var(--line); color: var(--fg-faint); font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.07em; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.quick-btn:hover { color: var(--fg); border-color: var(--fg-dim); }
+.quick-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(56,182,255,0.06); }
 @media (max-width: 768px) { .photos-controls { padding: 0 18px 22px; } .event-select-btn { min-width: 200px; padding: 9px 14px; font-size: 11px; } }
 .photos-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; padding: 0 14px; }
 @media (max-width: 1199px) { .photos-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 10px; } }
