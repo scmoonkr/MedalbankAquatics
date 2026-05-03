@@ -19,12 +19,7 @@
       </div>
 
       <!-- 대회 필터 -->
-      <select v-model="meetFilter" class="filter-select">
-        <option value="">전체 대회</option>
-        <optgroup v-for="g in meetGrouped" :key="g.year" :label="g.year">
-          <option v-for="m in g.options" :key="m.meet_id" :value="m.meet_id">{{ m.meet_label }}</option>
-        </optgroup>
-      </select>
+      <MeetGroupSelect v-model="meetFilter" :groups="meetGrouped" as-number class="filter-select" />
 
       <!-- 월별 필터 -->
       <select v-model="monthFilter" class="filter-select">
@@ -206,11 +201,11 @@ const meetOptions = computed(() => {
 })
 
 const meetGrouped = computed(() => {
-  const groups = new Map<string, typeof meetOptions.value>()
+  const groups = new Map<string, { value: number; label: string }[]>()
   for (const m of meetOptions.value) {
     const year = m.meet_short?.slice(0, 4) || '기타'
     if (!groups.has(year)) groups.set(year, [])
-    groups.get(year)!.push(m)
+    groups.get(year)!.push({ value: m.meet_id, label: m.meet_label })
   }
   return [...groups.entries()]
     .map(([year, options]) => ({ year, options }))

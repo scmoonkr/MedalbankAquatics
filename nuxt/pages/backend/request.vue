@@ -24,12 +24,7 @@
         <option value="">전체 소속</option>
         <option v-for="t in teamOptions" :key="t" :value="t">{{ t }}</option>
       </select>
-      <select v-model="meetFilter" class="filter-select">
-        <option value="">전체 대회</option>
-        <optgroup v-for="g in meetGrouped" :key="g.year" :label="g.year">
-          <option v-for="m in g.options" :key="m" :value="m">{{ m }}</option>
-        </optgroup>
-      </select>
+      <MeetGroupSelect v-model="meetFilter" :groups="meetGrouped" class="filter-select" />
       <select v-model="monthFilter" class="filter-select">
         <option value="">전체 월</option>
         <option v-for="mo in monthOptions" :key="mo" :value="mo">{{ mo }}</option>
@@ -132,8 +127,6 @@ useHead({ title: '촬영요청 관리 — 백엔드' })
 const { data, refresh } = await useFetch<any[]>('/api/admin/requests')
 const list = computed(() => data.value ?? [])
 
-const { data: meetsData } = await useFetch<any[]>('/api/admin/meets')
-
 const checkedIds  = ref<number[]>([])
 const editing     = ref<any>(null)
 const statusFilter = ref('')
@@ -154,15 +147,12 @@ const meetOptions = computed(() => {
 })
 
 const meetGrouped = computed(() => {
-  const labelYearMap = new Map<string, string>()
-  for (const m of (meetsData.value ?? [])) {
-    if (m.label && m.short) labelYearMap.set(m.label, m.short.slice(0, 4))
-  }
-  const groups = new Map<string, string[]>()
+  const groups = new Map<string, { value: string; label: string }[]>()
   for (const label of meetOptions.value) {
-    const year = labelYearMap.get(label) ?? '기타'
+    const m = label.match(/^(\d{4})/)
+    const year = m ? m[1] : '기타'
     if (!groups.has(year)) groups.set(year, [])
-    groups.get(year)!.push(label)
+    groups.get(year)!.push({ value: label, label })
   }
   return [...groups.entries()]
     .map(([year, options]) => ({ year, options }))
