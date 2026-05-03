@@ -151,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ ssr: false, layout: false })
+definePageMeta({ ssr: false, layout: 'backend' })
 useHead({ title: '대회 관리 — 백엔드' })
 
 const BATCH_SIZE = 20

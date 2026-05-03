@@ -174,7 +174,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ ssr: false, layout: false })
+definePageMeta({ ssr: false, layout: 'backend' })
 useHead({ title: '이미지 관리 — 백엔드' })
 
 const { data, refresh } = await useFetch<any[]>('/api/admin/images')
