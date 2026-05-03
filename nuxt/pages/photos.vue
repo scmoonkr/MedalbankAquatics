@@ -41,7 +41,7 @@
           class="quick-btn" :class="{ active: activeMeetId === m.meet_id }"
           :title="m.label"
           @click="selectMeet(m.meet_id)">
-          {{ m.short }}
+          {{ m.label }}
         </button>
       </div>
 
@@ -49,9 +49,9 @@
       <div v-if="quickMeetsMobile.length" class="quick-meets quick-meets--mobile">
         <button v-for="m in quickMeetsMobile" :key="m.meet_id" type="button"
           class="quick-btn" :class="{ active: activeMeetId === m.meet_id }"
-          :title="m.label"
+          :title="m.short"
           @click="selectMeet(m.meet_id)">
-          {{ m.short }}
+          {{ m.label }}
         </button>
       </div>
     </div>
