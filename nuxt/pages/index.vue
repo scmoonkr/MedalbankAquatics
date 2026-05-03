@@ -533,8 +533,9 @@ body:has(nav.menu:hover) .stage-dim { opacity: 1; }
   font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500;
   mix-blend-mode: difference;
 }
-.ui a, .ui button { pointer-events: auto; cursor: none; }
-@media (hover: none), (pointer: coarse) { .ui a, .ui button { cursor: auto; } }
+.ui a, .ui button { pointer-events: auto; }
+body.is-home .ui a, body.is-home .ui button { cursor: none; }
+@media (hover: none), (pointer: coarse) { body.is-home .ui a, body.is-home .ui button { cursor: auto; } }
 header.ui {
   top: 0; left: 0; right: 0;
   padding: 26px 32px; padding-top: max(26px, env(safe-area-inset-top));
@@ -543,7 +544,7 @@ header.ui {
 .logo {
   position: fixed; top: max(26px, env(safe-area-inset-top)); left: 32px;
   z-index: 2100; pointer-events: auto; display: block;
-  line-height: 0; text-decoration: none; cursor: none;
+  line-height: 0; text-decoration: none;
   mix-blend-mode: difference;
   transition: top 1.1s cubic-bezier(0.7,0,0.2,1), left 1.1s cubic-bezier(0.7,0,0.2,1), transform 1.1s cubic-bezier(0.7,0,0.2,1);
 }
@@ -564,7 +565,8 @@ body.loader-active .logo-img { max-width: min(380px, 60vw); max-height: 80px; }
   .logo { top: max(16px, env(safe-area-inset-top)); left: 18px; }
   .logo-img { max-width: 150px; max-height: 28px; }
 }
-@media (hover: none), (pointer: coarse) { .logo { cursor: auto; } }
+body.is-home .logo { cursor: none; }
+@media (hover: none), (pointer: coarse) { body.is-home .logo { cursor: auto; } }
 nav.menu { display: flex; gap: 22px; }
 nav.menu a { position: relative; color: var(--fg); text-decoration: none; padding: 4px 0; overflow: hidden; }
 nav.menu-inline a::after {
@@ -652,7 +654,7 @@ body.menu-open .cursor .label { opacity: 0; }
   position: fixed; top: max(26px, env(safe-area-inset-top)); right: 32px;
   z-index: 1950; width: 26px; height: 22px; display: none;
   flex-direction: column; justify-content: space-between; align-items: stretch;
-  background: none; border: 0; padding: 0; cursor: none; mix-blend-mode: difference;
+  background: none; border: 0; padding: 0; mix-blend-mode: difference;
   -webkit-tap-highlight-color: transparent;
 }
 .menu-toggle span {
@@ -669,17 +671,19 @@ body.menu-open .menu-toggle span:nth-child(3) { transform: translateY(-10px) rot
   body.menu-open .menu-toggle span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
   body.menu-open .menu-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 }
-@media (hover: none), (pointer: coarse) { .menu-toggle { cursor: auto; } }
+body.is-home .menu-toggle { cursor: none; }
+@media (hover: none), (pointer: coarse) { body.is-home .menu-toggle { cursor: auto; } }
 .menu-overlay {
   position: fixed; inset: 0; z-index: 1900;
   display: flex; align-items: center; justify-content: center;
   background: rgba(0,0,0,0.001);
   -webkit-backdrop-filter: blur(40px) brightness(0.5) saturate(1.05);
   backdrop-filter: blur(40px) brightness(0.5) saturate(1.05);
-  opacity: 0; pointer-events: none; transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1); cursor: none;
+  opacity: 0; pointer-events: none; transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1);
 }
 body.menu-open .menu-overlay { opacity: 1; pointer-events: auto; }
-@media (hover: none), (pointer: coarse) { .menu-overlay { cursor: auto; } }
+body.is-home .menu-overlay { cursor: none; }
+@media (hover: none), (pointer: coarse) { body.is-home .menu-overlay { cursor: auto; } }
 nav.menu-fullscreen { flex-direction: column; gap: 28px; align-items: flex-start; padding-left: 38px; }
 nav.menu-fullscreen a {
   position: relative;
@@ -688,7 +692,6 @@ nav.menu-fullscreen a {
   text-transform: none; color: var(--fg); line-height: 1;
   opacity: 0; transform: translateY(18px);
   transition: opacity 0.55s cubic-bezier(0.2,0.7,0.2,1) var(--menu-delay, 0ms), transform 0.55s cubic-bezier(0.2,0.7,0.2,1) var(--menu-delay, 0ms), color 0.3s ease;
-  cursor: none;
 }
 body.menu-open nav.menu-fullscreen a { opacity: 1; transform: translateY(0); }
 nav.menu-fullscreen a::before {
@@ -704,13 +707,14 @@ nav.menu-fullscreen a:hover { color: var(--accent); }
   nav.menu-fullscreen a { font-size: 30px; }
   nav.menu-fullscreen a::before { left: -22px; width: 7px; height: 7px; }
 }
-@media (hover: none), (pointer: coarse) { nav.menu-fullscreen a { cursor: auto; } }
+body.is-home nav.menu-fullscreen a { cursor: none; }
+@media (hover: none), (pointer: coarse) { body.is-home nav.menu-fullscreen a { cursor: auto; } }
 @media (min-width: 1200px) { .menu-toggle, .menu-overlay { display: none !important; } }
 @media (max-width: 1199px) { nav.menu-inline { display: none; } .menu-toggle { display: flex; } header.ui { display: none; } }
 .lightbox {
   --lb-margin-x: 50px; --lb-margin-y: 92px;
   position: fixed; inset: 0; z-index: 1100;
-  opacity: 0; pointer-events: none; transition: opacity 0.4s ease; cursor: none;
+  opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
 }
 .lightbox.open { opacity: 1; pointer-events: auto; }
 .lightbox-bg {
@@ -734,14 +738,16 @@ nav.menu-fullscreen a:hover { color: var(--accent); }
   position: absolute; top: 14px; right: 14px; z-index: 3;
   width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
   background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.18); border-radius: 50%;
-  color: #fff; cursor: none; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  color: #fff; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
   transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease; padding: 0;
 }
 .lightbox-close:hover { background: rgba(0,0,0,0.7); border-color: rgba(255,255,255,0.45); transform: scale(1.06); }
 .lightbox-close svg { display: block; width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.4; fill: none; stroke-linecap: round; }
 @media (max-width: 1199px) { .lightbox { --lb-margin-x: 30px; } .lightbox-close { width: 36px; height: 36px; top: 12px; right: 12px; } }
 @media (max-width: 767px) { .lightbox { --lb-margin-x: 10px; --lb-margin-y: 60px; } .lightbox-close { width: 34px; height: 34px; top: 10px; right: 10px; } .lightbox-close svg { width: 16px; height: 16px; } }
-@media (hover: none), (pointer: coarse) { .lightbox, .lightbox-close { cursor: auto; } }
+body.is-home .lightbox,
+body.is-home .lightbox-close { cursor: none; }
+@media (hover: none), (pointer: coarse) { body.is-home .lightbox, body.is-home .lightbox-close { cursor: auto; } }
 body.lb-open .grain { opacity: 0.06; }
 .vignette { position: fixed; inset: 0; pointer-events: none; z-index: 5; background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.45) 100%); }
 .hint {

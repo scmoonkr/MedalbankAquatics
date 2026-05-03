@@ -7,3 +7,5 @@
 *.zip
 textbooks
 ankor
+deploy.sh:wq
+html
