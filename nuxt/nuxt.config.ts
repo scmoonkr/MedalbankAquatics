@@ -8,6 +8,9 @@ export default defineNuxtConfig({
   app: {
     head: {
       htmlAttrs: { lang: 'ko' },
+      meta: [
+        { name: 'viewport', content: 'width=device-width, initial-scale=1.0, viewport-fit=cover' },
+      ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/images/medalbankaquatics.png' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },

@@ -2,8 +2,32 @@ import crypto from 'crypto'
 import nodemailer from 'nodemailer'
 import { getDB } from '../db.js'
 
-function consents() {
-  return getDB().collection('consents')
+const TOKEN_TTL_MS = 24 * 60 * 60 * 1000
+
+function getSecret() {
+  return process.env.CONSENT_TOKEN_SECRET ?? 'medalbank-consent-secret-change-me'
+}
+
+function signToken(payload) {
+  const data = Buffer.from(JSON.stringify(payload)).toString('base64url')
+  const sig  = crypto.createHmac('sha256', getSecret()).update(data).digest('base64url')
+  return `${data}.${sig}`
+}
+
+function verifyToken(token) {
+  const dot = token.lastIndexOf('.')
+  if (dot < 0) return null
+  const data = token.slice(0, dot)
+  const sig  = token.slice(dot + 1)
+  const expected = crypto.createHmac('sha256', getSecret()).update(data).digest('base64url')
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(sig, 'base64url'), Buffer.from(expected, 'base64url'))) return null
+  } catch {
+    return null
+  }
+  const payload = JSON.parse(Buffer.from(data, 'base64url').toString('utf8'))
+  if (Date.now() > payload.exp) return null
+  return payload
 }
 
 function makeTransport() {
@@ -64,7 +88,7 @@ function buildEmailHtml({ name, images, verifyUrl, siteUrl }) {
 }
 
 export default function (app) {
-  // POST /api/consent — 동의 요청 접수 + 인증 메일 발송
+  // POST /api/consent — DB 저장 없이 HMAC 서명 토큰을 이메일로 발송
   app.post('/api/consent', async (req, res) => {
     try {
       const { name, email, minor = false, image_ids = [], consents: consentItems = {} } = req.body
@@ -73,34 +97,8 @@ export default function (app) {
         return res.status(400).json({ error: '이름, 이메일, 사진 목록은 필수입니다.' })
       }
 
-      const token     = crypto.randomBytes(32).toString('hex')
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
-      const athleteCol = getDB().collection('athletes')
-
-      // athlete email 조회 — 없으면 신규 등록
-      let athleteDoc = await athleteCol.findOne({ email })
-      if (!athleteDoc) {
-        const maxDoc = await athleteCol.find({}, { projection: { athlete_id: 1 } })
-          .sort({ athlete_id: -1 }).limit(1).next()
-        const newId = (maxDoc?.athlete_id ?? 1000) + 1
-        await athleteCol.insertOne({ athlete_id: newId, name, email, lang: 'ko' })
-        athleteDoc = { athlete_id: newId }
-      }
-
-      await consents().insertOne({
-        token,
-        name,
-        email,
-        athlete_id: athleteDoc.athlete_id,
-        minor,
-        image_ids,
-        consents: consentItems,
-        verified:   false,
-        created_at: new Date(),
-        expires_at: expiresAt,
-      })
-
-      const siteUrl   = process.env.SITE_URL ?? 'http://localhost:6631'
+      const token   = signToken({ name, email, minor, image_ids, consents: consentItems, exp: Date.now() + TOKEN_TTL_MS })
+      const siteUrl = process.env.SITE_URL ?? 'http://localhost:6631'
       const verifyUrl = `${siteUrl}/verify?token=${token}`
 
       const imageDocs = await getDB().collection('images')
@@ -126,31 +124,59 @@ export default function (app) {
   app.get('/api/consent/verify/:token', async (req, res) => {
     try {
       const { token } = req.params
-      const doc = await consents().findOne({ token })
 
-      if (!doc)          return res.status(404).json({ error: '유효하지 않은 링크입니다.' })
-      if (doc.verified)  { console.log('[verify] already verified:', doc.name); return res.json({ ok: true, already: true, name: doc.name }) }
-      if (doc.expires_at < new Date()) return res.status(410).json({ error: '만료된 링크입니다.' })
+      const payload = verifyToken(token)
+      if (!payload) return res.status(400).json({ error: '유효하지 않거나 만료된 링크입니다.' })
+
+      const { name, email, minor, image_ids, consents: consentItems } = payload
+
+      // 중복 처리 방지 — 토큰 해시로 이미 처리된 요청 확인
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex')
+      const logCol    = getDB().collection('consent_log')
+      const existing  = await logCol.findOne({ token_hash: tokenHash })
+      if (existing) {
+        return res.json({ ok: true, already: true, name, athlete_id: existing.athlete_id })
+      }
 
       const now        = new Date()
       const athleteCol = getDB().collection('athletes')
 
-      // 1. consents — verified 처리
-      await consents().updateOne({ token }, { $set: { verified: true, verified_at: now } })
+      // athlete 없으면 이 시점에 신규 생성
+      let athleteDoc = await athleteCol.findOne({ email })
+      if (!athleteDoc) {
+        const maxDoc = await athleteCol.find({}, { projection: { athlete_id: 1 } })
+          .sort({ athlete_id: -1 }).limit(1).next()
+        const athleteId = (maxDoc?.athlete_id ?? 1000) + 1
+        await athleteCol.insertOne({ athlete_id: athleteId, name, email, lang: 'ko', created_at: now })
+        athleteDoc = { athlete_id: athleteId }
+      }
 
-      // 2. athletes — consent_date, first_date 업데이트
-      const existing = await athleteCol.findOne({ athlete_id: doc.athlete_id })
+      const athleteId = athleteDoc.athlete_id
+
+      // athletes — consent_date, first_date 업데이트
       const setFields = { consent_date: now }
-      if (!existing?.first_date) setFields.first_date = now
-      await athleteCol.updateOne({ athlete_id: doc.athlete_id }, { $set: setFields })
+      if (!athleteDoc.first_date) setFields.first_date = now
+      await athleteCol.updateOne({ athlete_id: athleteId }, { $set: setFields })
 
-      // 3. images — athlete_id, consent_date 업데이트
+      // images — athlete_id, consent_date 업데이트
       await getDB().collection('images').updateMany(
-        { image_id: { $in: doc.image_ids } },
-        { $set: { athlete_id: doc.athlete_id, consent_date: now } }
+        { image_id: { $in: image_ids } },
+        { $set: { athlete_id: athleteId, consent_date: now } }
       )
 
-      res.json({ ok: true, name: doc.name, image_ids: doc.image_ids, athlete_id: doc.athlete_id })
+      // 처리 완료 로그 기록 (중복 방지용)
+      await logCol.insertOne({
+        token_hash:  tokenHash,
+        athlete_id:  athleteId,
+        name,
+        email,
+        minor,
+        image_ids,
+        consents:    consentItems,
+        verified_at: now,
+      })
+
+      res.json({ ok: true, name, image_ids, athlete_id: athleteId })
     } catch (e) {
       res.status(500).json({ error: e.message })
     }

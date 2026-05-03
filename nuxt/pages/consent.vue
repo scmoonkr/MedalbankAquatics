@@ -36,6 +36,11 @@
     </p>
   </div>
 
+  <div v-if="restoredCount > 0" class="restored-banner">
+    <span>이전에 선택한 사진 <strong>{{ restoredCount }}장</strong>이 남아있습니다.</span>
+    <button type="button" @click="clearRestoredCart">초기화</button>
+  </div>
+
   <div class="consent-controls">
     <div class="event-select" :class="{ open: dropOpen }">
       <button class="event-select-btn" type="button" aria-haspopup="listbox" :aria-expanded="String(dropOpen)"
@@ -116,6 +121,13 @@ const dropOpen     = ref(false)
 const currentPage  = ref(1)
 const cart         = ref(new Set<number>())
 const infoOpen     = ref(false)
+const restoredCount = ref(0)
+
+function clearRestoredCart() {
+  cart.value = new Set()
+  restoredCount.value = 0
+  try { localStorage.removeItem(CART_KEY) } catch {}
+}
 
 const currentEvent = computed(() => events.value.find(e => e.id === eventId.value) ?? events.value[0])
 
@@ -158,7 +170,10 @@ onMounted(async () => {
     const raw = localStorage.getItem(CART_KEY)
     if (raw) {
       const arr = JSON.parse(raw)
-      if (Array.isArray(arr)) cart.value = new Set(arr)
+      if (Array.isArray(arr) && arr.length > 0) {
+        cart.value = new Set(arr)
+        restoredCount.value = arr.length
+      }
     }
   } catch {}
 
@@ -282,6 +297,38 @@ onMounted(async () => {
   .consent-head h1 { line-height: 1.2; }
   .consent-head .lead { font-size: 14.5px; }
   .consent-head .meta-inline { font-size: 10px; }
+}
+
+/* ── 이전 선택 복원 배너 ─── */
+.restored-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 32px 16px;
+  padding: 10px 16px;
+  background: rgba(56,182,255,0.07);
+  border: 1px solid rgba(56,182,255,0.2);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--fg-dim);
+}
+.restored-banner strong { color: var(--accent); font-weight: 500; }
+.restored-banner button {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
+  color: var(--fg-faint);
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: border-color 0.2s, color 0.2s;
+}
+.restored-banner button:hover { border-color: rgba(255,255,255,0.4); color: var(--fg); }
+@media (max-width: 768px) {
+  .restored-banner { margin: 0 18px 14px; font-size: 12px; }
 }
 
 /* ── 컨트롤 ───── */
