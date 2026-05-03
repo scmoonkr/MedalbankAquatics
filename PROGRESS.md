@@ -1,6 +1,6 @@
 # MedalbankAquatics — 작업 진행 현황
 
-> 마지막 업데이트: 2026-05-02 (4차)
+> 마지막 업데이트: 2026-05-03 (5차)
 
 ---
 
@@ -106,15 +106,18 @@
 | 엔드포인트 | 설명 |
 |-----------|------|
 | `GET /api/admin/athletes` | 선수 전체 목록 (비마스킹) |
+| `POST /api/admin/athletes` | 선수 신규 등록 (athlete_id 자동 채번) |
 | `PUT /api/admin/athletes/:id` | 선수 수정 |
 | `DELETE /api/admin/athletes/:id` | 선수 삭제 |
 | `GET /api/admin/meets` | 대회 전체 목록 |
+| `POST /api/admin/meets` | 대회 신규 등록 (meet_id 자동 채번) |
 | `PUT /api/admin/meets/:id` | 대회 수정 |
 | `DELETE /api/admin/meets/:id` | 대회 삭제 |
 | `GET /api/admin/images` | 이미지 목록 (선수명·대회명 join) |
 | `PUT /api/admin/images/:id` | 이미지 수정 (urls 포함) |
 | `DELETE /api/admin/images/:id` | 이미지 + iDrive 파일 삭제 |
 | `GET /api/admin/requests` | 촬영요청 전체 (비마스킹) |
+| `POST /api/admin/requests` | 촬영요청 신규 등록 (request_id 자동 채번) |
 | `PUT /api/admin/requests/:id` | 촬영요청 수정 |
 | `DELETE /api/admin/requests/:id` | 촬영요청 삭제 |
 | `POST /api/admin/upload-images` | 이미지 업로드 (sharp 리사이즈 + iDrive) |
@@ -125,12 +128,18 @@
 
 | 페이지 | 경로 | 기능 |
 |--------|------|------|
-| 촬영요청 관리 | `/backend/request` | 목록 조회, 상태 변경, 편집, 삭제 |
-| 이미지 관리 | `/backend/images` | 썸네일 목록, 선수명·대회명 join, urls 편집, 삭제 |
-| 선수 관리 | `/backend/athletes` | 목록 조회, 동의일 편집, 삭제 |
-| 대회 관리 | `/backend/meets` | 목록 조회, 편집, 이미지 업로드, 삭제 |
+| 촬영요청 관리 | `/backend/request` | 목록 조회·편집·삭제, **신규 추가**, **상태별·소속별·대회별·월별 필터** |
+| 이미지 관리 | `/backend/images` | 썸네일 목록·편집·삭제, **동의/비동의·대회별·월별 필터**, **그리드/리스트 뷰 토글** |
+| 선수 관리 | `/backend/athletes` | 목록 조회·편집·삭제, **신규 추가** |
+| 대회 관리 | `/backend/meets` | 목록 조회·편집·삭제, **신규 추가**, **폴더 선택 배치 업로드** (업로드 완료 파일 `uploaded/` 자동 이동) |
 
-**공통 UI**: 체크박스 다중 선택, 행 클릭 우측 편집 패널, 저장/삭제
+**공통 UI**: 체크박스 다중 선택, 행 클릭 우측 편집 패널, 저장/삭제, 지우기(폼 초기화)
+
+#### 폴더 업로드 (`/backend/meets`)
+- File System Access API(`showDirectoryPicker`) 사용 — Chrome/Edge 전용
+- 폴더 선택 시 이미지 파일 자동 스캔, `uploaded/` 서브폴더 완료 파일 수 집계
+- 20장씩 배치 업로드, 진행률 표시 (프로그레스 바)
+- 업로드 완료된 파일은 `폴더/uploaded/`로 이동 → 중복 업로드 방지
 
 ---
 
@@ -209,6 +218,19 @@ MAGAZINE_EMAIL_PASS=...
 
 ---
 
+### 9. 프론트엔드 CSS 전반 수정 (2026-05-03)
+
+- `nuxt/layouts/default.vue` 전역 `<style>` 블록에 `:root` CSS 변수 전체 선언
+  - 서브페이지에서 `--bg-soft`, `--line`, `--font-*`, `--ease-*` 등이 빈 값이었던 문제 해결
+- 스크롤바: `transparent` track, `rgba(255,255,255,0.08)` thumb
+- 서브페이지 `<h1>` 가시성 복구
+- 메인 외 모든 페이지 `footer` → `position: static` (`body:not(.is-home)` 선택자)
+- 전 페이지 하단 여백 `padding-bottom: 80px` 통일
+- `consent.vue` 동의 철회 안내 ⓘ 아이콘 + 모달 추가
+- `event-select` 드롭다운 배경색 global CSS로 통합 (scoped specificity 충돌 해결)
+
+---
+
 ## 다음 작업 (미착수)
 
 - [ ] iDrive 버킷 공개 접근 설정 (현재 URL 접속 시 idrive.com으로 리다이렉트됨)
@@ -216,4 +238,4 @@ MAGAZINE_EMAIL_PASS=...
 - [ ] 기존 이미지 iDrive 마이그레이션 (`migrate-images-to-idrive.mjs` 실행)
 - [ ] 백엔드 페이지 인증/접근 제한 (현재 비인증 공개 상태)
 - [ ] 이미지 업로드 후 athlete_id 매칭 (현재 0으로 저장됨)
-- [ ] 서버 `deploy.sh` 실행 → backend 페이지 반영 확인
+- [ ] 서버 `deploy.sh` 실행 → 5차 작업 반영 확인

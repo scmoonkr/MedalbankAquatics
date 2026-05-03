@@ -365,11 +365,11 @@
         <p>동의 완료 사진에 한하여 본인의 개인적 사용 목적으로의 다운로드가 허용되며, 상업적 목적의 무단 사용 및 제3자 재배포는 금합니다.</p>
       </div>
 
-      <div class="disc-block">
+      <!-- <div class="disc-block">
         <h4>동의 철회</h4>
         <p>사용 동의를 철회하시려는 경우, <a href="mailto:consent@medalbank.com?subject=%5B%EB%8F%99%EC%9D%98%20%EC%B2%A0%ED%9A%8C%20%EC%9A%94%EC%B2%AD%5D">consent@medalbank.com</a>으로 요청해 주시기 바랍니다. 갤러리에서 철회를 원하는 사진을 캡처하여 첨부해 주시고, 메일 본문에 동의 시 사용하신 이메일 주소를 함께 기재해 주시면 처리가 빠릅니다.</p>
         <p>접수 순서에 따라 처리되며, 영업일 기준 5일 이내에 처리 완료 메일을 발송해 드립니다. 철회 후 재동의는 언제든 가능합니다.</p>
-      </div>
+      </div> -->
 
       <div class="disc-block">
         <h4>© Medalbank Aquatics</h4>
@@ -420,7 +420,7 @@ onMounted(() => {
   .about-shell {
     min-height: 100vh;
     padding-top: 0;
-    padding-bottom: 140px;
+    padding-bottom: 80px;
   }
 
   /* ── HERO — 풀스크린 사진 + 오버레이 헤드라인 ────── */

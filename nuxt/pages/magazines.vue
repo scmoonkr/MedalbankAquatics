@@ -60,7 +60,7 @@ const latestVol   = MAGAZINES.reduce((acc, m) => m.status === 'active' ? Math.ma
   min-height: 100vh;
   min-height: 100dvh;
   padding-top: 96px;
-  padding-bottom: 40px;
+  padding-bottom: 80px;
 }
 
 /* ── 페이지 타이틀 ────────── */

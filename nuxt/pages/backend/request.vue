@@ -3,11 +3,37 @@
     <header class="admin-head">
       <h1>촬영요청 관리</h1>
       <div class="head-actions">
+        <button class="btn-secondary" @click="openNew">신규 추가</button>
+        <span class="head-sep" />
         <button class="btn-danger" :disabled="!checkedIds.length" @click="deleteChecked">
           선택 삭제 ({{ checkedIds.length }})
         </button>
       </div>
     </header>
+
+    <!-- 필터 바 -->
+    <div class="filter-bar">
+      <div class="btn-group">
+        <button :class="{ active: statusFilter === '' }"         @click="statusFilter = ''">전체</button>
+        <button :class="{ active: statusFilter === 'review' }"   @click="statusFilter = 'review'">검토중</button>
+        <button :class="{ active: statusFilter === 'approved' }" @click="statusFilter = 'approved'">승인</button>
+        <button :class="{ active: statusFilter === 'rejected' }" @click="statusFilter = 'rejected'">거절</button>
+        <button :class="{ active: statusFilter === 'done' }"     @click="statusFilter = 'done'">완료</button>
+      </div>
+      <select v-model="teamFilter" class="filter-select">
+        <option value="">전체 소속</option>
+        <option v-for="t in teamOptions" :key="t" :value="t">{{ t }}</option>
+      </select>
+      <select v-model="meetFilter" class="filter-select">
+        <option value="">전체 대회</option>
+        <option v-for="m in meetOptions" :key="m" :value="m">{{ m }}</option>
+      </select>
+      <select v-model="monthFilter" class="filter-select">
+        <option value="">전체 월</option>
+        <option v-for="mo in monthOptions" :key="mo" :value="mo">{{ mo }}</option>
+      </select>
+      <span class="filter-count">{{ filteredList.length }}건</span>
+    </div>
 
     <div class="table-wrap">
       <table>
@@ -25,7 +51,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="r in list" :key="r.request_id"
+          <tr v-for="r in filteredList" :key="r.request_id"
             :class="{ selected: checkedIds.includes(r.request_id), editing: editing?.request_id === r.request_id }"
             @click.stop="openEdit(r)">
             <td class="col-chk" @click.stop>
@@ -47,8 +73,11 @@
     <!-- 편집 패널 -->
     <div v-if="editing" class="edit-panel" @click.stop>
       <div class="edit-header">
-        <span>요청 #{{ editing.request_id }}</span>
-        <button class="close-btn" @click="editing = null">✕</button>
+        <span>{{ editing.request_id ? `요청 #${editing.request_id}` : '신규 요청' }}</span>
+        <div class="header-actions">
+          <button class="clear-btn" @click="clearForm">지우기</button>
+          <button class="close-btn" @click="editing = null">✕</button>
+        </div>
       </div>
       <div class="edit-body">
         <div class="field-row">
@@ -86,8 +115,8 @@
         </div>
       </div>
       <div class="edit-footer">
-        <button class="btn-danger" @click="deleteOne(editing.request_id)">삭제</button>
-        <button class="btn-primary" @click="save">저장</button>
+        <button v-if="editing.request_id" class="btn-danger" @click="deleteOne(editing.request_id)">삭제</button>
+        <button class="btn-primary" @click="save">{{ editing.request_id ? '저장' : '신규 저장' }}</button>
       </div>
     </div>
     <div v-if="editing" class="overlay" @click="editing = null" />
@@ -101,20 +130,66 @@ useHead({ title: '촬영요청 관리 — 백엔드' })
 const { data, refresh } = await useFetch<any[]>('/api/admin/requests')
 const list = computed(() => data.value ?? [])
 
-const checkedIds = ref<number[]>([])
-const editing    = ref<any>(null)
+const checkedIds  = ref<number[]>([])
+const editing     = ref<any>(null)
+const statusFilter = ref('')
+const teamFilter   = ref('')
+const meetFilter   = ref('')
+const monthFilter  = ref('')
+
+const teamOptions = computed(() => {
+  const s = new Set<string>()
+  for (const r of list.value) if (r.team) s.add(r.team)
+  return [...s].sort()
+})
+
+const meetOptions = computed(() => {
+  const s = new Set<string>()
+  for (const r of list.value) if (r.meet) s.add(r.meet)
+  return [...s].sort()
+})
+
+const monthOptions = computed(() => {
+  const s = new Set<string>()
+  for (const r of list.value) {
+    const m = String(r.created_at ?? '').slice(0, 7)
+    if (m) s.add(m)
+  }
+  return [...s].sort().reverse()
+})
+
+const filteredList = computed(() => {
+  let items = list.value
+  if (statusFilter.value) items = items.filter(r => r.status === statusFilter.value)
+  if (teamFilter.value)   items = items.filter(r => r.team === teamFilter.value)
+  if (meetFilter.value)   items = items.filter(r => r.meet === meetFilter.value)
+  if (monthFilter.value)  items = items.filter(r => String(r.created_at ?? '').startsWith(monthFilter.value))
+  return items
+})
 
 const allChecked = computed(() =>
-  list.value.length > 0 && checkedIds.value.length === list.value.length)
+  filteredList.value.length > 0 &&
+  filteredList.value.every(r => checkedIds.value.includes(r.request_id)))
 
 function toggleAll(e: Event) {
-  checkedIds.value = (e.target as HTMLInputElement).checked
-    ? list.value.map(r => r.request_id)
-    : []
+  const ids = filteredList.value.map(r => r.request_id)
+  if ((e.target as HTMLInputElement).checked) {
+    checkedIds.value = [...new Set([...checkedIds.value, ...ids])]
+  } else {
+    checkedIds.value = checkedIds.value.filter(id => !ids.includes(id))
+  }
 }
 
 function openEdit(r: any) {
   editing.value = { ...r }
+}
+
+function openNew() {
+  editing.value = { status: 'review', name: '', team: '', email: '', meet: '', date: '', message: '' }
+}
+
+function clearForm() {
+  editing.value = { status: 'review', name: '', team: '', email: '', meet: '', date: '', message: '' }
 }
 
 function statusLabel(s: string) {
@@ -127,7 +202,11 @@ function fmtDate(d: string) {
 
 async function save() {
   const { request_id, ...body } = editing.value
-  await $fetch(`/api/admin/requests/${request_id}`, { method: 'PUT', body })
+  if (request_id) {
+    await $fetch(`/api/admin/requests/${request_id}`, { method: 'PUT', body })
+  } else {
+    await $fetch('/api/admin/requests', { method: 'POST', body })
+  }
   editing.value = null
   await refresh()
 }
@@ -151,7 +230,7 @@ async function deleteChecked() {
 
 <style scoped>
 .admin-shell { min-height: 100vh; background: #0d1117; color: #e6edf3; font-family: var(--font-sans, sans-serif); padding: 32px; }
-.admin-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.admin-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .admin-head h1 { font-size: 20px; font-weight: 600; }
 .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #30363d; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -203,4 +282,20 @@ input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-colo
 .btn-danger { padding: 8px 20px; background: transparent; border: 1px solid #f85149; border-radius: 6px; color: #f85149; font-size: 13px; cursor: pointer; }
 .btn-danger:hover { background: #3a1a1a; }
 .btn-danger:disabled { opacity: 0.4; cursor: default; }
+.btn-secondary { padding: 8px 20px; background: transparent; border: 1px solid #388bfd; border-radius: 6px; color: #388bfd; font-size: 13px; cursor: pointer; }
+.btn-secondary:hover { background: rgba(56,139,253,0.1); }
+.filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.btn-group { display: flex; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; }
+.btn-group button { padding: 6px 14px; background: none; border: 0; color: #8b949e; font-size: 12px; cursor: pointer; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+.btn-group button:not(:last-child) { border-right: 1px solid #30363d; }
+.btn-group button:hover { background: #21262d; color: #e6edf3; }
+.btn-group button.active { background: #21262d; color: #e6edf3; }
+.filter-select { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+.filter-select:focus { outline: none; border-color: #388bfd; }
+.filter-count { font-size: 12px; color: #8b949e; font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: 4px; }
+.head-actions { display: flex; align-items: center; gap: 10px; }
+.head-sep { display: inline-block; width: 1px; height: 20px; background: #30363d; margin: 0 8px; }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.clear-btn { background: none; border: 1px solid #30363d; border-radius: 4px; color: #8b949e; font-size: 11px; padding: 3px 8px; cursor: pointer; letter-spacing: 0.04em; }
+.clear-btn:hover { border-color: #8b949e; color: #e6edf3; }
 </style>

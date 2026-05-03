@@ -3,6 +3,8 @@
     <header class="admin-head">
       <h1>선수 관리</h1>
       <div class="head-actions">
+        <button class="btn-secondary" @click="openNew">신규 추가</button>
+        <span class="head-sep" />
         <button class="btn-danger" :disabled="!checkedIds.length" @click="deleteChecked">
           선택 삭제 ({{ checkedIds.length }})
         </button>
@@ -44,8 +46,11 @@
     <!-- 편집 패널 -->
     <div v-if="editing" class="edit-panel" @click.stop>
       <div class="edit-header">
-        <span>선수 #{{ editing.athlete_id }}</span>
-        <button class="close-btn" @click="editing = null">✕</button>
+        <span>{{ editing.athlete_id ? `선수 #${editing.athlete_id}` : '신규 선수' }}</span>
+        <div class="header-actions">
+          <button class="clear-btn" @click="clearForm">지우기</button>
+          <button class="close-btn" @click="editing = null">✕</button>
+        </div>
       </div>
       <div class="edit-body">
         <div class="field-row">
@@ -70,8 +75,8 @@
         </div>
       </div>
       <div class="edit-footer">
-        <button class="btn-danger" @click="deleteOne(editing.athlete_id)">삭제</button>
-        <button class="btn-primary" @click="save">저장</button>
+        <button v-if="editing.athlete_id" class="btn-danger" @click="deleteOne(editing.athlete_id)">삭제</button>
+        <button class="btn-primary" @click="save">{{ editing.athlete_id ? '저장' : '신규 저장' }}</button>
       </div>
     </div>
     <div v-if="editing" class="overlay" @click="editing = null" />
@@ -105,21 +110,33 @@ function openEdit(a: any) {
     : ''
 }
 
+function openNew() {
+  editing.value = { name: '', email: '', lang: '' }
+  editConsentDate.value = ''
+}
+
+function clearForm() {
+  editing.value = { name: '', email: '', lang: '' }
+  editConsentDate.value = ''
+}
+
 function fmtDate(d: string) {
   return d ? new Date(d).toLocaleDateString('ko-KR') : ''
 }
 
 async function save() {
   const { athlete_id } = editing.value
-  await $fetch(`/api/admin/athletes/${athlete_id}`, {
-    method: 'PUT',
-    body: {
-      name:         editing.value.name,
-      email:        editing.value.email,
-      lang:         editing.value.lang,
-      consent_date: editConsentDate.value || null,
-    },
-  })
+  const body = {
+    name:         editing.value.name,
+    email:        editing.value.email,
+    lang:         editing.value.lang,
+    consent_date: editConsentDate.value || null,
+  }
+  if (athlete_id) {
+    await $fetch(`/api/admin/athletes/${athlete_id}`, { method: 'PUT', body })
+  } else {
+    await $fetch('/api/admin/athletes', { method: 'POST', body })
+  }
   editing.value = null
   await refresh()
 }
@@ -185,4 +202,11 @@ input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-colo
 .btn-danger { padding: 8px 20px; background: transparent; border: 1px solid #f85149; border-radius: 6px; color: #f85149; font-size: 13px; cursor: pointer; }
 .btn-danger:hover { background: #3a1a1a; }
 .btn-danger:disabled { opacity: 0.4; cursor: default; }
+.btn-secondary { padding: 8px 20px; background: transparent; border: 1px solid #388bfd; border-radius: 6px; color: #388bfd; font-size: 13px; cursor: pointer; }
+.btn-secondary:hover { background: rgba(56,139,253,0.1); }
+.head-actions { display: flex; align-items: center; gap: 10px; }
+.head-sep { display: inline-block; width: 1px; height: 20px; background: #30363d; margin: 0 8px; }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.clear-btn { background: none; border: 1px solid #30363d; border-radius: 4px; color: #8b949e; font-size: 11px; padding: 3px 8px; cursor: pointer; letter-spacing: 0.04em; }
+.clear-btn:hover { border-color: #8b949e; color: #e6edf3; }
 </style>

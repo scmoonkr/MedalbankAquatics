@@ -14,6 +14,25 @@ export default function (app) {
     }
   })
 
+  app.post('/api/admin/meets', async (req, res) => {
+    try {
+      const { label, short, date, location, competition_id } = req.body
+      const last = await meets().find({}).sort({ meet_id: -1 }).limit(1).toArray()
+      const meet_id = (last[0]?.meet_id ?? 0) + 1
+      await meets().insertOne({
+        meet_id,
+        label: label || '',
+        short: short || '',
+        date: date ? new Date(date) : null,
+        location: location || '',
+        competition_id: competition_id || '',
+      })
+      res.json({ ok: true, meet_id })
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
   app.put('/api/admin/meets/:id', async (req, res) => {
     try {
       const meet_id = parseInt(req.params.id)

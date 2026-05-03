@@ -235,7 +235,7 @@ onMounted(async () => {
     min-height: 100vh;
     min-height: 100dvh;
     padding-top: 96px;
-    padding-bottom: 40px;
+    padding-bottom: 80px;
   }
 
   .cart-head {

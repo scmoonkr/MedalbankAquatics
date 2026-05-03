@@ -250,7 +250,7 @@ onMounted(() => {
     min-height: 100vh;
     min-height: 100dvh;
     padding-top: 0;
-    padding-bottom: 40px;
+    padding-bottom: 80px;
   }
 
   /* ── HERO ──────────────────────────── */

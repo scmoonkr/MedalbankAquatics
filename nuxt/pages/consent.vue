@@ -6,7 +6,31 @@
     <h1>내 사진을 찾아<br /><span class="em">장바구니에 담아주세요.</span></h1>
     <p class="lead">
       <strong>본인 또는 자제분의 사진을 장바구니에 담아 한 번에 공개요청</strong>할 수 있습니다.
+      <button class="info-btn" type="button" @click.stop="infoOpen = true" aria-label="동의 철회 안내">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="9" cy="9" r="7.5"/>
+          <line x1="9" y1="7.5" x2="9" y2="12.5"/>
+          <circle cx="9" cy="5.5" r="0.8" fill="currentColor" stroke="none"/>
+        </svg>
+      </button>
     </p>
+
+    <Teleport to="body">
+      <div v-if="infoOpen" class="info-overlay" @click="infoOpen = false">
+        <div class="info-modal" @click.stop>
+          <button class="info-modal-close" type="button" @click="infoOpen = false" aria-label="닫기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true">
+              <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
+            </svg>
+          </button>
+          <div class="disc-block">
+            <h4>동의 철회</h4>
+            <p>사용 동의를 철회하시려는 경우, <a href="mailto:consent@medalbank.com?subject=%5B%EB%8F%99%EC%9D%98%20%EC%B2%A0%ED%9A%8C%20%EC%9A%94%EC%B2%AD%5D">consent@medalbank.com</a>으로 요청해 주시기 바랍니다. 갤러리에서 철회를 원하는 사진을 캡처하여 첨부해 주시고, 메일 본문에 동의 시 사용하신 이메일 주소를 함께 기재해 주시면 처리가 빠릅니다.</p>
+            <p>접수 순서에 따라 처리되며, 영업일 기준 5일 이내에 처리 완료 메일을 발송해 드립니다. 철회 후 재동의는 언제든 가능합니다.</p>
+          </div>
+        </div>
+      </div>
+    </Teleport>
     <p class="meta-inline">
       현재 {{ currentEvent.count }}장 · {{ currentPage }} / {{ pages }}
     </p>
@@ -91,6 +115,7 @@ const eventId      = ref<number | 'all'>('all')
 const dropOpen     = ref(false)
 const currentPage  = ref(1)
 const cart         = ref(new Set<number>())
+const infoOpen     = ref(false)
 
 const currentEvent = computed(() => events.value.find(e => e.id === eventId.value) ?? events.value[0])
 
@@ -154,7 +179,7 @@ onMounted(async () => {
   min-height: 100vh;
   min-height: 100dvh;
   padding-top: 96px;
-  padding-bottom: 40px;
+  padding-bottom: 80px;
 }
 
 /* ── 페이지 타이틀 ─────────────────────── */
@@ -200,6 +225,50 @@ onMounted(async () => {
   max-width: 720px;
 }
 .consent-head .lead strong { color: var(--fg); font-weight: 400; }
+.info-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 17px; height: 17px; margin-left: 6px; vertical-align: middle;
+  color: var(--fg-faint); cursor: pointer; background: none; border: 0; padding: 0;
+  transition: color 0.2s;
+  position: relative; top: -1px;
+}
+.info-btn:hover { color: var(--fg-dim); }
+.info-btn svg { width: 17px; height: 17px; }
+.info-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,0.55);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.info-modal {
+  position: relative; background: #0d1119;
+  border: 1px solid rgba(255,255,255,0.10);
+  padding: 36px 36px 32px; max-width: 560px; width: 100%;
+}
+.info-modal-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; cursor: pointer; color: var(--fg-faint);
+  transition: color 0.2s;
+}
+.info-modal-close:hover { color: var(--fg); }
+.info-modal-close svg { width: 16px; height: 16px; }
+.disc-block h4 {
+  font-family: var(--font-sans); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-faint);
+  margin-bottom: 16px;
+}
+.disc-block p {
+  font-family: var(--font-myungjo); font-size: 14px; line-height: 1.75;
+  color: var(--fg-dim); margin-bottom: 12px;
+}
+.disc-block p:last-child { margin-bottom: 0; }
+.disc-block a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+.disc-block a:hover { border-bottom-color: var(--accent); }
+@media (max-width: 768px) {
+  .info-modal { padding: 28px 22px 24px; }
+}
 .consent-head .meta-inline {
   margin-top: 18px;
   color: var(--fg-faint);
@@ -229,8 +298,6 @@ onMounted(async () => {
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
-  background: var(--bg-soft);
-  border: 1px solid var(--line);
   color: var(--fg);
   font-family: var(--font-sans);
   font-size: 12px;
@@ -240,6 +307,8 @@ onMounted(async () => {
   transition: border-color 0.3s, background 0.3s;
   min-width: 240px;
   text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
 }
 .event-select-btn:hover { border-color: var(--accent-dim); background: rgba(56,182,255,0.04); }
 .event-select-btn .label { flex: 1; }
@@ -256,8 +325,6 @@ onMounted(async () => {
   min-width: 100%;
   max-height: 320px;
   overflow-y: auto;
-  background: var(--bg-soft);
-  border: 1px solid var(--line);
   padding: 6px 0;
   opacity: 0;
   pointer-events: none;
@@ -375,7 +442,7 @@ onMounted(async () => {
 /* ── 페이지네이션 ──────────────────────── */
 .pagination {
   margin: 56px 0 0;
-  padding: 0 14px 80px;
+  padding: 0 14px 0;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -416,7 +483,7 @@ onMounted(async () => {
   background: var(--fg);
 }
 @media (max-width: 768px) {
-  .pagination { margin-top: 40px; padding-bottom: 60px; }
+  .pagination { margin-top: 40px; padding-bottom: 0; }
   .page-numbers { gap: 1px; }
   .page-num { font-size: 14px; min-width: 22px; height: 26px; padding: 0 3px; }
   .page-num.active { font-size: 17px; }

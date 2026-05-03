@@ -25,6 +25,28 @@ export default function (app) {
     }
   })
 
+  app.post('/api/admin/requests', async (req, res) => {
+    try {
+      const { status, name, team, email, meet, date, message } = req.body
+      const last = await requests().find({}).sort({ request_id: -1 }).limit(1).toArray()
+      const request_id = (last[0]?.request_id ?? 0) + 1
+      await requests().insertOne({
+        request_id,
+        status: status || 'review',
+        name: name || '',
+        team: team || '',
+        email: email || '',
+        meet: meet || '',
+        date: date || '',
+        message: message || '',
+        created_at: new Date(),
+      })
+      res.json({ ok: true, request_id })
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
   app.put('/api/admin/requests/:id', async (req, res) => {
     try {
       const request_id = parseInt(req.params.id)

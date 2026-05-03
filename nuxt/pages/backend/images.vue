@@ -9,7 +9,51 @@
       </div>
     </header>
 
-    <div class="table-wrap">
+    <!-- 필터 바 -->
+    <div class="filter-bar">
+      <!-- 동의 필터 -->
+      <div class="btn-group">
+        <button :class="{ active: consentFilter === 'all' }"     @click="consentFilter = 'all'">전체</button>
+        <button :class="{ active: consentFilter === 'yes' }"     @click="consentFilter = 'yes'">동의</button>
+        <button :class="{ active: consentFilter === 'no' }"      @click="consentFilter = 'no'">비동의</button>
+      </div>
+
+      <!-- 대회 필터 -->
+      <select v-model="meetFilter" class="filter-select">
+        <option value="">전체 대회</option>
+        <option v-for="m in meetOptions" :key="m.meet_id" :value="m.meet_id">{{ m.meet_label }}</option>
+      </select>
+
+      <!-- 월별 필터 -->
+      <select v-model="monthFilter" class="filter-select">
+        <option value="">전체 월</option>
+        <option v-for="mo in monthOptions" :key="mo" :value="mo">{{ mo }}</option>
+      </select>
+
+      <span class="filter-count">{{ filteredList.length }}장</span>
+
+      <!-- 뷰 토글 -->
+      <div class="view-toggle">
+        <button :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'" title="리스트">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+            <line x1="2" y1="4" x2="14" y2="4"/>
+            <line x1="2" y1="8" x2="14" y2="8"/>
+            <line x1="2" y1="12" x2="14" y2="12"/>
+          </svg>
+        </button>
+        <button :class="{ active: viewMode === 'grid' }" @click="viewMode = 'grid'" title="그리드">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+            <rect x="2" y="2" width="5" height="5" rx="1"/>
+            <rect x="9" y="2" width="5" height="5" rx="1"/>
+            <rect x="2" y="9" width="5" height="5" rx="1"/>
+            <rect x="9" y="9" width="5" height="5" rx="1"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 리스트 뷰 -->
+    <div v-if="viewMode === 'list'" class="table-wrap">
       <table>
         <thead>
           <tr>
@@ -24,7 +68,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="img in list" :key="img.image_id"
+          <tr v-for="img in filteredList" :key="img.image_id"
             :class="{ selected: checkedIds.includes(img.image_id), editing: editing?.image_id === img.image_id }"
             @click.stop="openEdit(img)">
             <td class="col-chk" @click.stop>
@@ -44,6 +88,26 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- 그리드 뷰 -->
+    <div v-else class="img-grid">
+      <button v-for="img in filteredList" :key="img.image_id"
+        class="grid-tile" :class="{ selected: checkedIds.includes(img.image_id), editing: editing?.image_id === img.image_id }"
+        @click.stop="openEdit(img)">
+        <div class="grid-chk" @click.stop>
+          <input type="checkbox" :value="img.image_id" v-model="checkedIds" @click.stop />
+        </div>
+        <img v-if="img.urls?.thumb" :src="img.urls.thumb" class="grid-img" />
+        <div v-else class="grid-img no-img">—</div>
+        <div class="grid-meta">
+          <span class="grid-id">#{{ img.image_id }}</span>
+          <span v-if="img.consent_date" class="grid-info">{{ img.athlete_name }} · {{ img.meet_label }}</span>
+          <span class="badge" :class="img.consent_date ? 'approved' : 'review'">
+            {{ img.consent_date ? '동의' : '미동의' }}
+          </span>
+        </div>
+      </button>
     </div>
 
     <!-- 편집 패널 -->
@@ -119,17 +183,56 @@ useHead({ title: '이미지 관리 — 백엔드' })
 const { data, refresh } = await useFetch<any[]>('/api/admin/images')
 const list = computed(() => data.value ?? [])
 
-const checkedIds  = ref<number[]>([])
-const editing     = ref<any>(null)
+const checkedIds      = ref<number[]>([])
+const editing         = ref<any>(null)
 const editConsentDate = ref('')
+const viewMode        = ref<'list' | 'grid'>('list')
+const consentFilter   = ref<'all' | 'yes' | 'no'>('all')
+const meetFilter      = ref<number | ''>('')
+const monthFilter     = ref('')
+
+// ── Filter options (derived from loaded data) ─────────────────────────────────
+const meetOptions = computed(() => {
+  const seen = new Map<number, string>()
+  for (const img of list.value) {
+    if (img.meet_id && !seen.has(img.meet_id)) seen.set(img.meet_id, img.meet_label ?? '')
+  }
+  return [...seen.entries()].map(([meet_id, meet_label]) => ({ meet_id, meet_label }))
+    .sort((a, b) => b.meet_id - a.meet_id)
+})
+
+const monthOptions = computed(() => {
+  const months = new Set<string>()
+  for (const img of list.value) {
+    if (img.date) {
+      const m = String(img.date).slice(0, 7)
+      if (m) months.add(m)
+    }
+  }
+  return [...months].sort().reverse()
+})
+
+// ── Filtered list ─────────────────────────────────────────────────────────────
+const filteredList = computed(() => {
+  let items = list.value
+  if (consentFilter.value === 'yes') items = items.filter(i => !!i.consent_date)
+  if (consentFilter.value === 'no')  items = items.filter(i => !i.consent_date)
+  if (meetFilter.value !== '')       items = items.filter(i => i.meet_id === meetFilter.value)
+  if (monthFilter.value)             items = items.filter(i => String(i.date ?? '').startsWith(monthFilter.value))
+  return items
+})
 
 const allChecked = computed(() =>
-  list.value.length > 0 && checkedIds.value.length === list.value.length)
+  filteredList.value.length > 0 &&
+  filteredList.value.every(i => checkedIds.value.includes(i.image_id)))
 
 function toggleAll(e: Event) {
-  checkedIds.value = (e.target as HTMLInputElement).checked
-    ? list.value.map(r => r.image_id)
-    : []
+  const ids = filteredList.value.map(i => i.image_id)
+  if ((e.target as HTMLInputElement).checked) {
+    checkedIds.value = [...new Set([...checkedIds.value, ...ids])]
+  } else {
+    checkedIds.value = checkedIds.value.filter(id => !ids.includes(id))
+  }
 }
 
 function openEdit(img: any) {
@@ -178,8 +281,28 @@ async function deleteChecked() {
 
 <style scoped>
 .admin-shell { min-height: 100vh; background: #0d1117; color: #e6edf3; font-family: var(--font-sans, sans-serif); padding: 32px; }
-.admin-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.admin-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .admin-head h1 { font-size: 20px; font-weight: 600; }
+.head-actions { display: flex; align-items: center; gap: 10px; }
+
+/* ── 필터 바 ── */
+.filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.btn-group { display: flex; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; }
+.btn-group button { padding: 6px 14px; background: none; border: 0; color: #8b949e; font-size: 12px; cursor: pointer; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+.btn-group button:not(:last-child) { border-right: 1px solid #30363d; }
+.btn-group button:hover { background: #21262d; color: #e6edf3; }
+.btn-group button.active { background: #21262d; color: #e6edf3; }
+.filter-select { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+.filter-select:focus { outline: none; border-color: #388bfd; }
+.filter-count { margin-left: 4px; font-size: 12px; color: #8b949e; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.view-toggle { margin-left: auto; display: flex; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; }
+.view-toggle button { padding: 6px 10px; background: none; border: 0; color: #8b949e; cursor: pointer; display: flex; align-items: center; transition: background 0.15s, color 0.15s; }
+.view-toggle button:not(:last-child) { border-right: 1px solid #30363d; }
+.view-toggle button:hover { background: #21262d; color: #e6edf3; }
+.view-toggle button.active { background: #21262d; color: #e6edf3; }
+.view-toggle svg { width: 16px; height: 16px; }
+
+/* ── 리스트 뷰 ── */
 .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #30363d; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 thead tr { background: #161b22; border-bottom: 1px solid #30363d; }
@@ -196,15 +319,31 @@ td { padding: 8px 12px; vertical-align: middle; }
 .col-meet { }
 .col-consent { width: 110px; }
 input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #388bfd; }
-
 .thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; display: block; }
 .no-img { width: 80px; height: 80px; background: #21262d; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #8b949e; font-size: 11px; }
 
+/* ── 그리드 뷰 ── */
+.img-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+@media (max-width: 1400px) { .img-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 900px) { .img-grid { grid-template-columns: repeat(3, 1fr); } }
+.grid-tile { position: relative; background: #161b22; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; cursor: pointer; padding: 0; display: flex; flex-direction: column; transition: border-color 0.15s; text-align: left; }
+.grid-tile:hover { border-color: #8b949e; }
+.grid-tile.selected { border-color: #388bfd; background: #1c2a3a; }
+.grid-tile.editing { border-color: #388bfd; outline: 1px solid #388bfd; }
+.grid-chk { position: absolute; top: 6px; left: 6px; z-index: 2; }
+.grid-chk input { width: 14px; height: 14px; cursor: pointer; accent-color: #388bfd; }
+.grid-img { width: 100%; aspect-ratio: 3/2; object-fit: cover; display: block; background: #21262d; }
+.grid-img.no-img { display: flex; align-items: center; justify-content: center; color: #8b949e; font-size: 12px; }
+.grid-meta { display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; gap: 6px; }
+.grid-id { font-size: 11px; color: #8b949e; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.grid-info { font-size: 11px; color: #e6edf3; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── badges ── */
 .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
 .badge.approved { background: #1a3a2a; color: #3fb950; }
 .badge.review   { background: #2d333b; color: #8b949e; }
 
-/* 편집 패널 */
+/* ── 편집 패널 ── */
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; }
 .edit-panel { position: fixed; right: 0; top: 0; bottom: 0; width: 340px; background: #161b22; border-left: 1px solid #30363d; z-index: 101; display: flex; flex-direction: column; }
 .edit-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #30363d; font-weight: 600; }

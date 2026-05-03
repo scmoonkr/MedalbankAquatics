@@ -140,7 +140,7 @@ onMounted(() => {
 
 <style scoped>
 :root { --grid-margin: 14px; }
-.photos-shell { min-height: 100vh; min-height: 100dvh; padding-top: 96px; padding-bottom: 40px; }
+.photos-shell { min-height: 100vh; min-height: 100dvh; padding-top: 96px; padding-bottom: 80px; }
 .photos-head { padding: 8px 32px 24px; display: flex; align-items: baseline; gap: 22px; flex-wrap: wrap; }
 .photos-head h1 { font-family: var(--font-myungjo); font-size: 44px; font-weight: 400; letter-spacing: -0.01em; line-height: 1; }
 .photos-head .vol { font-family: var(--font-serif); font-style: italic; font-size: 24px; color: var(--fg-faint); letter-spacing: -0.01em; }
@@ -148,12 +148,12 @@ onMounted(() => {
 @media (max-width: 768px) { .photos-head { padding: 4px 18px 20px; gap: 14px; } .photos-head h1 { font-size: 32px; } .photos-head .vol { font-size: 18px; } .photos-head .meta-inline { font-size: 10px; width: 100%; margin-left: 0; } }
 .photos-controls { padding: 4px 32px 26px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .event-select { position: relative; }
-.event-select-btn { display: inline-flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--bg-soft); border: 1px solid var(--line); color: var(--fg); font-family: var(--font-sans); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: border-color 0.3s, background 0.3s; min-width: 240px; text-align: left; }
+.event-select-btn { display: inline-flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--fg); font-family: var(--font-sans); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: border-color 0.3s, background 0.3s; min-width: 240px; text-align: left; -webkit-appearance: none; appearance: none; }
 .event-select-btn:hover { border-color: var(--accent-dim); background: rgba(56,182,255,0.04); }
 .event-select-btn .label { flex: 1; }
 .event-select-btn .caret { width: 10px; height: 10px; transform: rotate(0deg); transition: transform 0.3s var(--ease-out); }
 .event-select.open .event-select-btn .caret { transform: rotate(180deg); }
-.event-select-list { position: absolute; top: calc(100% + 6px); left: 0; min-width: 100%; max-height: 320px; overflow-y: auto; background: var(--bg-soft); border: 1px solid var(--line); padding: 6px 0; opacity: 0; pointer-events: none; transform: translateY(-4px); transition: opacity 0.25s, transform 0.25s var(--ease-out); z-index: 30; }
+.event-select-list { position: absolute; top: calc(100% + 6px); left: 0; min-width: 100%; max-height: 320px; overflow-y: auto; padding: 6px 0; opacity: 0; pointer-events: none; transform: translateY(-4px); transition: opacity 0.25s, transform 0.25s var(--ease-out); z-index: 30; }
 .event-select.open .event-select-list { opacity: 1; pointer-events: auto; transform: translateY(0); }
 .event-select-list button { display: block; width: 100%; text-align: left; padding: 10px 16px; color: var(--fg-dim); font-family: var(--font-sans); font-size: 12px; letter-spacing: 0.04em; cursor: pointer; transition: color 0.2s, background 0.2s; background: none; border: 0; }
 .event-select-list button:hover, .event-select-list button.active { color: var(--fg); background: rgba(255,255,255,0.04); }
@@ -174,11 +174,11 @@ onMounted(() => {
 @media (max-width: 1199px) { .photo-tile .num { font-size: 9px; bottom: 6px; left: 8px; } }
 @media (max-width: 768px) { .photo-tile .num { font-size: 9px; bottom: 5px; left: 7px; } }
 :deep(.lightbox-frame) { aspect-ratio: 3/2; }
-.pagination { margin: 56px 0 0; padding: 0 14px 80px; display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; }
+.pagination { margin: 56px 0 0; padding: 0 14px 0; display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; }
 .page-numbers { display: flex; align-items: baseline; gap: 2px; flex-wrap: wrap; justify-content: flex-start; }
 .page-num { background: none; border: 0; color: var(--fg-dim); font-family: var(--font-serif); font-style: italic; font-size: 17px; letter-spacing: -0.01em; line-height: 1; min-width: 26px; height: 30px; padding: 0 5px; cursor: pointer; font-variant-numeric: tabular-nums; transition: color 0.3s ease, transform 0.3s var(--ease-out); position: relative; }
 .page-num:not(.active):not(:disabled):hover { color: var(--fg); }
 .page-num.active { color: var(--fg); font-size: 21px; transform: translateY(-1px); }
 .page-num.active::after { content: ''; position: absolute; left: 50%; bottom: -4px; transform: translateX(-50%); width: 12px; height: 1px; background: var(--fg); }
-@media (max-width: 768px) { .pagination { margin-top: 40px; padding-bottom: 60px; } .page-num { font-size: 14px; min-width: 22px; height: 26px; padding: 0 3px; } .page-num.active { font-size: 17px; } }
+@media (max-width: 768px) { .pagination { margin-top: 40px; padding-bottom: 0; } .page-num { font-size: 14px; min-width: 22px; height: 26px; padding: 0 3px; } .page-num.active { font-size: 17px; } }
 </style>

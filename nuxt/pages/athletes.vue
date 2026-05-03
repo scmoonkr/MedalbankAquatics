@@ -107,7 +107,7 @@ function jumpTo(g: string) {
 </script>
 
 <style scoped>
-.ath-shell { min-height: 100vh; min-height: 100dvh; padding-top: 96px; padding-bottom: 40px; }
+.ath-shell { min-height: 100vh; min-height: 100dvh; padding-top: 96px; padding-bottom: 80px; }
 .ath-head { padding: 8px 32px 24px; }
 .ath-head .eyebrow { color: var(--fg-faint); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 500; margin-bottom: 22px; }
 .ath-head .eyebrow .num { font-family: var(--font-serif); font-style: italic; font-size: 14px; margin-right: 10px; color: var(--accent); letter-spacing: -0.01em; }

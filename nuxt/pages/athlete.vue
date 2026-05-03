@@ -118,7 +118,7 @@ function onTileClick(key: string, photo: any) {
 
 <style scoped>
 :root { --grid-margin: 14px; }
-.ath-shell { min-height: 100vh; min-height: 100dvh; padding-top: 96px; padding-bottom: 40px; }
+.ath-shell { min-height: 100vh; min-height: 100dvh; padding-top: 96px; padding-bottom: 80px; }
 .ath-head { padding: 8px 32px 28px; }
 .ath-head h1 { font-family: var(--font-myungjo); font-size: clamp(48px,7vw,88px); font-weight: 400; line-height: 1.05; letter-spacing: -0.018em; margin-bottom: 22px; }
 .ath-head .summary { color: var(--fg-dim); font-family: var(--font-myungjo); font-size: clamp(15px,1.4vw,18px); line-height: 1.7; letter-spacing: -0.005em; max-width: 720px; }

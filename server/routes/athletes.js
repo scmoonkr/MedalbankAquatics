@@ -27,6 +27,19 @@ export default function (app) {
     }
   })
 
+  app.post('/api/admin/athletes', async (req, res) => {
+    try {
+      const { name, email, consent_date, lang } = req.body
+      const last = await athletes().find({}).sort({ athlete_id: -1 }).limit(1).toArray()
+      const athlete_id = (last[0]?.athlete_id ?? 0) + 1
+      const doc = { athlete_id, name: name || '', email: email || '', lang: lang || '', consent_date: consent_date ? new Date(consent_date) : null }
+      await athletes().insertOne(doc)
+      res.json({ ok: true, athlete_id })
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
   app.put('/api/admin/athletes/:id', async (req, res) => {
     try {
       const athlete_id = parseInt(req.params.id)
