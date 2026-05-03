@@ -4,9 +4,18 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-dotenv.config({ path: path.join(__dirname, '.env') })
+// CLI 인자로 .env 경로 지정 가능: node check_athletes.mjs /path/to/.env
+const envPath = process.argv[2] ?? path.join(__dirname, '.env')
+dotenv.config({ path: envPath })
 
 const { MONGODB_ADDR, MONGO_USERNAME, MONGO_PWD, MONGO_DBNAME } = process.env
+if (!MONGODB_ADDR || MONGODB_ADDR === 'undefined') {
+  console.error('❌ .env 로드 실패. 경로를 확인하세요.')
+  console.error('   사용법: node check_athletes.mjs [.env 경로]')
+  console.error(`   시도한 경로: ${envPath}`)
+  process.exit(1)
+}
+
 const uri = `mongodb://${MONGO_USERNAME}:${encodeURIComponent(MONGO_PWD)}@${MONGODB_ADDR}/${MONGO_DBNAME}?authSource=admin`
 const client = new MongoClient(uri)
 await client.connect()
