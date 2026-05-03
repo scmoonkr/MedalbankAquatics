@@ -82,6 +82,7 @@
         <!-- 업로드 버튼 행 -->
         <div class="upload-area" @dragover.prevent @drop.prevent="onDrop">
           <input ref="fileInput" type="file" accept="image/*" multiple hidden @change="onFileChange" />
+          <input ref="dirInput" type="file" accept="image/*" multiple hidden webkitdirectory @change="onDirInputChange" />
           <button class="btn-upload" @click="fileInput?.click()">파일 선택</button>
           <button class="btn-upload btn-upload-dir" @click="selectDirectory">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" width="13" height="13">
@@ -104,7 +105,12 @@
           <div class="dir-stats">
             <span class="stat-item pending">대기 <strong>{{ dirPending.length }}</strong>장</span>
             <span class="stat-sep">·</span>
-            <span class="stat-item done">완료 <strong>{{ dirDoneCount }}</strong>장 (uploaded/)</span>
+            <template v-if="!dirFallback">
+              <span class="stat-item done">완료 <strong>{{ dirDoneCount }}</strong>장 (uploaded/)</span>
+            </template>
+            <template v-else>
+              <span class="stat-item done" style="opacity:0.5">파일 이동 불가 (HTTP)</span>
+            </template>
           </div>
         </div>
 
@@ -163,14 +169,16 @@ const checkedIds    = ref<number[]>([])
 const editing       = ref<any>(null)
 const editDate      = ref('')
 const fileInput     = ref<HTMLInputElement | null>(null)
+const dirInput      = ref<HTMLInputElement | null>(null)
 
 // ── 파일 모드 ────────────────────────────────────────────────────────────────
 const uploadFiles   = ref<{ file: File; preview: string }[]>([])
 
 // ── 폴더 모드 ────────────────────────────────────────────────────────────────
-const dirHandle     = ref<any>(null)   // FileSystemDirectoryHandle
+const dirHandle     = ref<any>(null)   // FileSystemDirectoryHandle (HTTPS only)
+const dirFallback   = ref(false)       // webkitdirectory fallback
 const dirName       = ref('')
-const dirPending    = ref<any[]>([])   // FileSystemFileHandle[]
+const dirPending    = ref<any[]>([])   // FileSystemFileHandle[] or File[]
 const dirDoneCount  = ref(0)
 
 // ── 공통 진행 상태 ───────────────────────────────────────────────────────────
@@ -211,6 +219,7 @@ function resetUpload() {
   uploadFiles.value = []
   uploadResults.value = []
   dirHandle.value = null
+  dirFallback.value = false
   dirName.value = ''
   dirPending.value = []
   dirDoneCount.value = 0
@@ -260,32 +269,54 @@ async function doFileUpload() {
 
 // ── 폴더 모드 ────────────────────────────────────────────────────────────────
 async function selectDirectory() {
-  try {
-    const handle = await (window as any).showDirectoryPicker({ mode: 'readwrite' })
-    dirHandle.value  = handle
-    dirName.value    = handle.name
-    dirPending.value = []
-    dirDoneCount.value = 0
-    uploadFiles.value = []
-    uploadResults.value = []
-
-    // uploaded/ 서브폴더에 이미 처리된 파일 수 집계
+  // HTTPS/localhost: File System Access API
+  if (typeof (window as any).showDirectoryPicker === 'function') {
     try {
-      const uploadedDir = await handle.getDirectoryHandle('uploaded')
-      for await (const [, h] of (uploadedDir as any).entries()) {
-        if (h.kind === 'file') dirDoneCount.value++
-      }
-    } catch {}
+      const handle = await (window as any).showDirectoryPicker({ mode: 'readwrite' })
+      dirHandle.value    = handle
+      dirFallback.value  = false
+      dirName.value      = handle.name
+      dirPending.value   = []
+      dirDoneCount.value = 0
+      uploadFiles.value  = []
+      uploadResults.value = []
 
-    // 루트에서 이미지 파일 수집 (uploaded/ 제외)
-    for await (const [name, h] of (handle as any).entries()) {
-      if (h.kind === 'file' && IMAGE_RE.test(name)) {
-        dirPending.value.push(h)
+      try {
+        const uploadedDir = await handle.getDirectoryHandle('uploaded')
+        for await (const [, h] of (uploadedDir as any).entries()) {
+          if (h.kind === 'file') dirDoneCount.value++
+        }
+      } catch {}
+
+      for await (const [name, h] of (handle as any).entries()) {
+        if (h.kind === 'file' && IMAGE_RE.test(name)) dirPending.value.push(h)
       }
+    } catch (e: any) {
+      if (e.name !== 'AbortError') alert('폴더 접근 실패: ' + e.message)
     }
-  } catch (e: any) {
-    if (e.name !== 'AbortError') alert('폴더 접근 실패: ' + e.message)
+  } else {
+    // HTTP fallback: webkitdirectory input
+    dirInput.value?.click()
   }
+}
+
+function onDirInputChange(e: Event) {
+  const files = Array.from((e.target as HTMLInputElement).files ?? [])
+    .filter(f => IMAGE_RE.test(f.name))
+  if (!files.length) return
+
+  dirHandle.value    = true   // truthy marker
+  dirFallback.value  = true
+  dirDoneCount.value = 0
+  uploadFiles.value  = []
+  uploadResults.value = []
+
+  // 폴더명은 첫 파일의 relativePath에서 추출
+  const rel = (files[0] as any).webkitRelativePath as string
+  dirName.value    = rel ? rel.split('/')[0] : '선택된 폴더'
+  dirPending.value = files   // File[] (no FileSystemFileHandle)
+
+  if (dirInput.value) dirInput.value.value = ''
 }
 
 function clearDir() {
@@ -297,25 +328,26 @@ function clearDir() {
 
 async function doDirUpload() {
   if (!dirPending.value.length || !editing.value || !dirHandle.value) return
-  uploading.value  = true
-  uploadDone.value = 0
+  uploading.value   = true
+  uploadDone.value  = 0
   uploadTotal.value = dirPending.value.length
   uploadResults.value = []
 
-  const uploadedDir = await (dirHandle.value as any).getDirectoryHandle('uploaded', { create: true })
   const pending = [...dirPending.value]
+  let uploadedDir: any = null
+  if (!dirFallback.value) {
+    uploadedDir = await (dirHandle.value as any).getDirectoryHandle('uploaded', { create: true })
+  }
 
   for (let i = 0; i < pending.length; i += BATCH_SIZE) {
     const batch = pending.slice(i, i + BATCH_SIZE)
 
-    // 파일 읽기
     const batchItems: { file: File; handle: any }[] = []
     for (const h of batch) {
-      const file = await h.getFile()
-      batchItems.push({ file, handle: h })
+      const file = dirFallback.value ? (h as File) : await h.getFile()
+      batchItems.push({ file, handle: dirFallback.value ? null : h })
     }
 
-    // 서버 업로드
     const fd = new FormData()
     fd.append('meet_id', String(editing.value.meet_id))
     fd.append('date', editDate.value)
@@ -325,16 +357,17 @@ async function doDirUpload() {
       const res = await $fetch<any>('/api/admin/upload-images', { method: 'POST', body: fd })
       uploadResults.value.push(...res.results)
 
-      // uploaded/ 로 이동 (복사 후 원본 삭제)
-      for (const { file, handle } of batchItems) {
-        try {
-          const newHandle = await (uploadedDir as any).getFileHandle(file.name, { create: true })
-          const writable  = await newHandle.createWritable()
-          await writable.write(await handle.getFile())
-          await writable.close()
-          await (dirHandle.value as any).removeEntry(file.name)
-          dirDoneCount.value++
-        } catch {}
+      if (!dirFallback.value && uploadedDir) {
+        for (const { file, handle } of batchItems) {
+          try {
+            const newHandle = await (uploadedDir as any).getFileHandle(file.name, { create: true })
+            const writable  = await newHandle.createWritable()
+            await writable.write(await handle.getFile())
+            await writable.close()
+            await (dirHandle.value as any).removeEntry(file.name)
+            dirDoneCount.value++
+          } catch {}
+        }
       }
     } catch (e) {
       console.error(`Batch ${i}–${i + BATCH_SIZE} 실패`, e)
