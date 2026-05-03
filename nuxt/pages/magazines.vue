@@ -2,8 +2,8 @@
 <main class="mag-shell">
 
   <div class="mag-head">
-    <h1>정기간행물</h1>
-    <span class="tagline">— Medalbank Aquatics Magazine</span>
+    <div class="eyebrow"><span class="num">00</span>Magazine · 정기간행물</div>
+    <h1>메달뱅크 아쿠아틱스<br /><span class="em">매거진.</span></h1>
     <span class="meta-inline">vol. 01 ~ {{ String(latestVol).padStart(2, '0') }} · {{ activeCount }}호 발행</span>
   </div>
 
@@ -67,29 +67,41 @@ const latestVol   = MAGAZINES.reduce((acc, m) => m.status === 'active' ? Math.ma
 }
 
 /* ── 페이지 타이틀 ────────── */
-.mag-head {
-  padding: 8px 32px 24px;
-  display: flex;
-  align-items: baseline;
-  gap: 22px;
-  flex-wrap: wrap;
+.mag-head { padding: 8px 32px 24px; }
+.mag-head .eyebrow {
+  color: var(--fg-faint);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin-bottom: 22px;
+}
+.mag-head .eyebrow .num {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 14px;
+  margin-right: 10px;
+  color: var(--accent);
+  letter-spacing: -0.01em;
 }
 .mag-head h1 {
   font-family: var(--font-myungjo);
-  font-size: 44px;
+  font-size: clamp(36px, 5vw, 60px);
   font-weight: 400;
-  letter-spacing: -0.01em;
-  line-height: 1;
+  line-height: 1.18;
+  letter-spacing: -0.018em;
+  margin-bottom: 24px;
+  max-width: 1100px;
 }
-.mag-head .tagline {
+.mag-head h1 .em {
   font-family: var(--font-serif);
   font-style: italic;
-  font-size: 22px;
-  color: var(--fg-faint);
-  letter-spacing: -0.01em;
+  color: var(--accent);
+  font-weight: 400;
+  letter-spacing: -0.02em;
 }
 .mag-head .meta-inline {
-  margin-left: auto;
+  display: block;
   color: var(--fg-dim);
   font-size: 11px;
   letter-spacing: 0.08em;
@@ -97,10 +109,8 @@ const latestVol   = MAGAZINES.reduce((acc, m) => m.status === 'active' ? Math.ma
   font-variant-numeric: tabular-nums;
 }
 @media (max-width: 768px) {
-  .mag-head { padding: 4px 18px 22px; gap: 12px; }
-  .mag-head h1 { font-size: 32px; }
-  .mag-head .tagline { font-size: 16px; }
-  .mag-head .meta-inline { font-size: 10px; width: 100%; margin-left: 0; }
+  .mag-head { padding: 4px 18px 22px; }
+  .mag-head .meta-inline { font-size: 10px; }
 }
 
 /* ── 인트로 ─────────────────── */

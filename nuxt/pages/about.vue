@@ -4,7 +4,7 @@
   <!-- ─── HERO ─── -->
   <section class="about-hero">
     <div class="hero-inner">
-      <div class="hero-eyebrow">About<span class="dot">·</span>Medalbank Aquatics</div>
+      <div class="hero-eyebrow"><span class="num">00</span>About · Medalbank Aquatics</div>
       <h1 class="hero-title">
         수영인이 찍고,<br />
         수영인에게 <span class="em">돌려드립니다</span>.
@@ -463,7 +463,14 @@ onMounted(() => {
     margin-bottom: 28px;
     font-weight: 500;
   }
-  .hero-eyebrow .dot { color: var(--accent); margin: 0 8px; }
+  .hero-eyebrow .num {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 14px;
+    margin-right: 10px;
+    color: var(--accent);
+    letter-spacing: -0.01em;
+  }
   .hero-title {
     font-family: var(--font-myungjo);
     font-size: clamp(40px, 6.5vw, 88px);
