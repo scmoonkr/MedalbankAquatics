@@ -3,11 +3,6 @@
     <div class="vignette"></div>
     <div class="grain"></div>
 
-    <div class="cursor" id="cursor">
-      <img class="cursor-img" src="/images/cursor_2.png" alt="" />
-      <div class="label" id="cursorLabel">ㅍㅇ ㅎㅇㅌ</div>
-    </div>
-
     <NuxtLink class="logo" to="/" aria-label="메달뱅크 아쿠아틱스 — 메인">
       <img class="logo-img" src="/images/medalbankaquatics.png" alt="Medalbank Aquatics" />
     </NuxtLink>
@@ -103,38 +98,6 @@ body { overflow-x: hidden; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
-.cursor {
-  position: fixed; top: 0; left: 0; width: 32px; height: 32px;
-  pointer-events: none; z-index: 3000; will-change: transform;
-  opacity: 0; transition: opacity 0.3s; mix-blend-mode: difference;
-}
-.cursor.visible { opacity: 1; }
-.cursor-img {
-  width: 100%; height: 100%; display: block;
-  transform: scale(1.6);
-  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
-  user-select: none; -webkit-user-drag: none; pointer-events: none;
-}
-.cursor.over .cursor-img { transform: scale(0.85); }
-.cursor.dragging .cursor-img { transform: scale(0.5); }
-body:has(.logo:hover) .cursor .cursor-img,
-body:has(.ui a:hover) .cursor .cursor-img,
-body:has(.lightbox-close:hover) .cursor .cursor-img,
-body:has(.menu-toggle:hover) .cursor .cursor-img,
-body:has(nav.menu-fullscreen a:hover) .cursor .cursor-img { transform: scale(0.85); }
-body:has(.logo:hover) .cursor .label,
-body:has(.ui a:hover) .cursor .label,
-body.lb-open .cursor .label,
-body.menu-open .cursor .label { opacity: 0; }
-.cursor .label {
-  position: absolute; top: 50%; left: 100%; margin-left: 18px;
-  transform: translateY(-50%); white-space: nowrap; color: var(--fg);
-  font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
-  opacity: 0; transition: opacity 0.3s; font-weight: 500;
-}
-.cursor .label.flip { left: auto; right: 100%; margin-left: 0; margin-right: 18px; }
-.cursor.over .label { opacity: 1; }
-@media (hover: none), (pointer: coarse) { .cursor { display: none; } }
 .event-select-btn { background: #0d1119; border: 1px solid rgba(255,255,255,0.08); }
 .event-select-list { background: #0d1119; border: 1px solid rgba(255,255,255,0.08); }
 body:not(.is-home) footer.ui {
