@@ -63,62 +63,72 @@ export default defineNuxtPlugin(() => {
     })
   }
 
-  const setupLightbox = () => {
-    const lightbox      = document.getElementById('lightbox')
-    const lightboxImg   = document.getElementById('lightboxImg') as HTMLImageElement | null
-    const lightboxBg    = document.getElementById('lightboxBg')
-    const lightboxClose = document.getElementById('lightboxClose')
+  const openLightbox = (thumbUrl: string, fullUrl: string, alt = '') => {
+    const lightbox    = document.getElementById('lightbox')
+    const lightboxImg = document.getElementById('lightboxImg') as HTMLImageElement | null
+    const lightboxBg  = document.getElementById('lightboxBg')
     if (!lightbox || !lightboxImg) return
 
-    const openLightbox = (thumbUrl: string, fullUrl: string, alt = '') => {
-      lightboxImg.src = thumbUrl
-      lightboxImg.alt = alt
-      lightboxImg.dataset.currentUrl = thumbUrl
-      lightbox.style.setProperty('--lb-img', `url("${thumbUrl}")`)
-      if (lightboxBg) lightboxBg.style.backgroundImage = `url("${thumbUrl}")`
-      lightbox.classList.add('open')
-      lightbox.setAttribute('aria-hidden', 'false')
-      document.body.classList.add('lb-open')
+    lightboxImg.src = thumbUrl
+    lightboxImg.alt = alt
+    lightboxImg.dataset.currentUrl = thumbUrl
+    lightbox.style.setProperty('--lb-img', `url("${thumbUrl}")`)
+    if (lightboxBg) lightboxBg.style.backgroundImage = `url("${thumbUrl}")`
+    lightbox.classList.add('open')
+    lightbox.setAttribute('aria-hidden', 'false')
+    document.body.classList.add('lb-open')
 
-      if (fullUrl && fullUrl !== thumbUrl) {
-        const hi = new Image()
-        hi.onload = () => {
-          if (lightbox.classList.contains('open') &&
-              lightboxImg.dataset.currentUrl === thumbUrl) {
-            lightboxImg.src = fullUrl
-            lightbox.style.setProperty('--lb-img', `url("${fullUrl}")`)
-            if (lightboxBg) lightboxBg.style.backgroundImage = `url("${fullUrl}")`
-            lightboxImg.dataset.currentUrl = fullUrl
-          }
+    if (fullUrl && fullUrl !== thumbUrl) {
+      const hi = new Image()
+      hi.onload = () => {
+        const lb  = document.getElementById('lightbox')
+        const li  = document.getElementById('lightboxImg') as HTMLImageElement | null
+        const lbg = document.getElementById('lightboxBg')
+        if (lb?.classList.contains('open') && li?.dataset.currentUrl === thumbUrl) {
+          if (li) li.src = fullUrl
+          lb.style.setProperty('--lb-img', `url("${fullUrl}")`)
+          if (lbg) lbg.style.backgroundImage = `url("${fullUrl}")`
+          if (li) li.dataset.currentUrl = fullUrl
         }
-        hi.src = fullUrl
       }
+      hi.src = fullUrl
     }
-    const closeLightbox = () => {
-      if (!lightbox.classList.contains('open')) return
-      lightbox.classList.remove('open')
-      lightbox.setAttribute('aria-hidden', 'true')
-      document.body.classList.remove('lb-open')
-      setTimeout(() => {
-        if (!lightbox.classList.contains('open')) {
-          lightboxImg.removeAttribute('src')
-          lightbox.style.setProperty('--lb-img', 'none')
-          if (lightboxBg) lightboxBg.style.backgroundImage = 'none'
-        }
-      }, 500)
-    }
+  }
 
-    lightbox.addEventListener('click', (e) => {
-      if ((e.target as Element).closest('.lightbox-close')) { closeLightbox(); return }
-      if ((e.target as Element).closest('.lightbox-frame')) return
+  const closeLightbox = () => {
+    const lightbox    = document.getElementById('lightbox')
+    const lightboxImg = document.getElementById('lightboxImg') as HTMLImageElement | null
+    const lightboxBg  = document.getElementById('lightboxBg')
+    if (!lightbox?.classList.contains('open')) return
+    lightbox.classList.remove('open')
+    lightbox.setAttribute('aria-hidden', 'true')
+    document.body.classList.remove('lb-open')
+    setTimeout(() => {
+      const lb  = document.getElementById('lightbox')
+      const li  = document.getElementById('lightboxImg') as HTMLImageElement | null
+      const lbg = document.getElementById('lightboxBg')
+      if (!lb?.classList.contains('open')) {
+        li?.removeAttribute('src')
+        lb?.style.setProperty('--lb-img', 'none')
+        if (lbg) lbg.style.backgroundImage = 'none'
+      }
+    }, 500)
+  }
+
+  const setupLightbox = () => {
+    // 이벤트 리스너는 document에 한 번만 위임 등록
+    if ((window as any).__mbLightboxInit) return
+    ;(window as any).__mbLightboxInit = true
+    document.addEventListener('click', (e) => {
+      const t = e.target as Element
+      if (!t.closest('#lightbox')) return
+      if (t.closest('.lightbox-close')) { closeLightbox(); return }
+      if (t.closest('.lightbox-frame')) return
       closeLightbox()
     })
-    lightboxClose?.addEventListener('click', (e) => { e.stopPropagation(); closeLightbox() })
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox()
+      if (e.key === 'Escape') closeLightbox()
     })
-
-    window.MB = { openLightbox, closeLightbox }
   }
 
   const setupClock = () => {
@@ -132,6 +142,8 @@ export default defineNuxtPlugin(() => {
     tick()
     setInterval(tick, 1000)
   }
+
+  window.MB = { openLightbox, closeLightbox }
 
   const router = useRouter()
   const init = () => {
@@ -147,7 +159,7 @@ export default defineNuxtPlugin(() => {
     init()
   }
 
-  router.afterEach(() => nextTick(init))
+  router.afterEach(() => setTimeout(init, 0))
 })
 
 declare global {
