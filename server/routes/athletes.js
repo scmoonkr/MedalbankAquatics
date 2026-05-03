@@ -106,7 +106,7 @@ export default function (app) {
         .find({ meet_id: { $in: meetIds } }).toArray()
       const meetsMap = Object.fromEntries(meetDocs.map(m => [m.meet_id, m]))
 
-      const dates = imgDocs.map(i => i.date).filter(Boolean).sort()
+      const dates = imgDocs.map(i => i.date).filter(Boolean).sort((a, b) => new Date(a) - new Date(b))
 
       res.json({
         athlete_id:   athlete.athlete_id,
