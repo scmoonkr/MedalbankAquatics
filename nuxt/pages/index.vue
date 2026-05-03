@@ -576,7 +576,9 @@ nav.menu-inline a::after {
   transition: transform 0.6s cubic-bezier(0.62, 0.05, 0, 1);
 }
 nav.menu-inline a:hover::after { transform-origin: left center; transform: scaleX(1); }
-footer.ui {
+footer.ui,
+body.is-home footer.ui {
+  position: fixed;
   bottom: 0; left: 0; right: 0;
   padding: 26px 32px; padding-bottom: max(26px, env(safe-area-inset-bottom));
   display: flex; justify-content: space-between; align-items: flex-end;

@@ -69,6 +69,15 @@
 
 <script setup lang="ts">
 const route = useRoute()
+
+let scrollTimer: ReturnType<typeof setTimeout>
+function onScroll() {
+  document.body.classList.add('is-scrolling')
+  clearTimeout(scrollTimer)
+  scrollTimer = setTimeout(() => document.body.classList.remove('is-scrolling'), 800)
+}
+onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
+onUnmounted(() => window.removeEventListener('scroll', onScroll))
 </script>
 
 <style>
@@ -94,12 +103,16 @@ const route = useRoute()
 }
 html, body, #__nuxt { background: #07090f; color: #fff; }
 body { overflow-x: hidden; }
-::-webkit-scrollbar { width: 10px; height: 10px; }
+html { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0); border-radius: 6px; transition: background 0.4s ease; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.35) !important; }
+body.is-scrolling ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); transition: background 0.1s ease; }
+body.is-scrolling { scrollbar-color: rgba(255,255,255,0.18) transparent; }
 .event-select-btn { background: #0d1119; border: 1px solid rgba(255,255,255,0.08); }
 .event-select-list { background: #0d1119; border: 1px solid rgba(255,255,255,0.08); }
+.lightbox-close { cursor: pointer; }
 body:not(.is-home) footer.ui {
   position: static;
   z-index: auto;

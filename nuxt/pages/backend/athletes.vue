@@ -11,6 +11,22 @@
       </div>
     </header>
 
+    <div class="filter-bar">
+      <div class="btn-group">
+        <button :class="{ active: consentFilter === 'all' }" @click="consentFilter = 'all'">전체</button>
+        <button :class="{ active: consentFilter === 'yes' }" @click="consentFilter = 'yes'">동의</button>
+        <button :class="{ active: consentFilter === 'no' }"  @click="consentFilter = 'no'">비동의</button>
+      </div>
+      <div class="group-filter">
+        <button type="button" class="group-btn" :class="{ active: groupFilter === '' }"
+          @click="groupFilter = ''">전체</button>
+        <button v-for="g in availableGroups" :key="g" type="button"
+          class="group-btn" :class="{ active: groupFilter === g }"
+          @click="groupFilter = groupFilter === g ? '' : g">{{ g }}</button>
+      </div>
+      <span class="filter-count">{{ filteredList.length }}명</span>
+    </div>
+
     <div class="table-wrap">
       <table>
         <thead>
@@ -25,7 +41,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="a in list" :key="a.athlete_id"
+          <tr v-for="a in filteredList" :key="a.athlete_id"
             :class="{ selected: checkedIds.includes(a.athlete_id), editing: editing?.athlete_id === a.athlete_id }"
             @click.stop="openEdit(a)">
             <td class="col-chk" @click.stop>
@@ -90,17 +106,54 @@ useHead({ title: '선수 관리 — 백엔드' })
 const { data, refresh } = await useFetch<any[]>('/api/admin/athletes')
 const list = computed(() => data.value ?? [])
 
-const checkedIds     = ref<number[]>([])
-const editing        = ref<any>(null)
+const checkedIds      = ref<number[]>([])
+const editing         = ref<any>(null)
 const editConsentDate = ref('')
+const consentFilter   = ref<'all' | 'yes' | 'no'>('all')
+const groupFilter     = ref('')
+
+const CHOSEONG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ']
+function getGroup(name: string): string {
+  const first = name?.[0]
+  if (!first) return '?'
+  const code = first.charCodeAt(0)
+  if (code >= 0xAC00 && code <= 0xD7A3)
+    return CHOSEONG[Math.floor((code - 0xAC00) / 28 / 21)]
+  if (/[A-Za-z]/.test(first)) return first.toUpperCase()
+  return first
+}
+
+const availableGroups = computed(() => {
+  const groupSet = new Set<string>()
+  for (const a of list.value) groupSet.add(getGroup(a.name))
+  const korOrder = Object.fromEntries(CHOSEONG.map((c, i) => [c, i]))
+  return [...groupSet].sort((a, b) => {
+    const aIsKor = a in korOrder, bIsKor = b in korOrder
+    if (aIsKor && bIsKor) return korOrder[a] - korOrder[b]
+    if (aIsKor) return -1; if (bIsKor) return 1
+    return a.localeCompare(b)
+  })
+})
+
+const filteredList = computed(() => {
+  let items = list.value
+  if (consentFilter.value === 'yes') items = items.filter(a => !!a.consent_date)
+  if (consentFilter.value === 'no')  items = items.filter(a => !a.consent_date)
+  if (groupFilter.value)             items = items.filter(a => getGroup(a.name) === groupFilter.value)
+  return items
+})
 
 const allChecked = computed(() =>
-  list.value.length > 0 && checkedIds.value.length === list.value.length)
+  filteredList.value.length > 0 &&
+  filteredList.value.every(a => checkedIds.value.includes(a.athlete_id)))
 
 function toggleAll(e: Event) {
-  checkedIds.value = (e.target as HTMLInputElement).checked
-    ? list.value.map(a => a.athlete_id)
-    : []
+  const ids = filteredList.value.map(a => a.athlete_id)
+  if ((e.target as HTMLInputElement).checked) {
+    checkedIds.value = [...new Set([...checkedIds.value, ...ids])]
+  } else {
+    checkedIds.value = checkedIds.value.filter(id => !ids.includes(id))
+  }
 }
 
 function openEdit(a: any) {
@@ -209,4 +262,15 @@ input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-colo
 .header-actions { display: flex; align-items: center; gap: 10px; }
 .clear-btn { background: none; border: 1px solid #30363d; border-radius: 4px; color: #8b949e; font-size: 11px; padding: 3px 8px; cursor: pointer; letter-spacing: 0.04em; }
 .clear-btn:hover { border-color: #8b949e; color: #e6edf3; }
+.filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.btn-group { display: flex; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; }
+.btn-group button { padding: 6px 14px; background: none; border: 0; color: #8b949e; font-size: 12px; cursor: pointer; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+.btn-group button:not(:last-child) { border-right: 1px solid #30363d; }
+.btn-group button:hover { background: #21262d; color: #e6edf3; }
+.btn-group button.active { background: #21262d; color: #e6edf3; }
+.group-filter { display: flex; flex-wrap: wrap; gap: 4px; }
+.group-btn { padding: 4px 10px; background: none; border: 1px solid #30363d; border-radius: 4px; color: #8b949e; font-size: 12px; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.group-btn:hover { background: #21262d; color: #e6edf3; }
+.group-btn.active { background: #21262d; color: #e6edf3; border-color: #388bfd; }
+.filter-count { font-size: 12px; color: #8b949e; font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: 4px; }
 </style>

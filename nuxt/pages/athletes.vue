@@ -4,7 +4,7 @@
       <div class="eyebrow"><span class="num">{{ athletes.length.toString().padStart(2, '0') }}</span>Athletes · 선수목록</div>
       <h1><span class="em">선수목록.</span></h1>
       <p class="lead">
-        본인 이름을 클릭하시면, 동의된 사진들이 <strong>대회별 또는 시간순</strong>으로 정리된 페이지로 이동합니다.
+        각 선수별 사진을 열람하실 수 있습니다.
       </p>
       <p class="meta-line">전체 <span style="color:var(--fg)">{{ athletes.length }}</span>명 · 동의된 사진 <span style="color:var(--fg)">{{ totalPhotos.toLocaleString() }}</span>장</p>
     </div>
