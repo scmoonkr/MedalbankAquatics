@@ -120,7 +120,7 @@ export default function (app) {
           label:   m.label,
           short:   m.short,
           date:    m.date,
-        })).sort((a, b) => b.date.localeCompare(a.date)),
+        })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
         images: imgDocs.map(i => ({
           image_id: i.image_id,
           meet_id:  i.meet_id,
