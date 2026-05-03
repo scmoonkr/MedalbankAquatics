@@ -11,6 +11,20 @@
       </div>
     </header>
 
+    <div class="filter-bar">
+      <select v-model="locationFilter" class="filter-select">
+        <option value="">전체 장소</option>
+        <option v-for="loc in locationOptions" :key="loc" :value="loc">{{ loc }}</option>
+      </select>
+      <select v-model="monthFilter" class="filter-select">
+        <option value="">전체 월</option>
+        <optgroup v-for="g in monthGrouped" :key="g.year" :label="g.year">
+          <option v-for="mo in g.months" :key="mo" :value="mo">{{ mo.slice(5) }}월</option>
+        </optgroup>
+      </select>
+      <span class="filter-count">{{ filteredList.length }}건</span>
+    </div>
+
     <div class="table-wrap">
       <table>
         <thead>
@@ -26,7 +40,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="m in list" :key="m.meet_id"
+          <tr v-for="m in filteredList" :key="m.meet_id"
             :class="{ selected: checkedIds.includes(m.meet_id), editing: editing?.meet_id === m.meet_id }"
             @click.stop="openEdit(m)">
             <td class="col-chk" @click.stop>
@@ -160,9 +174,11 @@ const IMAGE_RE   = /\.(jpe?g|png|gif|webp|tiff?|bmp)$/i
 const { data, refresh } = await useFetch<any[]>('/api/admin/meets')
 const list = computed(() => data.value ?? [])
 
-const checkedIds    = ref<number[]>([])
-const editing       = ref<any>(null)
-const editDate      = ref('')
+const checkedIds      = ref<number[]>([])
+const editing         = ref<any>(null)
+const editDate        = ref('')
+const locationFilter  = ref('')
+const monthFilter     = ref('')
 const fileInput     = ref<HTMLInputElement | null>(null)
 const dirInput      = ref<HTMLInputElement | null>(null)
 
@@ -182,13 +198,55 @@ const uploadDone    = ref(0)
 const uploadTotal   = ref(0)
 const uploadResults = ref<any[]>([])
 
+// ── 필터 옵션 ────────────────────────────────────────────────────────────────
+const locationOptions = computed(() => {
+  const s = new Set<string>()
+  for (const m of list.value) if (m.location) s.add(m.location)
+  return [...s].sort()
+})
+
+const monthOptions = computed(() => {
+  const s = new Set<string>()
+  for (const m of list.value) {
+    if (m.date) {
+      const mo = String(m.date).slice(0, 7)
+      if (mo) s.add(mo)
+    }
+  }
+  return [...s].sort().reverse()
+})
+
+const monthGrouped = computed(() => {
+  const groups = new Map<string, string[]>()
+  for (const mo of monthOptions.value) {
+    const year = mo.slice(0, 4)
+    if (!groups.has(year)) groups.set(year, [])
+    groups.get(year)!.push(mo)
+  }
+  return [...groups.entries()]
+    .map(([year, months]) => ({ year, months }))
+    .sort((a, b) => b.year.localeCompare(a.year))
+})
+
+const filteredList = computed(() => {
+  let items = list.value
+  if (locationFilter.value) items = items.filter(m => m.location === locationFilter.value)
+  if (monthFilter.value)    items = items.filter(m => String(m.date ?? '').startsWith(monthFilter.value))
+  return items
+})
+
 // ── 체크박스 ─────────────────────────────────────────────────────────────────
 const allChecked = computed(() =>
-  list.value.length > 0 && checkedIds.value.length === list.value.length)
+  filteredList.value.length > 0 &&
+  filteredList.value.every(m => checkedIds.value.includes(m.meet_id)))
 
 function toggleAll(e: Event) {
-  checkedIds.value = (e.target as HTMLInputElement).checked
-    ? list.value.map(m => m.meet_id) : []
+  const ids = filteredList.value.map(m => m.meet_id)
+  if ((e.target as HTMLInputElement).checked) {
+    checkedIds.value = [...new Set([...checkedIds.value, ...ids])]
+  } else {
+    checkedIds.value = checkedIds.value.filter(id => !ids.includes(id))
+  }
 }
 
 // ── 편집 패널 열기 ────────────────────────────────────────────────────────────
@@ -425,7 +483,11 @@ async function deleteChecked() {
 
 <style scoped>
 .admin-shell { min-height: 100vh; background: #0d1117; color: #e6edf3; font-family: var(--font-sans, sans-serif); padding: 32px; }
-.admin-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.admin-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.filter-select { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+.filter-select:focus { outline: none; border-color: #388bfd; }
+.filter-count { font-size: 12px; color: #8b949e; font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: 4px; }
 .admin-head h1 { font-size: 20px; font-weight: 600; }
 .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #30363d; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
