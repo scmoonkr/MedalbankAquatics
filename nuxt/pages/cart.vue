@@ -97,7 +97,7 @@
             </span>
             <span class="text">
               <span class="title">SNS 게재 (인스타그램 등)</span>
-              <span class="desc">하이라이트 사진으로 선정되는 경우, @medalbankaquatics 계정에 게재될 수 있습니다. 요청 시 삭제 처리해드립니다.</span>
+              <span class="desc">하이라이트 사진으로 선정되는 경우, @medalbankaquatics 계정에 게재될 수 있습니다.</span>
             </span>
           </label>
 
@@ -108,7 +108,7 @@
             </span>
             <span class="text">
               <span class="title">매거진 인쇄 게재</span>
-              <span class="desc">하이라이트 사진으로 선정되는 경우, 메달뱅크 아쿠아틱스 매거진에 사진이 게재될 수 있습니다.</span>
+              <span class="desc">하이라이트 사진으로 선정되는 경우, 메달뱅크 아쿠아틱스 실물 매거진에 사진이 게재될 수 있습니다.</span>
             </span>
           </label>
         </div>

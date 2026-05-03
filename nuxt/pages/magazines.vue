@@ -8,7 +8,8 @@
   </div>
 
   <p class="mag-intro">
-    분기마다 발행하는 <strong>메달뱅크 아쿠아틱스 매거진</strong>. 한 권에 한 시즌 — 대회 현장의 표정, 선수들의 한 호흡, 그리고 물 위의 한 순간을 인쇄로 담습니다.
+    분기마다 발행하는 <strong>메달뱅크 아쿠아틱스 매거진</strong>. 한 권에 한 시즌 — 대회 현장의 표정, 선수들의 한 호흡, 그리고 물 위의 한 순간을 인쇄로 담습니다. > 대한민국 유일의 수영전문지, 월간 수영, 메달뱅크 아쿠아틱스. — 대회 현장의 모든 표정을 인쇄합니다.
+
   </p>
 
   <div class="mag-grid">
@@ -44,11 +45,13 @@ useHead({ title: "메달뱅크 아쿠아틱스 — 정기간행물" })
 
 const MAGAZINES = [
   { vol: 1, title: '창간호 · ISSUE 01', date: '2026.05', cover: '/images/magazine/cover-01.jpg', status: 'active' },
-  { vol: 2, date: '2026.08', status: 'coming' },
-  { vol: 3, date: '2026.11', status: 'coming' },
-  { vol: 4, date: '2027.02', status: 'coming' },
-  { vol: 5, date: '2027.05', status: 'coming' },
-  { vol: 6, date: '2027.08', status: 'coming' },
+  { vol: 2, date: '2026.06', status: 'coming' },
+  { vol: 3, date: '2026.07', status: 'coming' },
+  { vol: 4, date: '2026.08', status: 'coming' },
+  { vol: 5, date: '2026.09', status: 'coming' },
+  { vol: 6, date: '2026.10', status: 'coming' },
+  { vol: 7, date: '2026.11', status: 'coming' },
+  { vol: 8, date: '2026.12', status: 'coming' },
 ] as const
 
 const activeCount = MAGAZINES.filter(m => m.status === 'active').length

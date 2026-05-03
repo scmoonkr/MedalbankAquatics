@@ -5,7 +5,7 @@
     <div class="eyebrow"><span class="num">00</span>Consent Request · 공개 요청</div>
     <h1>내 사진을 찾아<br /><span class="em">장바구니에 담아주세요.</span></h1>
     <p class="lead">
-      <strong>본인 또는 자제분의 사진을 장바구니에 담아 한 번에 공개요청</strong>할 수 있습니다.
+      본인의 사진을 장바구니에 담아 한 번에 다운로드 요청할 수 있습니다. 이 페이지에는 초상권자의 동의가 없는 사진만 흑백저화질사진으로 나열됩니다. 동의가 완료된 사진은 사진집 또는 선수목록에서 컬러로 확인하실 수 있습니다. 일정 기간 동안 동의가 완료되지 않은 사진은 영구적으로 삭제될 수 있습니다.
       <button class="info-btn" type="button" @click.stop="infoOpen = true" aria-label="동의 철회 안내">
         <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="9" cy="9" r="7.5"/>
@@ -91,7 +91,7 @@
       <span class="n">{{ cart.size }}</span>
       <span class="label">장 선택</span>
     </span>
-    <span>동의 신청하기</span>
+    <span>컬러사진 생성</span>
     <span class="arrow">→</span>
   </NuxtLink>
 
