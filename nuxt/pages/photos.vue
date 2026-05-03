@@ -2,12 +2,13 @@
   <main class="photos-shell">
     <div class="photos-head">
       <h1>사진집</h1>
-      <span class="vol">— vol. <span>{{ currentPage }}</span></span>
+      <span v-if="activeMeetId !== null" class="vol">— {{ activeLabel }}</span>
       <span class="meta-inline">
         전체 <span>{{ activeTotalCount }}</span>장 ·
         <span>{{ currentPage }} / {{ totalPages }}</span>
       </span>
     </div>
+    <p class="photos-sub">아래 드롭다운 메뉴 또는 대회명 버튼을 통해 각 대회를 선택하여 사진을 열람할 수 있습니다.</p>
 
     <div class="photos-controls">
       <div class="event-select" :class="{ open: dropOpen }">
@@ -162,6 +163,8 @@ onMounted(() => {
 .photos-head .vol { font-family: var(--font-serif); font-style: italic; font-size: 24px; color: var(--fg-faint); letter-spacing: -0.01em; }
 .photos-head .meta-inline { margin-left: auto; color: var(--fg-dim); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
 @media (max-width: 768px) { .photos-head { padding: 4px 18px 20px; gap: 14px; } .photos-head h1 { font-size: 32px; } .photos-head .vol { font-size: 18px; } .photos-head .meta-inline { font-size: 10px; width: 100%; margin-left: 0; } }
+.photos-sub { padding: 0 32px 24px; color: var(--fg-dim); font-family: var(--font-myungjo); font-size: clamp(13px, 1.2vw, 15px); line-height: 1.7; letter-spacing: -0.005em; max-width: 680px; }
+@media (max-width: 768px) { .photos-sub { padding: 0 18px 20px; font-size: 13px; } }
 .photos-controls { padding: 4px 32px 26px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .event-select { position: relative; }
 .event-select-btn { display: inline-flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--fg); font-family: var(--font-sans); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: border-color 0.3s, background 0.3s; min-width: 240px; text-align: left; -webkit-appearance: none; appearance: none; }
