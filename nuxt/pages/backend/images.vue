@@ -24,7 +24,9 @@
       <!-- 월별 필터 -->
       <select v-model="monthFilter" class="filter-select">
         <option value="">전체 월</option>
-        <option v-for="mo in monthOptions" :key="mo" :value="mo">{{ mo }}</option>
+        <optgroup v-for="g in monthGrouped" :key="g.year" :label="g.year">
+          <option v-for="mo in g.months" :key="mo" :value="mo">{{ mo.slice(5) }}월</option>
+        </optgroup>
       </select>
 
       <span class="filter-count">{{ filteredList.length }}장</span>
@@ -221,6 +223,18 @@ const monthOptions = computed(() => {
     }
   }
   return [...months].sort().reverse()
+})
+
+const monthGrouped = computed(() => {
+  const groups = new Map<string, string[]>()
+  for (const mo of monthOptions.value) {
+    const year = mo.slice(0, 4)
+    if (!groups.has(year)) groups.set(year, [])
+    groups.get(year)!.push(mo)
+  }
+  return [...groups.entries()]
+    .map(([year, months]) => ({ year, months }))
+    .sort((a, b) => b.year.localeCompare(a.year))
 })
 
 // ── Filtered list ─────────────────────────────────────────────────────────────
