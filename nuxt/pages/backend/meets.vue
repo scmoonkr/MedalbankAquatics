@@ -105,12 +105,7 @@
           <div class="dir-stats">
             <span class="stat-item pending">대기 <strong>{{ dirPending.length }}</strong>장</span>
             <span class="stat-sep">·</span>
-            <template v-if="!dirFallback">
-              <span class="stat-item done">완료 <strong>{{ dirDoneCount }}</strong>장 (uploaded/)</span>
-            </template>
-            <template v-else>
-              <span class="stat-item done" style="opacity:0.5">파일 이동 불가 (HTTP)</span>
-            </template>
+            <span class="stat-item done">완료 <strong>{{ dirDoneCount }}</strong>장 (uploaded/)</span>
           </div>
         </div>
 
@@ -301,20 +296,28 @@ async function selectDirectory() {
 }
 
 function onDirInputChange(e: Event) {
-  const files = Array.from((e.target as HTMLInputElement).files ?? [])
+  const all = Array.from((e.target as HTMLInputElement).files ?? [])
     .filter(f => IMAGE_RE.test(f.name))
-  if (!files.length) return
+  if (!all.length) return
 
-  dirHandle.value    = true   // truthy marker
+  const pending = all.filter(f => {
+    const rel = (f as any).webkitRelativePath as string
+    return !rel.includes('/uploaded/')
+  })
+  const done = all.filter(f => {
+    const rel = (f as any).webkitRelativePath as string
+    return rel.includes('/uploaded/')
+  })
+
+  dirHandle.value    = true
   dirFallback.value  = true
-  dirDoneCount.value = 0
+  dirDoneCount.value = done.length
   uploadFiles.value  = []
   uploadResults.value = []
 
-  // 폴더명은 첫 파일의 relativePath에서 추출
-  const rel = (files[0] as any).webkitRelativePath as string
+  const rel = (all[0] as any).webkitRelativePath as string
   dirName.value    = rel ? rel.split('/')[0] : '선택된 폴더'
-  dirPending.value = files   // File[] (no FileSystemFileHandle)
+  dirPending.value = pending
 
   if (dirInput.value) dirInput.value.value = ''
 }
