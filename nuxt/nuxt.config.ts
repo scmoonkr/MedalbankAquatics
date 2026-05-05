@@ -25,8 +25,8 @@ export default defineNuxtConfig({
 
   nitro: {
     publicAssets: [
-      { dir: 'C:/Develop/MedalbankAquatics/html/images', baseURL: '/images', maxAge: 0 },
-      { dir: 'C:/Develop/MedalbankAquatics/html/data',   baseURL: '/data',   maxAge: 0 },
+      { dir: '../html/images', baseURL: '/images', maxAge: 0 },
+      { dir: '../html/data',   baseURL: '/data',   maxAge: 0 },
     ],
   },
 })
