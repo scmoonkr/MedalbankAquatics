@@ -179,7 +179,10 @@
 definePageMeta({ ssr: false, layout: 'backend' })
 useHead({ title: '이미지 관리 — 백엔드' })
 
-const { data, refresh } = await useFetch<any[]>('/api/admin/images')
+const [{ data, refresh }, { data: meetsData }] = await Promise.all([
+  useFetch<any[]>('/api/admin/images'),
+  useFetch<any[]>('/api/admin/meets'),
+])
 const list = computed(() => data.value ?? [])
 
 const checkedIds      = ref<number[]>([])
@@ -190,24 +193,13 @@ const consentFilter   = ref<'all' | 'yes' | 'no'>('all')
 const meetFilter      = ref<number | ''>('')
 const monthFilter     = ref('')
 
-// ── Filter options (derived from loaded data) ─────────────────────────────────
-const meetOptions = computed(() => {
-  const seen = new Map<number, { meet_label: string; meet_short: string }>()
-  for (const img of list.value) {
-    if (img.meet_id && !seen.has(img.meet_id))
-      seen.set(img.meet_id, { meet_label: img.meet_label ?? '', meet_short: img.meet_short ?? '' })
-  }
-  return [...seen.entries()]
-    .map(([meet_id, { meet_label, meet_short }]) => ({ meet_id, meet_label, meet_short }))
-    .sort((a, b) => b.meet_id - a.meet_id)
-})
-
+// ── Filter options ────────────────────────────────────────────────────────────
 const meetGrouped = computed(() => {
   const groups = new Map<string, { value: number; label: string }[]>()
-  for (const m of meetOptions.value) {
-    const year = m.meet_short?.slice(0, 4) || '기타'
+  for (const m of (meetsData.value ?? [])) {
+    const year = m.short?.slice(0, 4) || '기타'
     if (!groups.has(year)) groups.set(year, [])
-    groups.get(year)!.push({ value: m.meet_id, label: m.meet_label })
+    groups.get(year)!.push({ value: m.meet_id, label: m.label })
   }
   return [...groups.entries()]
     .map(([year, options]) => ({ year, options }))
