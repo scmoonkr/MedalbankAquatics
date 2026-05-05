@@ -39,7 +39,7 @@ export default function (app) {
       const { label, short, date, location, competition_id } = req.body
       await meets().updateOne(
         { meet_id },
-        { $set: { label, short: short || '', date: date ? new Date(date) : null, location: location || '', competition_id: competition_id || '' } }
+        { $set: { label: label ?? '', short: short ?? '', date: date ? new Date(date) : null, location: location ?? '', competition_id: competition_id ?? '' } }
       )
       res.json({ ok: true })
     } catch (e) {

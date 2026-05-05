@@ -449,19 +449,23 @@ function fmtDate(d: string) {
 async function save() {
   const { meet_id } = editing.value
   const body = {
-    label:          editing.value.label,
-    short:          editing.value.short,
+    label:          editing.value.label ?? '',
+    short:          editing.value.short ?? '',
     date:           editDate.value || null,
-    location:       editing.value.location,
-    competition_id: editing.value.competition_id,
+    location:       editing.value.location ?? '',
+    competition_id: editing.value.competition_id ?? '',
   }
-  if (meet_id) {
-    await $fetch(`/api/admin/meets/${meet_id}`, { method: 'PUT', body })
-  } else {
-    await $fetch('/api/admin/meets', { method: 'POST', body })
+  try {
+    if (meet_id) {
+      await $fetch(`/api/admin/meets/${meet_id}`, { method: 'PUT', body })
+    } else {
+      await $fetch('/api/admin/meets', { method: 'POST', body })
+    }
+    editing.value = null
+    await refresh()
+  } catch (e: any) {
+    alert('저장 실패: ' + (e?.data?.message ?? e?.message ?? '알 수 없는 오류'))
   }
-  editing.value = null
-  await refresh()
 }
 
 async function deleteOne(id: number) {
