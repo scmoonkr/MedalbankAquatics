@@ -158,12 +158,12 @@
           <input v-model="editing.urls.preview" placeholder="https://..." />
         </div>
         <div class="field-row">
-          <label>xl</label>
-          <input v-model="editing.urls.xl" placeholder="https://..." />
+          <label>original</label>
+          <input v-model="editing.urls.original" placeholder="https://..." />
         </div>
         <div class="field-row">
-          <label>full</label>
-          <input v-model="editing.urls.full" placeholder="https://..." />
+          <label>large</label>
+          <input v-model="editing.urls.large" placeholder="https://..." />
         </div>
       </div>
       <div class="edit-footer">
@@ -261,7 +261,7 @@ function toggleAll(e: Event) {
 }
 
 function openEdit(img: any) {
-  editing.value = { ...img, urls: { thumb: '', preview: '', xl: '', full: '', ...img.urls } }
+  editing.value = { ...img, urls: { thumb: '', preview: '', original: '', large: '', ...img.urls } }
   editConsentDate.value = img.consent_date
     ? new Date(img.consent_date).toISOString().slice(0, 10)
     : ''

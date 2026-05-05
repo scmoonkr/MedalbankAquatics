@@ -37,12 +37,12 @@ async function s3Upload(buffer, key) {
   return publicUrl(key, region, bucket)
 }
 
-async function resizeLongest(buf, px) {
-  return sharp(buf).resize(px, px, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer()
+async function resizeWidth(buf, width) {
+  return sharp(buf).resize(width, null, { withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer()
 }
 
-async function resizeGrayscale(buf, px) {
-  return sharp(buf).resize(px, px, { fit: 'inside', withoutEnlargement: true }).grayscale().jpeg({ quality: 80 }).toBuffer()
+async function resizeWidthGrayscale(buf, width) {
+  return sharp(buf).resize(width, null, { withoutEnlargement: true }).grayscale().jpeg({ quality: 80 }).toBuffer()
 }
 
 async function nextImageId() {
@@ -66,18 +66,18 @@ export default function (app) {
         const imageId = await nextImageId()
         const id      = String(imageId)
 
-        const [thumbBuf, previewBuf, fullBuf] = await Promise.all([
-          resizeLongest(buf, 400),
-          resizeGrayscale(buf, 320),
-          resizeLongest(buf, 1600),
+        const [thumbBuf, previewBuf, largeBuf] = await Promise.all([
+          resizeWidth(buf, 400),
+          resizeWidthGrayscale(buf, 320),
+          resizeWidth(buf, 1600),
         ])
 
         const prefix = `meet-${meet_id}`
-        const [thumbUrl, previewUrl, fullUrl, xlUrl] = await Promise.all([
+        const [thumbUrl, previewUrl, largeUrl, originalUrl] = await Promise.all([
           s3Upload(thumbBuf,   `${prefix}/thumbs/${id}.jpg`),
           s3Upload(previewBuf, `${prefix}/previews/${id}.jpg`),
-          s3Upload(fullBuf,    `${prefix}/full/${id}.jpg`),
-          s3Upload(buf,        `${prefix}/xl/${id}.jpg`),
+          s3Upload(largeBuf,   `${prefix}/large/${id}.jpg`),
+          s3Upload(buf,        `${prefix}/original/${id}.jpg`),
         ])
 
         await images().insertOne({
@@ -85,12 +85,12 @@ export default function (app) {
           athlete_id: 0,
           meet_id,
           date,
-          urls: { thumb: thumbUrl, preview: previewUrl, full: fullUrl, xl: xlUrl },
+          urls: { thumb: thumbUrl, preview: previewUrl, large: largeUrl, original: originalUrl },
           tags: [],
           created_at: new Date(),
         })
 
-        results.push({ image_id: imageId, urls: { thumb: thumbUrl, preview: previewUrl, full: fullUrl, xl: xlUrl } })
+        results.push({ image_id: imageId, urls: { thumb: thumbUrl, preview: previewUrl, large: largeUrl, original: originalUrl } })
       }
 
       res.json({ ok: true, count: results.length, results })

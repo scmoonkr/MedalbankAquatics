@@ -84,7 +84,7 @@ useHead({
   bodyAttrs: { class: 'is-home' },
 })
 
-type GalleryImage = { image_id: number; urls: { thumb: string; xl: string } }
+type GalleryImage = { image_id: number; urls: { thumb: string; original: string } }
 
 onMounted(async () => {
   const galleryImages = await $fetch<GalleryImage[]>('/api/gallery').catch(() => [] as GalleryImage[])
@@ -106,7 +106,7 @@ onMounted(async () => {
     }
 
     const imgUrl = (idx: number) => galleryImages[idx]?.urls?.thumb ?? `/images/thumbs/thumb-${String(idx + 1).padStart(3, '0')}.jpg`
-    const xlUrl  = (idx: number) => galleryImages[idx]?.urls?.xl   ?? `/images/xl/xl-${String(idx + 1).padStart(3, '0')}.jpg`
+    const xlUrl  = (idx: number) => galleryImages[idx]?.urls?.original ?? `/images/xl/xl-${String(idx + 1).padStart(3, '0')}.jpg`
     const URL_CACHE: string[] = []
     for (let i = 0; i < CFG.imageCount; i++) URL_CACHE[i] = `url("${imgUrl(i)}")`
 

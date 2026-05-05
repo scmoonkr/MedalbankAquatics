@@ -112,7 +112,7 @@ const clickedKey = ref<string | null>(null)
 function onTileClick(key: string, photo: any) {
   clickedKey.value = key
   setTimeout(() => { clickedKey.value = null }, 500)
-  window.MB?.openLightbox(photo.urls.thumb, photo.urls.xl, `Photo #${photo.image_id}`)
+  window.MB?.openLightbox(photo.urls.thumb, photo.urls.original, `Photo #${photo.image_id}`)
 }
 </script>
 

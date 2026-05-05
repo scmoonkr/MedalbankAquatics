@@ -78,7 +78,7 @@ export default function (app) {
 
       if (doc?.urls) {
         const { s3, bucket } = getS3()
-        const keys = [doc.urls.thumb, doc.urls.preview, doc.urls.xl, doc.urls.full]
+        const keys = [doc.urls.thumb, doc.urls.preview, doc.urls.original, doc.urls.large]
           .map(urlToKey).filter(Boolean)
         await Promise.allSettled(keys.map(key =>
           s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
@@ -96,7 +96,7 @@ export default function (app) {
   app.get('/api/gallery', async (req, res) => {
     try {
       const docs = await images()
-        .find({}, { projection: { _id: 0, image_id: 1, 'urls.thumb': 1, 'urls.xl': 1 } })
+        .find({}, { projection: { _id: 0, image_id: 1, 'urls.thumb': 1, 'urls.original': 1 } })
         .sort({ date: -1 })
         .toArray()
       res.json(docs)
