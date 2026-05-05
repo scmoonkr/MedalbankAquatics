@@ -1,6 +1,6 @@
 # MedalbankAquatics — 작업 진행 현황
 
-> 마지막 업데이트: 2026-05-03 (5차)
+> 마지막 업데이트: 2026-05-05 (6차)
 
 ---
 
@@ -143,17 +143,22 @@
 
 ---
 
-### 6. iDrive e2 이미지 스토리지
+### 6. Cloudflare R2 이미지 스토리지 (2026-05-05 교체)
 
-- **버킷**: `medalbank-bucket` (ap-northeast-1)
-- **업로드 경로**: `meet-{id}/thumbs|previews|full|xl/{image_id}.jpg`
-- **리사이즈** (sharp):
-  - `thumb`: 긴 쪽 400px
-  - `preview`: 긴 쪽 320px, 흑백
-  - `full`: 긴 쪽 1600px
-  - `xl`: 원본
-- **삭제 연동**: images 삭제 시 iDrive 4개 파일 자동 삭제
-- **마이그레이션**: `server/migrate-images-to-idrive.mjs` — 기존 로컬 이미지 일괄 업로드
+- **이전**: iDrive e2 (`medalbank-bucket`) — 10TB 이하 플랜에서 퍼블릭 버킷 불가로 교체
+- **현재**: Cloudflare R2 (`medalbankaquatics-bucket`)
+  - 퍼블릭 URL: `https://pub-df208b7bfe8647ef8a12e9eacbce028c.r2.dev`
+  - S3 API: `https://a44879681445b06ffe42cdab6fe31667.r2.cloudflarestorage.com`
+  - egress 무료, 퍼블릭 버킷 플랜 무관
+- **업로드 경로**: `meet-{id}/thumbs|previews|large|original/{image_id}.jpg`
+- **리사이즈** (sharp, 가로 기준):
+  - `thumb`: 가로 400px
+  - `preview`: 가로 320px, 흑백
+  - `large`: 가로 1600px
+  - `original`: 원본
+- **이미지 URL 필드명**: `urls.full` → `urls.large`, `urls.xl` → `urls.original`
+- **삭제 연동**: images 삭제 시 R2 4개 파일 자동 삭제
+- **환경변수**: `R2_ENDPOINT`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_PUBLIC_URL`
 
 ---
 
@@ -201,10 +206,12 @@ MONGO_USERNAME=...
 MONGO_PWD=...
 MONGO_DBNAME=MedalbankAquatics
 
-idrivee2_endpoint=s3.ap-northeast-1.idrivee2.com
-idrivee2_bucket=medalbank-bucket
-idrivee2-access_key_id=...
-idrivee2-access_key=...
+# Cloudflare R2
+R2_ENDPOINT=https://a44879681445b06ffe42cdab6fe31667.r2.cloudflarestorage.com
+R2_BUCKET=medalbankaquatics-bucket
+R2_ACCESS_KEY_ID=...
+R2_SECRET_ACCESS_KEY=...
+R2_PUBLIC_URL=https://pub-df208b7bfe8647ef8a12e9eacbce028c.r2.dev
 
 EMAIL_HOST=smtp.naver.com
 EMAIL_PORT=587
@@ -214,6 +221,8 @@ EMAIL_FROM=...
 
 MAGAZINE_EMAIL=magazine@medalbank.com
 MAGAZINE_EMAIL_PASS=...
+
+CONSENT_TOKEN_SECRET=...
 ```
 
 ---
@@ -231,11 +240,23 @@ MAGAZINE_EMAIL_PASS=...
 
 ---
 
+### 10. 6차 작업 추가 변경사항 (2026-05-05)
+
+- **Consent 흐름 개선**: POST `/api/consent`에서 DB 저장 없이 HMAC-SHA256 서명 토큰으로 이메일 발송, GET `/verify`에서 모든 DB 작업 처리
+- **SPA 이동 후 라이트박스 미동작 버그 수정**: `plugins/mb.client.ts`에서 `openLightbox`/`closeLightbox`를 매번 `getElementById` fresh lookup으로 변경
+- **localStorage 복원 배너**: `consent.vue`에서 이전 선택 복원 시 배너 표시, 초기화 버튼 추가
+- **백엔드 사이드바**: Medalbank 클릭 시 홈 이동, git 버전 해시 표시 (`nuxt/server/api/version.get.ts`)
+- **이미지 대회 필터**: `backend/images.vue`에서 이미지 없는 대회도 필터에 표시되도록 `/api/admin/meets` 직접 조회
+- **meets date 업데이트 버그 수정**: PUT 핸들러 `label` 등 `undefined` 필드 `?? ''` fallback 추가, `save()` try-catch 추가
+- **deploy.sh**: `git pull origin master` 주석 해제 (서버 배포 자동화)
+- **브랜치 정책**: 서버를 `master` 브랜치로 변경 (`git checkout master`)
+
+---
+
 ## 다음 작업 (미착수)
 
-- [ ] iDrive 버킷 공개 접근 설정 (현재 URL 접속 시 idrive.com으로 리다이렉트됨)
+- [ ] 로컬/서버 화면 차이 원인 파악 및 해결
+- [ ] 서버 `.env`에 R2 환경변수 5개 추가 필요 (`R2_ENDPOINT` 등)
 - [ ] magazine@medalbank.com Naver Works 이메일 MX 레코드 적용 확인
-- [ ] 기존 이미지 iDrive 마이그레이션 (`migrate-images-to-idrive.mjs` 실행)
 - [ ] 백엔드 페이지 인증/접근 제한 (현재 비인증 공개 상태)
 - [ ] 이미지 업로드 후 athlete_id 매칭 (현재 0으로 저장됨)
-- [ ] 서버 `deploy.sh` 실행 → 5차 작업 반영 확인
