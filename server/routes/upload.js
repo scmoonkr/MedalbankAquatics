@@ -5,36 +5,36 @@ import { images } from '../models/Image.js'
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } })
 
-let _s3, _bucket, _region
+let _s3, _bucket, _publicBase
 
 function getS3() {
   if (!_s3) {
-    const endpoint = process.env.idrivee2_endpoint
-    _region  = endpoint?.split('.')[1] ?? 'ap-northeast-1'
-    _bucket  = process.env.idrivee2_bucket
-    const keyId  = process.env['idrivee2-access_key_id']
-    const secret = process.env['idrivee2-access_key']
+    _bucket     = process.env.R2_BUCKET
+    _publicBase = process.env.R2_PUBLIC_URL
     _s3 = new S3Client({
-      endpoint: `https://${endpoint}`,
-      region: _region,
-      credentials: { accessKeyId: keyId, secretAccessKey: secret },
+      endpoint: process.env.R2_ENDPOINT,
+      region: 'auto',
+      credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+      },
       forcePathStyle: false,
     })
   }
-  return { s3: _s3, bucket: _bucket, region: _region }
+  return { s3: _s3, bucket: _bucket }
 }
 
-function publicUrl(key, region, bucket) {
-  return `https://${bucket}.s3.${region}.idrivee2.com/${key}`
+function publicUrl(key) {
+  return `${_publicBase}/${key}`
 }
 
 async function s3Upload(buffer, key) {
-  const { s3, bucket, region } = getS3()
+  const { s3, bucket } = getS3()
   await s3.send(new PutObjectCommand({
     Bucket: bucket, Key: key, Body: buffer,
-    ContentType: 'image/jpeg', ACL: 'public-read',
+    ContentType: 'image/jpeg',
   }))
-  return publicUrl(key, region, bucket)
+  return publicUrl(key)
 }
 
 async function resizeWidth(buf, width) {

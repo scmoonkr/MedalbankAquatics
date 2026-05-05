@@ -5,14 +5,13 @@ import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
 let _s3, _bucket
 function getS3() {
   if (!_s3) {
-    const endpoint = process.env.idrivee2_endpoint
-    _bucket = process.env.idrivee2_bucket
+    _bucket = process.env.R2_BUCKET
     _s3 = new S3Client({
-      endpoint: `https://${endpoint}`,
-      region: endpoint?.split('.')[1] ?? 'ap-northeast-1',
+      endpoint: process.env.R2_ENDPOINT,
+      region: 'auto',
       credentials: {
-        accessKeyId: process.env['idrivee2-access_key_id'],
-        secretAccessKey: process.env['idrivee2-access_key'],
+        accessKeyId: process.env.R2_ACCESS_KEY_ID,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
       },
       forcePathStyle: false,
     })
