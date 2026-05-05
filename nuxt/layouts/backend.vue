@@ -2,8 +2,8 @@
   <div class="bk-root">
     <aside class="bk-side">
       <div class="bk-brand">
-        <span class="bk-brand-main">Medalbank</span>
-        <span class="bk-brand-sub">Backend</span>
+        <NuxtLink class="bk-brand-main" to="/">Medalbank</NuxtLink>
+        <span class="bk-brand-sub">Backend <span class="bk-version">{{ version }}</span></span>
       </div>
       <nav class="bk-nav">
         <NuxtLink to="/backend/athletes" :class="{ active: route.path === '/backend/athletes' }">
@@ -32,6 +32,8 @@
 
 <script setup lang="ts">
 const route = useRoute()
+const { data: versionData } = await useFetch<{ hash: string }>('/api/version')
+const version = computed(() => versionData.value?.hash ?? '')
 </script>
 
 <style scoped>
@@ -68,12 +70,20 @@ const route = useRoute()
   font-weight: 700;
   color: #e6edf3;
   letter-spacing: 0.04em;
+  text-decoration: none;
+  transition: color 0.15s;
 }
+.bk-brand-main:hover { color: #58a6ff; }
 .bk-brand-sub {
   font-size: 10px;
   color: #484f58;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+.bk-version {
+  color: #30363d;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
 }
 
 .bk-nav {

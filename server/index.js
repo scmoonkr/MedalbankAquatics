@@ -1,6 +1,7 @@
 import { config } from 'dotenv'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { execSync } from 'child_process'
 config({ path: resolve(dirname(fileURLToPath(import.meta.url)), '../.env') })
 import express from 'express'
 import { connectDB } from './db.js'
@@ -24,7 +25,13 @@ app.use((req, res, next) => {
   next()
 })
 
+const GIT_HASH = (() => {
+  try { return execSync('git rev-parse --short HEAD', { cwd: dirname(fileURLToPath(import.meta.url)) }).toString().trim() }
+  catch { return 'unknown' }
+})()
+
 app.get('/health', (_, res) => res.json({ ok: true }))
+app.get('/api/version', (_, res) => res.json({ hash: GIT_HASH }))
 
 athletesRoute(app)
 meetsRoute(app)
