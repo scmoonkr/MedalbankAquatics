@@ -31,6 +31,24 @@
         <div class="free-note">※ 프레스패스 지급 시 Community Edition으로 전환됩니다.</div>
       </div>
     </div>
+
+    <div class="paid-box swim-edition">
+      <div>
+        <div class="badge-row">
+          <span class="badge">Swim Meet</span>
+        </div>
+        <h3>장비 · 인건비 · 출장비 및 일체 포함. 하이라이트 사진 3000장+ 제공.</h3>
+        <p class="desc">
+          수영을 사랑합니다. 수영대회인 경우에만, 별도의 비용 없이 장비와 인력부터 준비와 촬영 그리고 공개동의와 공유의 과정까지 모두 메달뱅크가 지원합니다.
+        </p>
+      </div>
+      <div class="price-block">
+        <div class="price"><span class="strike">₩1,200,000</span>0원</div>
+        <div class="unit">Swimming Edition</div>
+        <div class="free-note">※ 프레스패스 지급 시 Community Edition으로 전환됩니다.</div>
+        <div class="free-note">※ 연맹·대회 측의 데크 액세스 제공이 가능한 경우에만 제공 가능.</div>
+      </div>
+    </div>
   </section>
 
   <!-- ─── COMMUNITY EDITION ─── -->
@@ -480,6 +498,28 @@ onMounted(() => {
     font-size: 14px;
     margin-top: 14px;
     letter-spacing: -0.003em;
+  }
+  .swim-edition {
+    margin-top: 20px;
+    background: rgba(56,182,255,0.055);
+  }
+  .badge-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .badge-row .badge { margin-bottom: 0; }
+  .badge-sep {
+    color: var(--fg-faint);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1;
+  }
+  .badge-swim {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
   }
   @media (max-width: 768px) {
     .paid-box { grid-template-columns: 1fr; gap: 24px; padding: 28px 22px; }

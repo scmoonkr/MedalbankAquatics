@@ -73,9 +73,8 @@
         <div class="sec-label">02 · 동의 항목</div>
         <h2>사진들이 어디에 게재되나요?</h2>
         <p class="help">
-          웹사이트에 공개되고 다운로드 되는 형태는 <strong>모든 사진</strong>에 해당됩니다.
-          하지만 모든 사진이 반드시 인스타그램이나 매거진에 게재되는 것은 아닙니다.
-          필요시 게재될 수 있어 <strong>미리 동의를 구합니다</strong>. 언제든 철회 가능합니다.
+          선수분의 사진을 다루게 되어 영광입니다.
+          국내외 대한민국 선수들의 사진을 촬영하고 다루는 대한민국 유일의 수영 전문지 '메달뱅크 아쿠아틱스' 매거진에 선수의 사진을 게재하려 합니다.
         </p>
 
         <div class="check-group">
@@ -86,7 +85,7 @@
             </span>
             <span class="text">
               <span class="title">웹사이트 공개 및 다운로드 <span class="lock-tag">필수</span></span>
-              <span class="desc">갤러리에 컬러 원본이 공개되며, 누구나 무료로 다운로드할 수 있습니다.</span>
+              <span class="desc">웹사이트 사진집에 컬러 원본이 공개되며, 누구나 무료로 다운로드할 수 있습니다.</span>
             </span>
           </label>
 
