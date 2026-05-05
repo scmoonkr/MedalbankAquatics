@@ -35,6 +35,12 @@
         </optgroup>
       </select>
 
+      <!-- 카테고리 필터 -->
+      <select v-model="categoryFilter" class="filter-select">
+        <option value="">전체 카테고리</option>
+        <option v-for="cat in categoryOptions" :key="cat" :value="cat">{{ cat }}</option>
+      </select>
+
       <!-- 태그 필터 -->
       <select v-model="tagFilter" class="filter-select">
         <option value="">전체 태그</option>
@@ -254,6 +260,7 @@ const consentFilter   = ref<'all' | 'yes' | 'no'>('all')
 const meetFilter      = ref<number | ''>('')
 const monthFilter     = ref('')
 const tagFilter       = ref('')
+const categoryFilter  = ref('')
 
 // ── Filter options ────────────────────────────────────────────────────────────
 const meetGrouped = computed(() => {
@@ -297,6 +304,12 @@ const tagOptions = computed(() => {
   return [...s].sort()
 })
 
+const categoryOptions = computed(() => {
+  const s = new Set<string>()
+  for (const img of list.value) for (const c of (img.category ?? [])) s.add(c)
+  return [...s].sort()
+})
+
 // ── Filtered list ─────────────────────────────────────────────────────────────
 const filteredList = computed(() => {
   let items = list.value
@@ -304,6 +317,7 @@ const filteredList = computed(() => {
   if (consentFilter.value === 'no')  items = items.filter(i => !i.consent_date)
   if (meetFilter.value !== '')       items = items.filter(i => i.meet_id === meetFilter.value)
   if (monthFilter.value)             items = items.filter(i => String(i.date ?? '').startsWith(monthFilter.value))
+  if (categoryFilter.value)          items = items.filter(i => (i.category ?? []).includes(categoryFilter.value))
   if (tagFilter.value)               items = items.filter(i => (i.tags ?? []).includes(tagFilter.value))
   return items
 })
