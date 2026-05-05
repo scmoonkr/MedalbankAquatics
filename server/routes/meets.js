@@ -16,7 +16,7 @@ export default function (app) {
 
   app.post('/api/admin/meets', async (req, res) => {
     try {
-      const { label, short, date, location, competition_id } = req.body
+      const { label, short, date, location, competition_id, tags } = req.body
       const last = await meets().find({}).sort({ meet_id: -1 }).limit(1).toArray()
       const meet_id = (last[0]?.meet_id ?? 0) + 1
       await meets().insertOne({
@@ -26,6 +26,7 @@ export default function (app) {
         date: date ? new Date(date) : null,
         location: location || '',
         competition_id: competition_id || '',
+        tags: Array.isArray(tags) ? tags : (tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : []),
       })
       res.json({ ok: true, meet_id })
     } catch (e) {
@@ -36,10 +37,15 @@ export default function (app) {
   app.put('/api/admin/meets/:id', async (req, res) => {
     try {
       const meet_id = parseInt(req.params.id)
-      const { label, short, date, location, competition_id } = req.body
+      const { label, short, date, location, competition_id, tags } = req.body
       await meets().updateOne(
         { meet_id },
-        { $set: { label: label ?? '', short: short ?? '', date: date ? new Date(date) : null, location: location ?? '', competition_id: competition_id ?? '' } }
+        { $set: {
+          label: label ?? '', short: short ?? '',
+          date: date ? new Date(date) : null,
+          location: location ?? '', competition_id: competition_id ?? '',
+          tags: Array.isArray(tags) ? tags : (tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : []),
+        }}
       )
       res.json({ ok: true })
     } catch (e) {

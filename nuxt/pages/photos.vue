@@ -54,6 +54,26 @@
           {{ m.label }}
         </button>
       </div>
+
+      <!-- 카테고리 필터 -->
+      <div v-if="categoriesData?.length" class="tag-filter">
+        <button type="button"
+          class="tag-btn category-btn" :class="{ active: activeCategory === null }"
+          @click="selectCategory(null)">전체</button>
+        <button v-for="cat in categoriesData" :key="cat" type="button"
+          class="tag-btn category-btn" :class="{ active: activeCategory === cat }"
+          @click="selectCategory(cat)">{{ cat }}</button>
+      </div>
+
+      <!-- 태그 필터 -->
+      <div v-if="tagsData?.length" class="tag-filter">
+        <button type="button"
+          class="tag-btn" :class="{ active: activeTag === null }"
+          @click="selectTag(null)">전체</button>
+        <button v-for="tag in tagsData" :key="tag" type="button"
+          class="tag-btn" :class="{ active: activeTag === tag }"
+          @click="selectTag(tag)">{{ tag }}</button>
+      </div>
     </div>
 
     <!-- 로딩 -->
@@ -97,10 +117,15 @@ const { data: meetsData } = useFetch<{
 }>('/api/meets')
 
 // ── State ────────────────────────────────────────────────────────────────────
-const activeMeetId  = ref<number | null>(null)
-const currentPage   = ref(1)
-const dropOpen      = ref(false)
-const clickedId     = ref<number | null>(null)
+const activeMeetId    = ref<number | null>(null)
+const activeTag       = ref<string | null>(null)
+const activeCategory  = ref<string | null>(null)
+const currentPage     = ref(1)
+const dropOpen        = ref(false)
+const clickedId       = ref<number | null>(null)
+
+const { data: tagsData }       = useFetch<string[]>('/api/tags')
+const { data: categoriesData } = useFetch<string[]>('/api/categories')
 
 // ── Images (reactive query → auto-refetch) ────────────────────────────────────
 const { data: imagesData, status: imagesStatus } = useFetch<{
@@ -112,10 +137,12 @@ const { data: imagesData, status: imagesStatus } = useFetch<{
 }>('/api/images', {
   query: {
     meet_id:  activeMeetId,
+    tag:      activeTag,
+    category: activeCategory,
     page:     currentPage,
     per_page: PER_PAGE,
   },
-  watch: [activeMeetId, currentPage],
+  watch: [activeMeetId, activeTag, activeCategory, currentPage],
 })
 
 // ── Computed ─────────────────────────────────────────────────────────────────
@@ -161,6 +188,16 @@ function selectMeet(meetId: number | null) {
   activeMeetId.value = meetId
   currentPage.value  = 1
   dropOpen.value     = false
+}
+
+function selectTag(tag: string | null) {
+  activeTag.value   = tag
+  currentPage.value = 1
+}
+
+function selectCategory(category: string | null) {
+  activeCategory.value = category
+  currentPage.value    = 1
 }
 
 function goToPage(n: number) {
@@ -216,6 +253,12 @@ onMounted(() => {
 .quick-btn:hover { color: var(--fg); border-color: var(--fg-dim); }
 .quick-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(56,182,255,0.06); }
 @media (max-width: 768px) { .photos-controls { padding: 0 18px 22px; } .event-select-btn { min-width: 200px; padding: 9px 14px; font-size: 11px; } }
+.tag-filter { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%; padding-top: 4px; }
+.tag-btn { padding: 5px 12px; background: none; border: 1px solid var(--line); border-radius: 20px; color: var(--fg-faint); font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.07em; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; white-space: nowrap; }
+.tag-btn:hover { color: var(--fg); border-color: var(--fg-dim); }
+.tag-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(56,182,255,0.06); }
+.category-btn { border-radius: 4px; }
+.category-btn.active { color: #a371f7; border-color: #a371f7; background: rgba(163,113,247,0.06); }
 .photos-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; padding: 0 14px; }
 @media (max-width: 1199px) { .photos-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 10px; } }
 @media (max-width: 768px) { .photos-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 8px; } }

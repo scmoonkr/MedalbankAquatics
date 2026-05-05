@@ -59,6 +59,26 @@
       </div>
     </div>
     <span class="consent-help">사진을 클릭하면 선택됩니다 · 다시 클릭하면 해제</span>
+
+    <!-- 태그 필터 -->
+    <div v-if="tagsData?.length" class="category-filter">
+      <button type="button"
+        class="cat-btn tag-btn-accent" :class="{ active: activeTag === null }"
+        @click="selectTag(null)">전체</button>
+      <button v-for="tag in tagsData" :key="tag" type="button"
+        class="cat-btn tag-btn-accent" :class="{ active: activeTag === tag }"
+        @click="selectTag(tag)">{{ tag }}</button>
+    </div>
+
+    <!-- 카테고리 필터 -->
+    <div v-if="categoriesData?.length" class="category-filter">
+      <button type="button"
+        class="cat-btn" :class="{ active: activeCategory === null }"
+        @click="selectCategory(null)">전체</button>
+      <button v-for="cat in categoriesData" :key="cat" type="button"
+        class="cat-btn" :class="{ active: activeCategory === cat }"
+        @click="selectCategory(cat)">{{ cat }}</button>
+    </div>
   </div>
 
   <div class="consent-grid">
@@ -96,7 +116,7 @@
       <span class="n">{{ cart.size }}</span>
       <span class="label">장 선택</span>
     </span>
-    <span>컬러사진 생성</span>
+    <span>컬러 변환.</span>
     <span class="arrow">→</span>
   </NuxtLink>
 
@@ -113,15 +133,20 @@ const CART_KEY = 'medalbank_consent_cart'
 type GalleryImage = { image_id: number; urls: { preview: string } }
 type EventItem    = { id: number | 'all'; label: string; count: number }
 
-const events       = ref<EventItem[]>([{ id: 'all', label: '전체 대회', count: 0 }])
+const events        = ref<EventItem[]>([{ id: 'all', label: '전체 대회', count: 0 }])
 const galleryImages = ref<GalleryImage[]>([])
-const pages        = ref(1)
-const eventId      = ref<number | 'all'>('all')
-const dropOpen     = ref(false)
-const currentPage  = ref(1)
-const cart         = ref(new Set<number>())
-const infoOpen     = ref(false)
+const pages         = ref(1)
+const eventId       = ref<number | 'all'>('all')
+const activeCategory = ref<string | null>(null)
+const activeTag      = ref<string | null>(null)
+const dropOpen      = ref(false)
+const currentPage   = ref(1)
+const cart          = ref(new Set<number>())
+const infoOpen      = ref(false)
 const restoredCount = ref(0)
+
+const { data: categoriesData } = useFetch<string[]>('/api/categories')
+const { data: tagsData }       = useFetch<string[]>('/api/tags')
 
 function clearRestoredCart() {
   cart.value = new Set()
@@ -134,6 +159,8 @@ const currentEvent = computed(() => events.value.find(e => e.id === eventId.valu
 async function fetchImages() {
   const query: Record<string, number | string> = { page: currentPage.value, per_page: PER_PAGE }
   if (eventId.value !== 'all') query.meet_id = eventId.value
+  if (activeCategory.value) query.category = activeCategory.value
+  if (activeTag.value)      query.tag      = activeTag.value
   try {
     const data = await $fetch<{ images: GalleryImage[]; pages: number }>('/api/images', { query: { ...query, consented: 'false' } })
     galleryImages.value = data.images
@@ -157,13 +184,23 @@ function selectEvent(id: number | 'all') {
   dropOpen.value = false
 }
 
+function selectCategory(cat: string | null) {
+  activeCategory.value = cat
+  currentPage.value = 1
+}
+
+function selectTag(tag: string | null) {
+  activeTag.value = tag
+  currentPage.value = 1
+}
+
 function goToPage(n: number) {
   if (n === currentPage.value) return
   currentPage.value = n
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-watch([eventId, currentPage], fetchImages)
+watch([eventId, activeCategory, activeTag, currentPage], fetchImages)
 
 onMounted(async () => {
   try {
@@ -339,6 +376,11 @@ onMounted(async () => {
   gap: 18px;
   flex-wrap: wrap;
 }
+.category-filter { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%; }
+.cat-btn { padding: 5px 14px; background: none; border: 1px solid var(--line); border-radius: 4px; color: var(--fg-faint); font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.07em; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; white-space: nowrap; }
+.cat-btn:hover { color: var(--fg); border-color: var(--fg-dim); }
+.cat-btn.active { color: #a371f7; border-color: #a371f7; background: rgba(163,113,247,0.06); }
+.tag-btn-accent.active { color: var(--accent, #38b6ff); border-color: var(--accent, #38b6ff); background: rgba(56,182,255,0.06); }
 .event-select { position: relative; }
 .event-select-btn {
   display: inline-flex;

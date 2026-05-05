@@ -14,7 +14,7 @@
         </svg>
       </div>
       <h1>동의가 완료되었습니다.</h1>
-      <p>{{ result.name }}님의 공개 동의가 정상적으로 처리되었습니다.<br />선택하신 <strong>{{ result.image_ids?.length ?? 0 }}장</strong>의 사진이 공개 처리됩니다.</p>
+      <p>{{ result.name }}님의 공개 동의가 정상적으로 처리되었습니다.<br />선택하신 <strong>{{ result.modified_count ?? result.image_ids?.length ?? 0 }}장</strong>의 사진이 공개 처리됩니다.</p>
       <NuxtLink class="home-link" to="/">메인으로 돌아가기 →</NuxtLink>
     </div>
 
@@ -51,7 +51,7 @@ useHead({ title: "메달뱅크 아쿠아틱스 — 동의 인증" })
 
 const route = useRoute()
 const state    = ref<'loading' | 'success' | 'already' | 'error'>('loading')
-const result   = ref<{ name?: string; image_ids?: number[] }>({})
+const result   = ref<{ name?: string; image_ids?: number[]; modified_count?: number }>({})
 const errorMsg = ref('')
 
 onMounted(async () => {
@@ -62,11 +62,12 @@ onMounted(async () => {
     return
   }
   try {
-    const data = await $fetch<{ ok: boolean; already?: boolean; name?: string; image_ids?: number[] }>(
+    const data = await $fetch<{ ok: boolean; already?: boolean; name?: string; image_ids?: number[]; modified_count?: number }>(
       '/api/consent-verify', { query: { token } }
     )
     result.value = data
-    state.value  = data.already ? 'already' : 'success'
+    state.value  = data.already ? 'already' : (data.modified_count === 0 && (data.image_ids?.length ?? 0) > 0 ? 'error' : 'success')
+    if (state.value === 'error') errorMsg.value = `인증 처리 중 오류가 발생했습니다. (이미지 업데이트 실패)`
   } catch (e: any) {
     errorMsg.value = e?.data?.error ?? '오류가 발생했습니다.'
     state.value = 'error'

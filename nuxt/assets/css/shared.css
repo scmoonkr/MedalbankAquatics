@@ -329,45 +329,6 @@ footer.ui {
   .lightbox-close svg { width: 16px; height: 16px; }
 }
 
-/* ── CUSTOM CURSOR ──────────────────────────────────────── */
-.cursor {
-  position: fixed;
-  top: 0; left: 0;
-  width: 32px; height: 32px;
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0;
-  transition: opacity 0.3s;
-  mix-blend-mode: difference;
-}
-.cursor.visible { opacity: 1; }
-.cursor-img {
-  width: 100%; height: 100%;
-  display: block;
-  transform: scale(1.6);
-  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1);
-  -webkit-user-drag: none;
-  pointer-events: none;
-}
-.cursor.over .cursor-img { transform: scale(0.85); }
-.cursor .label {
-  position: absolute;
-  top: 50%; left: 100%;
-  margin-left: 18px;
-  transform: translateY(-50%);
-  font-family: var(--font-sans);
-  font-size: 11px; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--fg);
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.cursor .label.flip { left: auto; right: 100%; margin-left: 0; margin-right: 18px; }
-.cursor.over .label { opacity: 1; }
-body.lb-open .cursor .label,
-body.menu-open .cursor .label { opacity: 0; }
-@media (hover: none), (pointer: coarse) { .cursor { display: none; } }
-
 /* ── SCROLL LOCK ─────────────────────────────────────────── */
 body.lb-open,
 body.menu-open { overflow: hidden; }

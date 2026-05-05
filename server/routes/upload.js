@@ -9,14 +9,14 @@ let _s3, _bucket, _publicBase
 
 function getS3() {
   if (!_s3) {
-    _bucket     = process.env.R2_BUCKET
-    _publicBase = process.env.R2_PUBLIC_URL
+    _bucket     = process.env.CLOUD_BUCKET
+    _publicBase = process.env.CLOUD_PUBLIC_URL
     _s3 = new S3Client({
-      endpoint: process.env.R2_ENDPOINT,
-      region: 'auto',
+      endpoint: process.env.CLOUD_ENDPOINT,
+      region: process.env.CLOUD_REGION ?? 'auto',
       credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID,
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+        accessKeyId: process.env.CLOUD_ACCESS_KEY_ID,
+        secretAccessKey: process.env.CLOUD_SECRET_ACCESS_KEY,
       },
       forcePathStyle: false,
     })
@@ -24,17 +24,14 @@ function getS3() {
   return { s3: _s3, bucket: _bucket }
 }
 
-function publicUrl(key) {
-  return `${_publicBase}/${key}`
-}
-
 async function s3Upload(buffer, key) {
   const { s3, bucket } = getS3()
   await s3.send(new PutObjectCommand({
     Bucket: bucket, Key: key, Body: buffer,
     ContentType: 'image/jpeg',
+    ACL: 'public-read',
   }))
-  return publicUrl(key)
+  return key
 }
 
 async function resizeWidth(buf, width) {
@@ -53,9 +50,13 @@ async function nextImageId() {
 export default function (app) {
   app.post('/api/admin/upload-images', upload.array('files'), async (req, res) => {
     try {
-      const meet_id = parseInt(req.body.meet_id)
-      const date    = req.body.date ? new Date(req.body.date) : null
-      const files   = req.files
+      const meet_id        = parseInt(req.body.meet_id) || 0
+      const categoryPrefix = req.body.category_prefix ? String(req.body.category_prefix).trim() : ''
+      const date     = req.body.date ? new Date(req.body.date) : null
+      const tagList  = req.body.tags     ? String(req.body.tags).split(',').map(t => t.trim()).filter(Boolean) : []
+      const catList  = req.body.category ? [String(req.body.category).trim()].filter(Boolean)                  : []
+      const prefix   = categoryPrefix || `meet-${meet_id}`
+      const files    = req.files
 
       if (!files?.length) return res.status(400).json({ error: '파일이 없습니다.' })
 
@@ -72,7 +73,6 @@ export default function (app) {
           resizeWidth(buf, 1600),
         ])
 
-        const prefix = `meet-${meet_id}`
         const [thumbUrl, previewUrl, largeUrl, originalUrl] = await Promise.all([
           s3Upload(thumbBuf,   `${prefix}/thumbs/${id}.jpg`),
           s3Upload(previewBuf, `${prefix}/previews/${id}.jpg`),
@@ -86,7 +86,8 @@ export default function (app) {
           meet_id,
           date,
           urls: { thumb: thumbUrl, preview: previewUrl, large: largeUrl, original: originalUrl },
-          tags: [],
+          tags:     tagList,
+          category: catList,
           created_at: new Date(),
         })
 

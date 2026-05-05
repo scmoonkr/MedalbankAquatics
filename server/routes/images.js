@@ -5,13 +5,13 @@ import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
 let _s3, _bucket
 function getS3() {
   if (!_s3) {
-    _bucket = process.env.R2_BUCKET
+    _bucket = process.env.CLOUD_BUCKET
     _s3 = new S3Client({
-      endpoint: process.env.R2_ENDPOINT,
-      region: 'auto',
+      endpoint: process.env.CLOUD_ENDPOINT,
+      region: process.env.CLOUD_REGION ?? 'auto',
       credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID,
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+        accessKeyId: process.env.CLOUD_ACCESS_KEY_ID,
+        secretAccessKey: process.env.CLOUD_SECRET_ACCESS_KEY,
       },
       forcePathStyle: false,
     })
@@ -19,11 +19,30 @@ function getS3() {
   return { s3: _s3, bucket: _bucket }
 }
 
-function urlToKey(url) {
-  if (!url) return null
-  try {
-    return new URL(url).pathname.slice(1)
-  } catch { return null }
+const publicBase = () => process.env.CLOUD_PUBLIC_URL ?? ''
+
+function toUrl(key) {
+  if (!key) return null
+  if (key.startsWith('http')) return key
+  return `${publicBase()}/${key}`
+}
+
+function toKey(val) {
+  if (!val) return null
+  if (val.startsWith('http')) {
+    try { return new URL(val).pathname.slice(1) } catch { return null }
+  }
+  return val
+}
+
+function resolveUrls(urls) {
+  if (!urls) return urls
+  return {
+    thumb:    toUrl(urls.thumb),
+    preview:  toUrl(urls.preview),
+    large:    toUrl(urls.large),
+    original: toUrl(urls.original),
+  }
 }
 
 const PER_PAGE = 50
@@ -34,7 +53,7 @@ export default function (app) {
       const db = getDB()
       const [docs, athletes, meets] = await Promise.all([
         images()
-          .find({}, { projection: { _id: 0, image_id: 1, athlete_id: 1, meet_id: 1, date: 1, consent_date: 1, urls: 1 } })
+          .find({}, { projection: { _id: 0, image_id: 1, athlete_id: 1, meet_id: 1, date: 1, consent_date: 1, urls: 1, tags: 1, category: 1 } })
           .sort({ image_id: -1 })
           .toArray(),
         db.collection('athletes').find({}, { projection: { _id: 0, athlete_id: 1, name: 1 } }).toArray(),
@@ -46,6 +65,7 @@ export default function (app) {
 
       res.json(docs.map(d => ({
         ...d,
+        urls:         resolveUrls(d.urls),
         athlete_name: athleteMap[d.athlete_id] ?? '',
         meet_label:   meetMap[d.meet_id]?.label ?? '',
         meet_short:   meetMap[d.meet_id]?.short ?? '',
@@ -55,14 +75,31 @@ export default function (app) {
     }
   })
 
+  app.post('/api/admin/images/bulk-tags', async (req, res) => {
+    try {
+      const { image_ids, tags, action } = req.body
+      if (!Array.isArray(image_ids) || !image_ids.length) return res.status(400).json({ error: 'image_ids 필요' })
+      const tagList = Array.isArray(tags) ? tags : (tags ?? '').split(',').map(t => t.trim()).filter(Boolean)
+      const update  = action === 'remove'
+        ? { $pullAll: { tags: tagList } }
+        : { $addToSet: { tags: { $each: tagList } } }
+      await images().updateMany({ image_id: { $in: image_ids.map(Number) } }, update)
+      res.json({ ok: true })
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
   app.put('/api/admin/images/:id', async (req, res) => {
     try {
       const image_id = parseInt(req.params.id)
-      const { athlete_id, meet_id, date, consent_date, urls } = req.body
+      const { athlete_id, meet_id, date, consent_date, urls, tags, category } = req.body
       const update = { athlete_id: parseInt(athlete_id), meet_id: parseInt(meet_id), date }
       if (consent_date) update.consent_date = new Date(consent_date)
       else update.consent_date = null
       if (urls) update.urls = urls
+      update.tags     = Array.isArray(tags)     ? tags     : (tags     ? tags.split(',').map(t => t.trim()).filter(Boolean)     : [])
+      update.category = Array.isArray(category) ? category : (category ? category.split(',').map(t => t.trim()).filter(Boolean) : [])
       await images().updateOne({ image_id }, { $set: update })
       res.json({ ok: true })
     } catch (e) {
@@ -78,7 +115,7 @@ export default function (app) {
       if (doc?.urls) {
         const { s3, bucket } = getS3()
         const keys = [doc.urls.thumb, doc.urls.preview, doc.urls.original, doc.urls.large]
-          .map(urlToKey).filter(Boolean)
+          .map(toKey).filter(Boolean)
         await Promise.allSettled(keys.map(key =>
           s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
         ))
@@ -92,13 +129,54 @@ export default function (app) {
   })
 
 
+  app.post('/api/admin/images/bulk-category', async (req, res) => {
+    try {
+      const { image_ids, category, action } = req.body
+      if (!Array.isArray(image_ids) || !image_ids.length) return res.status(400).json({ error: 'image_ids 필요' })
+      const catList = Array.isArray(category) ? category : (category ?? '').split(',').map(t => t.trim()).filter(Boolean)
+      const update  = action === 'remove'
+        ? { $pullAll: { category: catList } }
+        : { $addToSet: { category: { $each: catList } } }
+      await images().updateMany({ image_id: { $in: image_ids.map(Number) } }, update)
+      res.json({ ok: true })
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
+  app.get('/api/categories', async (req, res) => {
+    try {
+      const result = await images().aggregate([
+        { $unwind: '$category' },
+        { $group: { _id: '$category' } },
+        { $sort: { _id: 1 } },
+      ]).toArray()
+      res.json(result.map(r => r._id))
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
+  app.get('/api/tags', async (req, res) => {
+    try {
+      const result = await images().aggregate([
+        { $unwind: '$tags' },
+        { $group: { _id: '$tags' } },
+        { $sort: { _id: 1 } },
+      ]).toArray()
+      res.json(result.map(r => r._id))
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
   app.get('/api/gallery', async (req, res) => {
     try {
       const docs = await images()
-        .find({}, { projection: { _id: 0, image_id: 1, 'urls.thumb': 1, 'urls.original': 1 } })
+        .find({ tags: 'top100' }, { projection: { _id: 0, image_id: 1, 'urls.thumb': 1, 'urls.original': 1 } })
         .sort({ date: -1 })
         .toArray()
-      res.json(docs)
+      res.json(docs.map(d => ({ ...d, urls: resolveUrls(d.urls) })))
     } catch (e) {
       res.status(500).json({ error: e.message })
     }
@@ -111,7 +189,7 @@ export default function (app) {
       const docs = await images()
         .find({ image_id: { $in: ids } }, { projection: { _id: 0, image_id: 1, 'urls.preview': 1, 'urls.thumb': 1 } })
         .toArray()
-      res.json(docs)
+      res.json(docs.map(d => ({ ...d, urls: resolveUrls(d.urls) })))
     } catch (e) {
       res.status(500).json({ error: e.message })
     }
@@ -123,9 +201,14 @@ export default function (app) {
       const perPage = Math.min(200, parseInt(req.query.per_page) || PER_PAGE)
       const meetId  = req.query.meet_id ? parseInt(req.query.meet_id) : null
 
+      const tag      = req.query.tag      ? String(req.query.tag)      : null
+      const category = req.query.category ? String(req.query.category) : null
+
       const consented = req.query.consented !== 'false'
       const filter = { consent_date: { $exists: consented } }
-      if (meetId) filter.meet_id = meetId
+      if (meetId)   filter.meet_id  = meetId
+      if (tag)      filter.tags     = tag
+      if (category) filter.category = category
 
       const [total, docs] = await Promise.all([
         images().countDocuments(filter),
@@ -142,7 +225,7 @@ export default function (app) {
           image_id: d.image_id,
           meet_id:  d.meet_id,
           date:     d.date,
-          urls:     d.urls,
+          urls:     resolveUrls(d.urls),
         })),
         total,
         page,

@@ -30,13 +30,14 @@
         <thead>
           <tr>
             <th class="col-chk">
-              <input type="checkbox" :checked="allChecked" @change="toggleAll" />
+              <input type="checkbox" v-model="allChecked" />
             </th>
             <th class="col-id">meet_id</th>
             <th class="col-label">대회명</th>
             <th class="col-date">날짜</th>
             <th class="col-loc">장소</th>
             <th class="col-comp">competition_id</th>
+            <th class="col-tags">tags</th>
           </tr>
         </thead>
         <tbody>
@@ -51,6 +52,7 @@
             <td class="col-date">{{ fmtDate(m.date) }}</td>
             <td class="col-loc">{{ m.location }}</td>
             <td class="col-comp">{{ m.competition_id }}</td>
+            <td class="col-tags">{{ (m.tags ?? []).join(', ') }}</td>
           </tr>
         </tbody>
       </table>
@@ -89,6 +91,10 @@
         <div class="field-row">
           <label>competition_id</label>
           <input v-model="editing.competition_id" />
+        </div>
+        <div class="field-row">
+          <label>tags</label>
+          <input v-model="editing.tagsInput" placeholder="tag1, tag2, ..." />
         </div>
 
         <div class="section-label">이미지 업로드</div>
@@ -236,34 +242,30 @@ const filteredList = computed(() => {
 })
 
 // ── 체크박스 ─────────────────────────────────────────────────────────────────
-const allChecked = computed(() =>
-  filteredList.value.length > 0 &&
-  filteredList.value.every(m => checkedIds.value.includes(m.meet_id)))
-
-function toggleAll(e: Event) {
-  const ids = filteredList.value.map(m => m.meet_id)
-  if ((e.target as HTMLInputElement).checked) {
-    checkedIds.value = [...new Set([...checkedIds.value, ...ids])]
-  } else {
-    checkedIds.value = checkedIds.value.filter(id => !ids.includes(id))
-  }
-}
+const allChecked = computed({
+  get: () => filteredList.value.length > 0 && filteredList.value.every(m => checkedIds.value.includes(m.meet_id)),
+  set: (val: boolean) => {
+    const ids = filteredList.value.map(m => m.meet_id)
+    if (val) checkedIds.value = [...new Set([...checkedIds.value, ...ids])]
+    else     checkedIds.value = checkedIds.value.filter(id => !ids.includes(id))
+  },
+})
 
 // ── 편집 패널 열기 ────────────────────────────────────────────────────────────
 function openEdit(m: any) {
-  editing.value = { ...m }
+  editing.value = { ...m, tagsInput: (m.tags ?? []).join(', ') }
   editDate.value = m.date ? new Date(m.date).toISOString().slice(0, 10) : ''
   resetUpload()
 }
 
 function openNew() {
-  editing.value = { label: '', short: '', location: '', competition_id: '' }
+  editing.value = { label: '', short: '', location: '', competition_id: '', tagsInput: '' }
   editDate.value = ''
   resetUpload()
 }
 
 function clearForm() {
-  editing.value = { label: '', short: '', location: '', competition_id: '' }
+  editing.value = { label: '', short: '', location: '', competition_id: '', tagsInput: '' }
   editDate.value = ''
   resetUpload()
 }
@@ -454,6 +456,7 @@ async function save() {
     date:           editDate.value || null,
     location:       editing.value.location ?? '',
     competition_id: editing.value.competition_id ?? '',
+    tags:           (editing.value.tagsInput ?? '').split(',').map((t: string) => t.trim()).filter(Boolean),
   }
   try {
     if (meet_id) {
@@ -508,6 +511,7 @@ td { padding: 10px 12px; vertical-align: middle; }
 .col-date { width: 100px; }
 .col-loc  { width: 140px; }
 .col-comp { width: 120px; color: #8b949e; }
+.col-tags { width: 160px; color: #8b949e; font-size: 12px; }
 input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #388bfd; }
 
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; }

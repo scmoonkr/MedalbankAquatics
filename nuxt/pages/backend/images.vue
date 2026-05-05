@@ -3,6 +3,12 @@
     <header class="admin-head">
       <h1>이미지 관리</h1>
       <div class="head-actions">
+        <button class="btn-tag" :disabled="!checkedIds.length" @click="openTagModal">
+          태그 ({{ checkedIds.length }})
+        </button>
+        <button class="btn-category" :disabled="!checkedIds.length" @click="openCategoryModal">
+          카테고리 ({{ checkedIds.length }})
+        </button>
         <button class="btn-danger" :disabled="!checkedIds.length" @click="deleteChecked">
           선택 삭제 ({{ checkedIds.length }})
         </button>
@@ -27,6 +33,12 @@
         <optgroup v-for="g in monthGrouped" :key="g.year" :label="g.year">
           <option v-for="mo in g.months" :key="mo" :value="mo">{{ mo.slice(5) }}월</option>
         </optgroup>
+      </select>
+
+      <!-- 태그 필터 -->
+      <select v-model="tagFilter" class="filter-select">
+        <option value="">전체 태그</option>
+        <option v-for="tag in tagOptions" :key="tag" :value="tag">{{ tag }}</option>
       </select>
 
       <span class="filter-count">{{ filteredList.length }}장</span>
@@ -57,13 +69,15 @@
         <thead>
           <tr>
             <th class="col-chk">
-              <input type="checkbox" :checked="allChecked" @change="toggleAll" />
+              <input type="checkbox" v-model="allChecked" />
             </th>
             <th class="col-img">이미지</th>
             <th class="col-id">image_id</th>
             <th class="col-name">선수</th>
             <th class="col-meet">대회</th>
             <th class="col-consent">consent_date</th>
+            <th class="col-tags">tags</th>
+            <th class="col-category">category</th>
           </tr>
         </thead>
         <tbody>
@@ -84,6 +98,8 @@
               <span v-if="img.consent_date" class="badge approved">{{ fmtDate(img.consent_date) }}</span>
               <span v-else class="badge review">미동의</span>
             </td>
+            <td class="col-tags">{{ (img.tags ?? []).join(', ') }}</td>
+            <td class="col-category">{{ (img.category ?? []).join(', ') }}</td>
           </tr>
         </tbody>
       </table>
@@ -165,6 +181,11 @@
           <label>large</label>
           <input v-model="editing.urls.large" placeholder="https://..." />
         </div>
+        <div class="section-label">기타</div>
+        <div class="field-row">
+          <label>tags</label>
+          <input v-model="editing.tagsInput" placeholder="tag1, tag2, ..." />
+        </div>
       </div>
       <div class="edit-footer">
         <button class="btn-danger" @click="deleteOne(editing.image_id)">삭제</button>
@@ -172,6 +193,42 @@
       </div>
     </div>
     <div v-if="editing" class="overlay" @click="editing = null" />
+
+    <!-- 카테고리 모달 -->
+    <div v-if="categoryModal" class="modal-overlay" @click.self="categoryModal = false">
+      <div class="tag-modal">
+        <div class="modal-header">
+          <span>카테고리 관리 — {{ checkedIds.length }}장 선택</span>
+          <button class="close-btn" @click="categoryModal = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-hint">쉼표로 구분해서 입력 (예: cat1, cat2)</p>
+          <input v-model="categoryInput" class="tag-input" placeholder="cat1, cat2, ..." @keyup.enter="bulkCategory('add')" />
+        </div>
+        <div class="modal-footer">
+          <button class="btn-danger" :disabled="!categoryInput.trim()" @click="bulkCategory('remove')">삭제</button>
+          <button class="btn-primary" :disabled="!categoryInput.trim()" @click="bulkCategory('add')">저장</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 태그 모달 -->
+    <div v-if="tagModal" class="modal-overlay" @click.self="tagModal = false">
+      <div class="tag-modal">
+        <div class="modal-header">
+          <span>태그 관리 — {{ checkedIds.length }}장 선택</span>
+          <button class="close-btn" @click="tagModal = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-hint">쉼표로 구분해서 입력 (예: tag1, tag2)</p>
+          <input v-model="tagInput" class="tag-input" placeholder="tag1, tag2, ..." @keyup.enter="bulkTag('add')" />
+        </div>
+        <div class="modal-footer">
+          <button class="btn-danger" :disabled="!tagInput.trim()" @click="bulkTag('remove')">삭제</button>
+          <button class="btn-primary" :disabled="!tagInput.trim()" @click="bulkTag('add')">저장</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -189,9 +246,14 @@ const checkedIds      = ref<number[]>([])
 const editing         = ref<any>(null)
 const editConsentDate = ref('')
 const viewMode        = ref<'list' | 'grid'>('list')
+const tagModal        = ref(false)
+const tagInput        = ref('')
+const categoryModal   = ref(false)
+const categoryInput   = ref('')
 const consentFilter   = ref<'all' | 'yes' | 'no'>('all')
 const meetFilter      = ref<number | ''>('')
 const monthFilter     = ref('')
+const tagFilter       = ref('')
 
 // ── Filter options ────────────────────────────────────────────────────────────
 const meetGrouped = computed(() => {
@@ -229,6 +291,12 @@ const monthGrouped = computed(() => {
     .sort((a, b) => b.year.localeCompare(a.year))
 })
 
+const tagOptions = computed(() => {
+  const s = new Set<string>()
+  for (const img of list.value) for (const t of (img.tags ?? [])) s.add(t)
+  return [...s].sort()
+})
+
 // ── Filtered list ─────────────────────────────────────────────────────────────
 const filteredList = computed(() => {
   let items = list.value
@@ -236,24 +304,21 @@ const filteredList = computed(() => {
   if (consentFilter.value === 'no')  items = items.filter(i => !i.consent_date)
   if (meetFilter.value !== '')       items = items.filter(i => i.meet_id === meetFilter.value)
   if (monthFilter.value)             items = items.filter(i => String(i.date ?? '').startsWith(monthFilter.value))
+  if (tagFilter.value)               items = items.filter(i => (i.tags ?? []).includes(tagFilter.value))
   return items
 })
 
-const allChecked = computed(() =>
-  filteredList.value.length > 0 &&
-  filteredList.value.every(i => checkedIds.value.includes(i.image_id)))
-
-function toggleAll(e: Event) {
-  const ids = filteredList.value.map(i => i.image_id)
-  if ((e.target as HTMLInputElement).checked) {
-    checkedIds.value = [...new Set([...checkedIds.value, ...ids])]
-  } else {
-    checkedIds.value = checkedIds.value.filter(id => !ids.includes(id))
-  }
-}
+const allChecked = computed({
+  get: () => filteredList.value.length > 0 && filteredList.value.every(i => checkedIds.value.includes(i.image_id)),
+  set: (val: boolean) => {
+    const ids = filteredList.value.map(i => i.image_id)
+    if (val) checkedIds.value = [...new Set([...checkedIds.value, ...ids])]
+    else     checkedIds.value = checkedIds.value.filter(id => !ids.includes(id))
+  },
+})
 
 function openEdit(img: any) {
-  editing.value = { ...img, urls: { thumb: '', preview: '', original: '', large: '', ...img.urls } }
+  editing.value = { ...img, urls: { thumb: '', preview: '', original: '', large: '', ...img.urls }, tagsInput: (img.tags ?? []).join(', ') }
   editConsentDate.value = img.consent_date
     ? new Date(img.consent_date).toISOString().slice(0, 10)
     : ''
@@ -273,6 +338,7 @@ async function save() {
       date:         editing.value.date,
       consent_date: editConsentDate.value || null,
       urls:         editing.value.urls,
+      tags:         (editing.value.tagsInput ?? '').split(',').map((t: string) => t.trim()).filter(Boolean),
     },
   })
   editing.value = null
@@ -284,6 +350,34 @@ async function deleteOne(id: number) {
   await $fetch(`/api/admin/images/${id}`, { method: 'DELETE' })
   editing.value = null
   checkedIds.value = checkedIds.value.filter(i => i !== id)
+  await refresh()
+}
+
+function openTagModal() {
+  tagInput.value = ''
+  tagModal.value = true
+}
+
+function openCategoryModal() {
+  categoryInput.value = ''
+  categoryModal.value = true
+}
+
+async function bulkCategory(action: 'add' | 'remove') {
+  await $fetch('/api/admin/images/bulk-category', {
+    method: 'POST',
+    body: { image_ids: checkedIds.value, category: categoryInput.value, action },
+  })
+  categoryModal.value = false
+  await refresh()
+}
+
+async function bulkTag(action: 'add' | 'remove') {
+  await $fetch('/api/admin/images/bulk-tags', {
+    method: 'POST',
+    body: { image_ids: checkedIds.value, tags: tagInput.value, action },
+  })
+  tagModal.value = false
   await refresh()
 }
 
@@ -335,6 +429,8 @@ td { padding: 8px 12px; vertical-align: middle; }
 .col-name { width: 100px; }
 .col-meet { }
 .col-consent { width: 110px; }
+.col-tags { width: 140px; color: #8b949e; font-size: 12px; }
+.col-category { width: 140px; color: #a371f7; font-size: 12px; }
 input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #388bfd; }
 .thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 4px; display: block; }
 .no-img { width: 80px; height: 80px; background: #21262d; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #8b949e; font-size: 11px; }
@@ -385,4 +481,20 @@ input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-colo
 .btn-danger { padding: 8px 20px; background: transparent; border: 1px solid #f85149; border-radius: 6px; color: #f85149; font-size: 13px; cursor: pointer; }
 .btn-danger:hover { background: #3a1a1a; }
 .btn-danger:disabled { opacity: 0.4; cursor: default; }
+.btn-tag { padding: 8px 20px; background: transparent; border: 1px solid #388bfd; border-radius: 6px; color: #388bfd; font-size: 13px; cursor: pointer; }
+.btn-tag:hover { background: #1c2a3a; }
+.btn-tag:disabled { opacity: 0.4; cursor: default; }
+.btn-category { padding: 8px 20px; background: transparent; border: 1px solid #a371f7; border-radius: 6px; color: #a371f7; font-size: 13px; cursor: pointer; }
+.btn-category:hover { background: #2a1a3a; }
+.btn-category:disabled { opacity: 0.4; cursor: default; }
+
+/* ── 태그 모달 ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; display: flex; align-items: center; justify-content: center; }
+.tag-modal { background: #161b22; border: 1px solid #30363d; border-radius: 10px; width: 400px; max-width: 90vw; display: flex; flex-direction: column; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #30363d; font-weight: 600; }
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.modal-hint { font-size: 12px; color: #8b949e; margin: 0; }
+.tag-input { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; padding: 8px 12px; font-size: 13px; font-family: inherit; width: 100%; box-sizing: border-box; }
+.tag-input:focus { outline: none; border-color: #388bfd; }
+.modal-footer { padding: 16px 20px; border-top: 1px solid #30363d; display: flex; justify-content: space-between; gap: 10px; }
 </style>

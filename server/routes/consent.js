@@ -47,7 +47,9 @@ function buildEmailHtml({ name, images, verifyUrl, siteUrl }) {
   const rows = []
   for (let i = 0; i < images.length; i += cols) {
     const cells = images.slice(i, i + cols).map(img => {
-      const thumbUrl = `${siteUrl}${img.urls.thumb}`
+      const cloudBase = process.env.CLOUD_PUBLIC_URL ?? ''
+      const thumb = img.urls.thumb ?? ''
+      const thumbUrl = thumb.startsWith('http') ? thumb : `${cloudBase}/${thumb}`
       return `<td width="33%" style="padding:3px;">
         <img src="${thumbUrl}" width="176" alt="#${img.image_id}"
           style="display:block;width:176px;height:118px;object-fit:cover;border:0;"/>
@@ -159,10 +161,18 @@ export default function (app) {
       await athleteCol.updateOne({ athlete_id: athleteId }, { $set: setFields })
 
       // images — athlete_id, consent_date 업데이트
-      await getDB().collection('images').updateMany(
-        { image_id: { $in: image_ids } },
-        { $set: { athlete_id: athleteId, consent_date: now } }
-      )
+      const imgIds = Array.isArray(image_ids) ? image_ids.map(Number).filter(Boolean) : []
+      let modifiedCount = 0
+      if (imgIds.length > 0) {
+        const updateResult = await getDB().collection('images').updateMany(
+          { image_id: { $in: imgIds } },
+          { $set: { athlete_id: athleteId, consent_date: now } }
+        )
+        modifiedCount = updateResult.modifiedCount
+        console.log(`[consent verify] image_ids=${JSON.stringify(imgIds)} modified=${modifiedCount}`)
+      } else {
+        console.warn('[consent verify] image_ids is empty')
+      }
 
       // 처리 완료 로그 기록 (중복 방지용)
       await logCol.insertOne({
@@ -171,12 +181,13 @@ export default function (app) {
         name,
         email,
         minor,
-        image_ids,
+        image_ids:   imgIds,
         consents:    consentItems,
         verified_at: now,
+        modified_count: modifiedCount,
       })
 
-      res.json({ ok: true, name, image_ids, athlete_id: athleteId })
+      res.json({ ok: true, name, image_ids: imgIds, athlete_id: athleteId, modified_count: modifiedCount })
     } catch (e) {
       res.status(500).json({ error: e.message })
     }

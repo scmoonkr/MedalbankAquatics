@@ -331,7 +331,7 @@
     <!-- ─── CONTACT ─── -->
   <section class="sec reveal">
     <div class="sec-eyebrow"><span class="num">06</span>Get in touch</div>
-    <h2>사진촬영이 필요하신가요?</h2>
+    <h2>수영대회 사진기록이 필요하신가요?</h2>
     <p>대회 촬영 신청, 협업 문의, 또는 그냥 수영 이야기도 환영합니다.</p>
 
     <div class="cta-area">

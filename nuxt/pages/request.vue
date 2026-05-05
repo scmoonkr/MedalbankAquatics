@@ -14,16 +14,15 @@
 
   <!-- ─── PREMIUM EDITION ─── -->
   <section class="sec reveal">
-    <div class="sec-eyebrow"><span class="num">01</span>Premium Edition · 정식 의뢰</div>
+    <div class="sec-eyebrow"><span class="num">01</span>EDITIONS · 정식 의뢰</div>
     <h2>일반 촬영 및 수영대회가 아닌 촬영.</h2>
 
     <div class="paid-box">
       <div>
         <span class="badge">Premium</span>
-        <h3>장비 · 인건비 · 출장비 포함, 하이라이트 300장+</h3>
+        <h3>촬영 서비스 및 하이라이트 사진 300장+ 제공.</h3>
         <p class="desc">
-          연맹·대회 측의 데크 액세스 제공이 어려운 상황에서 정식 의뢰 형태로 진행됩니다.
-          medalbankaquatics.com에 대회명과 함께 공유되며, 단체·팀·클럽 단위 사전 의뢰도 가능합니다.
+          수영대회가 아닌 다른 종목의 의뢰 형태에 대한 설명입니다. 단체·팀·클럽 단위 사전 의뢰도 가능합니다.
         </p>
       </div>
       <div class="price-block">

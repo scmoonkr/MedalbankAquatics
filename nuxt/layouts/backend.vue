@@ -18,6 +18,14 @@
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="12" height="10" rx="1.5"/><circle cx="5.5" cy="6.5" r="1"/><path d="M2 11l3-3 2.5 2.5L11 7l3 3"/></svg>
           이미지
         </NuxtLink>
+        <NuxtLink to="/backend/categories" :class="{ active: route.path === '/backend/categories' }">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 3h5v5H2zM9 3h5v5H9zM2 10h5v3H2zM9 10h5v3H9z"/></svg>
+          카테고리
+        </NuxtLink>
+        <NuxtLink to="/backend/tags" :class="{ active: route.path === '/backend/tags' }">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 010 1.414l-4.586 4.586a1 1 0 01-1.414 0L3.293 8.293A1 1 0 013 7.586V4z"/><circle cx="5.5" cy="5.5" r="0.75" fill="currentColor" stroke="none"/></svg>
+          태그
+        </NuxtLink>
         <NuxtLink to="/backend/request" :class="{ active: route.path === '/backend/request' }">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M13 3H3a1 1 0 00-1 1v7a1 1 0 001 1h2l3 2 3-2h2a1 1 0 001-1V4a1 1 0 00-1-1z"/></svg>
           촬영요청

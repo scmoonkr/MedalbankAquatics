@@ -5,11 +5,6 @@
     <div class="stage-dim"></div>
     <div class="grain"></div>
 
-    <div class="cursor" id="cursor">
-      <img class="cursor-img" src="/images/cursor_2.png" alt="" />
-      <div class="label" id="cursorLabel">ㅍㅇ ㅎㅇㅌ</div>
-    </div>
-
     <NuxtLink class="logo" to="/" aria-label="Medalbank Aquatics — Home">
       <img class="logo-img" src="/images/medalbankaquatics.png" alt="Medalbank Aquatics" />
     </NuxtLink>
@@ -101,7 +96,7 @@ onMounted(async () => {
       aspectRatio: 4 / 5,
       friction: 0.93, wheelMul: 0.55, dragMul: 1.0, maxVel: 70,
       curveRatio: 0.30, curveVelBoost: 1.5,
-      clickThreshold: 6, cursorEase: 0.20, snapEase: 0.18,
+      clickThreshold: 6, snapEase: 0.18,
       bufferTiles: 1, imageCount,
     }
 
@@ -114,15 +109,12 @@ onMounted(async () => {
       camX: 0, camY: 0, velX: 0, velY: 0, smoothVelX: 0,
       targetCamX: null, isDown: false, isDragging: false,
       lastPX: 0, lastPY: 0, moveDist: 0,
-      pointerX: -1e4, pointerY: -1e4, curX: 0, curY: 0,
       tileW: 320, tileH: 400, gap: 14, cols: 8, rows: 5,
-      fullCols: 5, perRow: 6, tiles: [], hoveredKey: null, visible: true,
+      fullCols: 5, perRow: 6, tiles: [], visible: true,
     }
 
-    const stage     = document.getElementById('stage')!
-    const cursorEl  = document.getElementById('cursor')!
-    const labelEl   = document.getElementById('cursorLabel')!
-    const clockEl   = document.getElementById('clock')!
+    const stage   = document.getElementById('stage')!
+    const clockEl = document.getElementById('clock')!
 
     function computeSize() {
       const vw = window.innerWidth, vh = window.innerHeight
@@ -184,10 +176,6 @@ onMounted(async () => {
         if (Math.abs(S.velY) < 0.05) S.velY = 0
       }
 
-      S.curX += (S.pointerX - S.curX) * CFG.cursorEase
-      S.curY += (S.pointerY - S.curY) * CFG.cursorEase
-      cursorEl.style.transform = `translate(${S.curX}px, ${S.curY}px) translate(-50%, -50%)`
-
       S.smoothVelX += (S.velX - S.smoothVelX) * 0.10
 
       const vw = window.innerWidth
@@ -218,39 +206,7 @@ onMounted(async () => {
           }
         }
       }
-      detectHover()
       requestAnimationFrame(render)
-    }
-
-    function detectHover() {
-      if (S.pointerX < 0) return
-      const r = pointToCell(S.pointerX, S.pointerY)
-      if (r.inTile) {
-        const key = r.ci + ',' + r.cj
-        if (S.hoveredKey !== key) {
-          S.hoveredKey = key
-          cursorEl.classList.add('over')
-          labelEl.classList.toggle('flip', S.pointerX > window.innerWidth - 220)
-        }
-      } else if (S.hoveredKey !== null) {
-        S.hoveredKey = null
-        cursorEl.classList.remove('over')
-      }
-    }
-
-    function pointToCell(px: number, py: number) {
-      const vw = window.innerWidth
-      const cellW = S.tileW + S.gap, cellH = S.tileH + S.gap
-      const speedFactor   = Math.min(1, Math.abs(S.smoothVelX) / CFG.maxVel)
-      const curveStrength = S.tileH * CFG.curveRatio * (1 + speedFactor * CFG.curveVelBoost)
-      const offX    = (px - vw / 2) / (vw / 2)
-      const clamped = Math.max(-1.4, Math.min(1.4, offX))
-      const curveOff = (1 - Math.cos(clamped * Math.PI / 2)) * curveStrength
-      const wx = px + S.camX, wy = py + S.camY - curveOff
-      const ci = Math.floor(wx / cellW), cj = Math.floor(wy / cellH)
-      const localX = wx - ci * cellW, localY = wy - cj * cellH
-      const inTile = localX >= 0 && localX < S.tileW && localY >= 0 && localY < S.tileH
-      return { ci, cj, inTile }
     }
 
     const getPoint = (e: any) => e.touches?.[0]
@@ -263,15 +219,10 @@ onMounted(async () => {
       S.isDown = true; S.isDragging = false
       S.lastPX = p.x; S.lastPY = p.y; S.moveDist = 0
       S.velX = 0; S.velY = 0; S.targetCamX = null
-      cursorEl.classList.add('dragging')
       if (e.cancelable) e.preventDefault()
     }
     function onMove(e: any) {
       const p = getPoint(e)
-      S.pointerX = p.x; S.pointerY = p.y
-      if (!cursorEl.classList.contains('visible')) {
-        S.curX = p.x; S.curY = p.y; cursorEl.classList.add('visible')
-      }
       if (S.isDown) {
         const dx = p.x - S.lastPX, dy = p.y - S.lastPY
         S.moveDist += Math.abs(dx) + Math.abs(dy)
@@ -284,7 +235,7 @@ onMounted(async () => {
         S.lastPX = p.x; S.lastPY = p.y
       }
     }
-    function onUp() { S.isDown = false; S.isDragging = false; cursorEl.classList.remove('dragging') }
+    function onUp() { S.isDown = false; S.isDragging = false }
     function onWheel(e: WheelEvent) {
       e.preventDefault(); S.targetCamX = null
       S.velX = clamp(S.velX + e.deltaX * CFG.wheelMul, -CFG.maxVel, CFG.maxVel)
@@ -319,7 +270,6 @@ onMounted(async () => {
       lightbox.setAttribute('aria-hidden', 'false')
       document.body.classList.add('lb-open')
       S.velX = 0; S.velY = 0; S.isDown = false; S.isDragging = false
-      cursorEl.classList.remove('dragging', 'over'); S.hoveredKey = null
       const hiRes = new Image()
       hiRes.onload = () => {
         if (lightbox.classList.contains('open') &&
@@ -474,12 +424,10 @@ body.is-home {
   width: 100%; height: 100vh; height: 100dvh;
   overflow: hidden; overscroll-behavior: none;
   user-select: none; -webkit-user-select: none;
-  cursor: none; position: fixed; inset: 0;
+  position: fixed; inset: 0;
   opacity: 0; animation: pageIn 0.9s 0.15s ease-out forwards;
 }
 @keyframes pageIn { to { opacity: 1; } }
-@media (hover: none), (pointer: coarse) { body.is-home { cursor: auto; } }
-
 #stage {
   position: fixed; inset: 0; overflow: hidden; touch-action: none;
   --gap: 14px;
@@ -534,8 +482,6 @@ body:has(nav.menu:hover) .stage-dim { opacity: 1; }
   mix-blend-mode: difference;
 }
 .ui a, .ui button { pointer-events: auto; }
-body.is-home .ui a, body.is-home .ui button { cursor: none; }
-@media (hover: none), (pointer: coarse) { body.is-home .ui a, body.is-home .ui button { cursor: auto; } }
 header.ui {
   top: 0; left: 0; right: 0;
   padding: 26px 32px; padding-top: max(26px, env(safe-area-inset-top));
@@ -565,8 +511,6 @@ body.loader-active .logo-img { max-width: min(380px, 60vw); max-height: 80px; }
   .logo { top: max(16px, env(safe-area-inset-top)); left: 18px; }
   .logo-img { max-width: 150px; max-height: 28px; }
 }
-body.is-home .logo { cursor: none; }
-@media (hover: none), (pointer: coarse) { body.is-home .logo { cursor: auto; } }
 nav.menu { display: flex; gap: 22px; }
 nav.menu a { position: relative; color: var(--fg); text-decoration: none; padding: 4px 0; overflow: hidden; }
 nav.menu-inline a::after {
@@ -603,38 +547,6 @@ body.is-home footer.ui {
   .meta-left > div:nth-child(1) { order: 3; }
   .meta-left > div:nth-child(2) { order: 4; }
 }
-.cursor {
-  position: fixed; top: 0; left: 0; width: 32px; height: 32px;
-  pointer-events: none; z-index: 3000; will-change: transform;
-  opacity: 0; transition: opacity 0.3s; mix-blend-mode: difference;
-}
-.cursor.visible { opacity: 1; }
-.cursor-img {
-  width: 100%; height: 100%; display: block;
-  transform: scale(1.6);
-  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
-  user-select: none; -webkit-user-drag: none; pointer-events: none;
-}
-.cursor.over .cursor-img { transform: scale(0.85); }
-.cursor.dragging .cursor-img { transform: scale(0.5); }
-body:has(.logo:hover) .cursor .cursor-img,
-body:has(.ui a:hover) .cursor .cursor-img,
-body:has(.lightbox-close:hover) .cursor .cursor-img,
-body:has(.menu-toggle:hover) .cursor .cursor-img,
-body:has(nav.menu-fullscreen a:hover) .cursor .cursor-img { transform: scale(0.85); }
-body:has(.logo:hover) .cursor .label,
-body:has(.ui a:hover) .cursor .label,
-body.lb-open .cursor .label,
-body.menu-open .cursor .label { opacity: 0; }
-.cursor .label {
-  position: absolute; top: 50%; left: 100%; margin-left: 18px;
-  transform: translateY(-50%); white-space: nowrap; color: var(--fg);
-  font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
-  opacity: 0; transition: opacity 0.3s; font-weight: 500;
-}
-.cursor .label.flip { left: auto; right: 100%; margin-left: 0; margin-right: 18px; }
-.cursor.over .label { opacity: 1; }
-@media (hover: none), (pointer: coarse) { .cursor { display: none; } }
 .grain {
   position: fixed; inset: -10%; pointer-events: none; z-index: 999;
   opacity: 0.10; mix-blend-mode: overlay;
@@ -673,8 +585,6 @@ body.menu-open .menu-toggle span:nth-child(3) { transform: translateY(-10px) rot
   body.menu-open .menu-toggle span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
   body.menu-open .menu-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 }
-body.is-home .menu-toggle { cursor: none; }
-@media (hover: none), (pointer: coarse) { body.is-home .menu-toggle { cursor: auto; } }
 .menu-overlay {
   position: fixed; inset: 0; z-index: 1900;
   display: flex; align-items: center; justify-content: center;
@@ -684,8 +594,6 @@ body.is-home .menu-toggle { cursor: none; }
   opacity: 0; pointer-events: none; transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1);
 }
 body.menu-open .menu-overlay { opacity: 1; pointer-events: auto; }
-body.is-home .menu-overlay { cursor: none; }
-@media (hover: none), (pointer: coarse) { body.is-home .menu-overlay { cursor: auto; } }
 nav.menu-fullscreen { flex-direction: column; gap: 28px; align-items: flex-start; padding-left: 38px; }
 nav.menu-fullscreen a {
   position: relative;

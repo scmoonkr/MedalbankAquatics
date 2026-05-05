@@ -15,6 +15,9 @@ import uploadRoute    from './routes/upload.js'
 
 const app  = express()
 const PORT = process.env.PORT ?? 6630
+const __dir = dirname(fileURLToPath(import.meta.url))
+
+app.use('/images', express.static(resolve(__dir, '../html/images')))
 
 app.use(express.json())
 app.use((req, res, next) => {
