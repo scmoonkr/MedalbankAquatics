@@ -32,4 +32,8 @@ export default defineNuxtConfig({
     ],
   },
 
+  routeRules: {
+    '/backend/**': { ssr: false },
+  },
+
 })
