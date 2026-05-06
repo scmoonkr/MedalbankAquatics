@@ -200,6 +200,7 @@ const dirDoneCount  = ref(0)
 
 // ── 공통 진행 상태 ───────────────────────────────────────────────────────────
 const uploading     = ref(false)
+const uploadAborted = ref(false)
 const uploadDone    = ref(0)
 const uploadTotal   = ref(0)
 const uploadResults = ref<any[]>([])
@@ -271,6 +272,7 @@ function clearForm() {
 }
 
 function resetUpload() {
+  uploadAborted.value = true
   uploadFiles.value = []
   uploadResults.value = []
   dirHandle.value = null
@@ -403,10 +405,12 @@ async function doDirUpload() {
   uploadTotal.value = dirPending.value.length
   uploadResults.value = []
 
+  uploadAborted.value = false
   const pending = [...dirPending.value]
   const folder  = dirName.value
 
   for (let i = 0; i < pending.length; i += BATCH_SIZE) {
+    if (uploadAborted.value) break
     const batch = pending.slice(i, i + BATCH_SIZE)
 
     const batchItems: { file: File }[] = []
@@ -441,6 +445,8 @@ async function doDirUpload() {
 function fmtDate(d: string) {
   return d ? String(d).slice(0, 10) : ''
 }
+
+watch(editing, (val) => { if (!val) resetUpload() })
 
 watch(editDate, (val) => {
   if (editing.value && val && val.length >= 7) {
