@@ -45,14 +45,14 @@ uploadRoute(app)
 
 connectDB().then(async () => {
   await ensureIndexes()
-  // atomic image_id 카운터 초기화 (현재 max보다 낮을 때만 세팅)
+  // atomic image_id 카운터 초기화 ($max: 현재값보다 클 때만 갱신, upsert로 없으면 생성)
   const { getDB } = await import('./db.js')
   const { images } = await import('./models/Image.js')
   const maxImg = await images().find({}).sort({ image_id: -1 }).limit(1).next()
   const maxId  = maxImg?.image_id ?? 0
   await getDB().collection('counters').updateOne(
-    { _id: 'image_id', seq: { $lt: maxId } },
-    { $set: { seq: maxId } },
+    { _id: 'image_id' },
+    { $max: { seq: maxId } },
     { upsert: true }
   )
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
