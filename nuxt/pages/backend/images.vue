@@ -87,7 +87,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="img in filteredList" :key="img.image_id"
+          <tr v-for="img in filteredList" :key="img._id || img.image_id"
             :class="{ selected: checkedIds.includes(img.image_id), editing: editing?.image_id === img.image_id }"
             @click.stop="openEdit(img)">
             <td class="col-chk" @click.stop>
@@ -113,7 +113,7 @@
 
     <!-- 그리드 뷰 -->
     <div v-else class="img-grid">
-      <button v-for="img in filteredList" :key="img.image_id"
+      <button v-for="img in filteredList" :key="img._id || img.image_id"
         class="grid-tile" :class="{ selected: checkedIds.includes(img.image_id), editing: editing?.image_id === img.image_id }"
         @click.stop="openEdit(img)">
         <div class="grid-chk" @click.stop>

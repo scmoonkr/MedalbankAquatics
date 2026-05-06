@@ -2,6 +2,7 @@ import multer from 'multer'
 import sharp from 'sharp'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { images } from '../models/Image.js'
+import { getDB } from '../db.js'
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } })
 
@@ -43,8 +44,12 @@ async function resizeWidthGrayscale(buf, width) {
 }
 
 async function nextImageId() {
-  const max = await images().find({}).sort({ image_id: -1 }).limit(1).next()
-  return (max?.image_id ?? 0) + 1
+  const result = await getDB().collection('counters').findOneAndUpdate(
+    { _id: 'image_id' },
+    { $inc: { seq: 1 } },
+    { upsert: true, returnDocument: 'after' }
+  )
+  return result.seq
 }
 
 export default function (app) {

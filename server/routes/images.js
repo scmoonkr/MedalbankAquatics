@@ -53,7 +53,7 @@ export default function (app) {
       const db = getDB()
       const [docs, athletes, meets] = await Promise.all([
         images()
-          .find({}, { projection: { _id: 0, image_id: 1, athlete_id: 1, meet_id: 1, date: 1, consent_date: 1, urls: 1, tags: 1, category: 1 } })
+          .find({}, { projection: { image_id: 1, athlete_id: 1, meet_id: 1, date: 1, consent_date: 1, urls: 1, tags: 1, category: 1 } })
           .sort({ image_id: -1 })
           .toArray(),
         db.collection('athletes').find({}, { projection: { _id: 0, athlete_id: 1, name: 1 } }).toArray(),
@@ -65,6 +65,7 @@ export default function (app) {
 
       res.json(docs.map(d => ({
         ...d,
+        _id:          d._id.toString(),
         urls:         resolveUrls(d.urls),
         athlete_name: athleteMap[d.athlete_id] ?? '',
         meet_label:   meetMap[d.meet_id]?.label ?? '',
@@ -173,7 +174,7 @@ export default function (app) {
   app.get('/api/gallery', async (req, res) => {
     try {
       const docs = await images()
-        .find({ tags: 'top100' }, { projection: { _id: 0, image_id: 1, 'urls.thumb': 1, 'urls.original': 1 } })
+        .find({ tags: '명예의전당' }, { projection: { _id: 0, image_id: 1, 'urls.thumb': 1, 'urls.original': 1 } })
         .sort({ date: -1 })
         .toArray()
       res.json(docs.map(d => ({ ...d, urls: resolveUrls(d.urls) })))
