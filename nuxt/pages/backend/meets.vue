@@ -322,35 +322,48 @@ async function doFileUpload() {
   }
 }
 
+// ── localStorage 업로드 기록 (파일시스템 쓰기 대신 사용) ──────────────────────
+const LS_KEY = 'mb_dir_uploaded'
+
+function getUploadedNames(folder: string): Set<string> {
+  try {
+    const map = JSON.parse(localStorage.getItem(LS_KEY) ?? '{}')
+    return new Set(map[folder] ?? [])
+  } catch { return new Set() }
+}
+
+function markUploaded(folder: string, names: string[]) {
+  try {
+    const map = JSON.parse(localStorage.getItem(LS_KEY) ?? '{}')
+    const s = new Set<string>(map[folder] ?? [])
+    for (const n of names) s.add(n)
+    map[folder] = [...s]
+    localStorage.setItem(LS_KEY, JSON.stringify(map))
+  } catch {}
+}
+
 // ── 폴더 모드 ────────────────────────────────────────────────────────────────
 async function selectDirectory() {
-  // HTTPS/localhost: File System Access API
   if (typeof (window as any).showDirectoryPicker === 'function') {
     try {
-      const handle = await (window as any).showDirectoryPicker({ mode: 'readwrite' })
+      const handle = await (window as any).showDirectoryPicker({ mode: 'read' })
+      const uploaded = getUploadedNames(handle.name)
       dirHandle.value    = handle
       dirFallback.value  = false
       dirName.value      = handle.name
       dirPending.value   = []
-      dirDoneCount.value = 0
+      dirDoneCount.value = uploaded.size
       uploadFiles.value  = []
       uploadResults.value = []
 
-      try {
-        const uploadedDir = await handle.getDirectoryHandle('uploaded')
-        for await (const [, h] of (uploadedDir as any).entries()) {
-          if (h.kind === 'file') dirDoneCount.value++
-        }
-      } catch {}
-
       for await (const [name, h] of (handle as any).entries()) {
-        if (h.kind === 'file' && IMAGE_RE.test(name)) dirPending.value.push(h)
+        if (h.kind === 'file' && IMAGE_RE.test(name) && !uploaded.has(name))
+          dirPending.value.push(h)
       }
     } catch (e: any) {
       if (e.name !== 'AbortError') alert('폴더 접근 실패: ' + e.message)
     }
   } else {
-    // HTTP fallback: webkitdirectory input
     dirInput.value?.click()
   }
 }
@@ -360,23 +373,17 @@ function onDirInputChange(e: Event) {
     .filter(f => IMAGE_RE.test(f.name))
   if (!all.length) return
 
-  const pending = all.filter(f => {
-    const rel = (f as any).webkitRelativePath as string
-    return !rel.includes('/uploaded/')
-  })
-  const done = all.filter(f => {
-    const rel = (f as any).webkitRelativePath as string
-    return rel.includes('/uploaded/')
-  })
+  const rel = (all[0] as any).webkitRelativePath as string
+  const folderName = rel ? rel.split('/')[0] : '선택된 폴더'
+  const uploaded = getUploadedNames(folderName)
+  const pending = all.filter(f => !uploaded.has(f.name))
 
   dirHandle.value    = true
   dirFallback.value  = true
-  dirDoneCount.value = done.length
+  dirDoneCount.value = uploaded.size
   uploadFiles.value  = []
   uploadResults.value = []
-
-  const rel = (all[0] as any).webkitRelativePath as string
-  dirName.value    = rel ? rel.split('/')[0] : '선택된 폴더'
+  dirName.value    = folderName
   dirPending.value = pending
 
   if (dirInput.value) dirInput.value.value = ''
@@ -397,25 +404,15 @@ async function doDirUpload() {
   uploadResults.value = []
 
   const pending = [...dirPending.value]
-  let uploadedDir: any = null
-  if (!dirFallback.value) {
-    // macOS Chrome: readwrite permission may expire after picker — re-request before writing
-    try {
-      const perm = await (dirHandle.value as any).queryPermission?.({ mode: 'readwrite' })
-      if (perm !== 'granted') {
-        await (dirHandle.value as any).requestPermission?.({ mode: 'readwrite' })
-      }
-    } catch {}
-    uploadedDir = await (dirHandle.value as any).getDirectoryHandle('uploaded', { create: true })
-  }
+  const folder  = dirName.value
 
   for (let i = 0; i < pending.length; i += BATCH_SIZE) {
     const batch = pending.slice(i, i + BATCH_SIZE)
 
-    const batchItems: { file: File; handle: any }[] = []
+    const batchItems: { file: File }[] = []
     for (const h of batch) {
       const file = dirFallback.value ? (h as File) : await h.getFile()
-      batchItems.push({ file, handle: dirFallback.value ? null : h })
+      batchItems.push({ file })
     }
 
     const fd = new FormData()
@@ -426,19 +423,9 @@ async function doDirUpload() {
     try {
       const res = await $fetch<any>('/api/admin/upload-images', { method: 'POST', body: fd })
       uploadResults.value.push(...res.results)
-
-      if (!dirFallback.value && uploadedDir) {
-        for (const { file, handle } of batchItems) {
-          try {
-            const newHandle = await (uploadedDir as any).getFileHandle(file.name, { create: true })
-            const writable  = await newHandle.createWritable()
-            await writable.write(await handle.getFile())
-            await writable.close()
-            await (dirHandle.value as any).removeEntry(file.name)
-            dirDoneCount.value++
-          } catch {}
-        }
-      }
+      const names = batchItems.map(({ file }) => file.name)
+      markUploaded(folder, names)
+      dirDoneCount.value += names.length
     } catch (e) {
       console.error(`Batch ${i}–${i + BATCH_SIZE} 실패`, e)
     }
