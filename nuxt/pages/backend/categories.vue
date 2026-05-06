@@ -176,7 +176,7 @@ useHead({ title: '카테고리 관리 — 백엔드' })
 const BATCH_SIZE = 20
 const IMAGE_RE   = /\.(jpe?g|png|gif|webp|tiff?|bmp)$/i
 
-const { data, refresh } = useFetch<any[]>('/api/admin/images')
+const { data, refresh } = await useFetch<any[]>('/api/admin/images')
 const list = computed(() => data.value ?? [])
 
 const selectedCategory = ref<string | null>(null)

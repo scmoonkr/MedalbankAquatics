@@ -84,7 +84,7 @@
 definePageMeta({ ssr: false, layout: 'backend' })
 useHead({ title: '태그 관리 — 백엔드' })
 
-const { data, refresh } = useFetch<any[]>('/api/admin/images')
+const { data, refresh } = await useFetch<any[]>('/api/admin/images')
 const list = computed(() => data.value ?? [])
 
 const selectedTag = ref<string | null>(null)

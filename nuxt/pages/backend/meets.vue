@@ -177,7 +177,7 @@ useHead({ title: '대회 관리 — 백엔드' })
 const BATCH_SIZE = 20
 const IMAGE_RE   = /\.(jpe?g|png|gif|webp|tiff?|bmp)$/i
 
-const { data, refresh } = useFetch<any[]>('/api/admin/meets')
+const { data, refresh } = await useFetch<any[]>('/api/admin/meets')
 const list = computed(() => data.value ?? [])
 
 const checkedIds      = ref<number[]>([])

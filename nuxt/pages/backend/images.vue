@@ -245,8 +245,10 @@
 definePageMeta({ ssr: false, layout: 'backend' })
 useHead({ title: '이미지 관리 — 백엔드' })
 
-const { data, refresh } = useFetch<any[]>('/api/admin/images')
-const { data: meetsData } = useFetch<any[]>('/api/admin/meets')
+const [{ data, refresh }, { data: meetsData }] = await Promise.all([
+  useFetch<any[]>('/api/admin/images'),
+  useFetch<any[]>('/api/admin/meets'),
+])
 const list = computed(() => data.value ?? [])
 
 const checkedIds      = ref<number[]>([])

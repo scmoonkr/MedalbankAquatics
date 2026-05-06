@@ -124,7 +124,7 @@
 definePageMeta({ ssr: false, layout: 'backend' })
 useHead({ title: '촬영요청 관리 — 백엔드' })
 
-const { data, refresh } = useFetch<any[]>('/api/admin/requests')
+const { data, refresh } = await useFetch<any[]>('/api/admin/requests')
 const list = computed(() => data.value ?? [])
 
 const checkedIds  = ref<number[]>([])
