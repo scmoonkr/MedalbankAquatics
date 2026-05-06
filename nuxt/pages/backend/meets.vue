@@ -399,6 +399,13 @@ async function doDirUpload() {
   const pending = [...dirPending.value]
   let uploadedDir: any = null
   if (!dirFallback.value) {
+    // macOS Chrome: readwrite permission may expire after picker — re-request before writing
+    try {
+      const perm = await (dirHandle.value as any).queryPermission?.({ mode: 'readwrite' })
+      if (perm !== 'granted') {
+        await (dirHandle.value as any).requestPermission?.({ mode: 'readwrite' })
+      }
+    } catch {}
     uploadedDir = await (dirHandle.value as any).getDirectoryHandle('uploaded', { create: true })
   }
 
