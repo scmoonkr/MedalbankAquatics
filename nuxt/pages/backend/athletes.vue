@@ -103,7 +103,7 @@
 definePageMeta({ ssr: false, layout: 'backend' })
 useHead({ title: '선수 관리 — 백엔드' })
 
-const { data, refresh } = await useFetch<any[]>('/api/admin/athletes')
+const { data, refresh } = useFetch<any[]>('/api/admin/athletes')
 const list = computed(() => data.value ?? [])
 
 const checkedIds      = ref<number[]>([])

@@ -177,7 +177,7 @@ useHead({ title: '대회 관리 — 백엔드' })
 const BATCH_SIZE = 20
 const IMAGE_RE   = /\.(jpe?g|png|gif|webp|tiff?|bmp)$/i
 
-const { data, refresh } = await useFetch<any[]>('/api/admin/meets')
+const { data, refresh } = useFetch<any[]>('/api/admin/meets')
 const list = computed(() => data.value ?? [])
 
 const checkedIds      = ref<number[]>([])
@@ -445,8 +445,14 @@ async function doDirUpload() {
 
 // ── 저장 / 삭제 ──────────────────────────────────────────────────────────────
 function fmtDate(d: string) {
-  return d ? new Date(d).toLocaleDateString('ko-KR') : ''
+  return d ? String(d).slice(0, 10) : ''
 }
+
+watch(editDate, (val) => {
+  if (editing.value && val && val.length >= 7) {
+    editing.value.short = val.slice(0, 7)
+  }
+})
 
 async function save() {
   const { meet_id } = editing.value

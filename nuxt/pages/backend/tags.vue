@@ -18,14 +18,23 @@
     <!-- 선택된 태그 이미지 -->
     <template v-if="selectedTag">
       <div class="section-head">
+        <label class="all-check">
+          <input type="checkbox" v-model="allChecked" />
+        </label>
         <span class="section-title">{{ selectedTag }}</span>
         <span class="section-count">{{ filteredImages.length }}장</span>
+        <button v-if="checkedIds.length" class="btn-exclude" @click="exclude">
+          제외하기 ({{ checkedIds.length }})
+        </button>
       </div>
 
       <div class="img-grid">
         <button v-for="img in filteredImages" :key="img.image_id"
-          type="button" class="grid-tile"
-          @click="openEdit(img)">
+          type="button" class="grid-tile" :class="{ selected: checkedIds.includes(img.image_id) }"
+          @click.stop="openEdit(img)">
+          <div class="grid-chk" @click.stop>
+            <input type="checkbox" :value="img.image_id" v-model="checkedIds" @click.stop />
+          </div>
           <img v-if="img.urls?.thumb" :src="img.urls.thumb" class="grid-img" />
           <div v-else class="grid-img no-img">—</div>
           <div class="grid-meta">
@@ -75,11 +84,21 @@
 definePageMeta({ ssr: false, layout: 'backend' })
 useHead({ title: '태그 관리 — 백엔드' })
 
-const { data, refresh } = await useFetch<any[]>('/api/admin/images')
+const { data, refresh } = useFetch<any[]>('/api/admin/images')
 const list = computed(() => data.value ?? [])
 
 const selectedTag = ref<string | null>(null)
 const editing     = ref<any>(null)
+const checkedIds  = ref<number[]>([])
+
+const allChecked = computed({
+  get: () => filteredImages.value.length > 0 && filteredImages.value.every(i => checkedIds.value.includes(i.image_id)),
+  set: (val: boolean) => {
+    const ids = filteredImages.value.map(i => i.image_id)
+    if (val) checkedIds.value = [...new Set([...checkedIds.value, ...ids])]
+    else     checkedIds.value = checkedIds.value.filter(id => !ids.includes(id))
+  },
+})
 
 const tags = computed(() => {
   const map = new Map<string, number>()
@@ -103,6 +122,18 @@ const filteredImages = computed(() =>
 
 function selectTag(name: string) {
   selectedTag.value = selectedTag.value === name ? null : name
+  checkedIds.value = []
+}
+
+async function exclude() {
+  if (!selectedTag.value || !checkedIds.value.length) return
+  if (!confirm(`${checkedIds.value.length}장에서 "${selectedTag.value}" 태그를 제외하시겠습니까?`)) return
+  await $fetch('/api/admin/images/bulk-tags', {
+    method: 'POST',
+    body: { image_ids: checkedIds.value, tags: selectedTag.value, action: 'remove' },
+  })
+  checkedIds.value = []
+  await refresh()
 }
 
 function openEdit(img: any) {
@@ -142,16 +173,23 @@ async function save() {
 .tag-chip.active .tag-count { color: #388bfd; opacity: 0.7; }
 
 /* ── 섹션 헤더 ── */
-.section-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+.section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .section-title { font-size: 16px; font-weight: 600; }
 .section-count { font-size: 12px; color: #8b949e; }
+.all-check { display: flex; align-items: center; cursor: pointer; }
+.all-check input { width: 15px; height: 15px; cursor: pointer; accent-color: #388bfd; }
+.btn-exclude { margin-left: auto; padding: 6px 16px; background: transparent; border: 1px solid #f85149; border-radius: 6px; color: #f85149; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.btn-exclude:hover { background: #3a1a1a; }
 
 /* ── 이미지 그리드 ── */
 .img-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
 @media (max-width: 1400px) { .img-grid { grid-template-columns: repeat(4, 1fr); } }
 @media (max-width: 900px)  { .img-grid { grid-template-columns: repeat(3, 1fr); } }
-.grid-tile { background: #161b22; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; cursor: pointer; padding: 0; display: flex; flex-direction: column; transition: border-color 0.15s; text-align: left; }
+.grid-tile { position: relative; background: #161b22; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; cursor: pointer; padding: 0; display: flex; flex-direction: column; transition: border-color 0.15s; text-align: left; }
 .grid-tile:hover { border-color: #8b949e; }
+.grid-tile.selected { border-color: #388bfd; background: #1c2a3a; }
+.grid-chk { position: absolute; top: 6px; left: 6px; z-index: 2; }
+.grid-chk input { width: 14px; height: 14px; cursor: pointer; accent-color: #388bfd; }
 .grid-img { width: 100%; aspect-ratio: 3/2; object-fit: cover; display: block; background: #21262d; }
 .grid-img.no-img { display: flex; align-items: center; justify-content: center; color: #8b949e; font-size: 12px; }
 .grid-meta { display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; gap: 6px; }

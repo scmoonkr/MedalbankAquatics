@@ -170,6 +170,14 @@
           <label>consent_date</label>
           <input v-model="editConsentDate" type="date" placeholder="비워두면 미동의" />
         </div>
+        <div class="field-row">
+          <label>tags</label>
+          <input v-model="editing.tagsInput" placeholder="tag1, tag2, ..." />
+        </div>
+        <div class="field-row">
+          <label>categories</label>
+          <input v-model="editing.categoryInput" placeholder="cat1, cat2, ..." />
+        </div>
         <div class="section-label">URLs</div>
         <div class="field-row">
           <label>thumb</label>
@@ -186,11 +194,6 @@
         <div class="field-row">
           <label>large</label>
           <input v-model="editing.urls.large" placeholder="https://..." />
-        </div>
-        <div class="section-label">기타</div>
-        <div class="field-row">
-          <label>tags</label>
-          <input v-model="editing.tagsInput" placeholder="tag1, tag2, ..." />
         </div>
       </div>
       <div class="edit-footer">
@@ -242,10 +245,8 @@
 definePageMeta({ ssr: false, layout: 'backend' })
 useHead({ title: '이미지 관리 — 백엔드' })
 
-const [{ data, refresh }, { data: meetsData }] = await Promise.all([
-  useFetch<any[]>('/api/admin/images'),
-  useFetch<any[]>('/api/admin/meets'),
-])
+const { data, refresh } = useFetch<any[]>('/api/admin/images')
+const { data: meetsData } = useFetch<any[]>('/api/admin/meets')
 const list = computed(() => data.value ?? [])
 
 const checkedIds      = ref<number[]>([])
@@ -332,7 +333,7 @@ const allChecked = computed({
 })
 
 function openEdit(img: any) {
-  editing.value = { ...img, urls: { thumb: '', preview: '', original: '', large: '', ...img.urls }, tagsInput: (img.tags ?? []).join(', ') }
+  editing.value = { ...img, urls: { thumb: '', preview: '', original: '', large: '', ...img.urls }, tagsInput: (img.tags ?? []).join(', '), categoryInput: (img.category ?? []).join(', ') }
   editConsentDate.value = img.consent_date
     ? new Date(img.consent_date).toISOString().slice(0, 10)
     : ''
@@ -353,6 +354,7 @@ async function save() {
       consent_date: editConsentDate.value || null,
       urls:         editing.value.urls,
       tags:         (editing.value.tagsInput ?? '').split(',').map((t: string) => t.trim()).filter(Boolean),
+      category:     (editing.value.categoryInput ?? '').split(',').map((t: string) => t.trim()).filter(Boolean),
     },
   })
   editing.value = null
