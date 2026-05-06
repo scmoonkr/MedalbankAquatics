@@ -303,7 +303,7 @@ function onFileChange(e: Event) {
 function onDrop(e: DragEvent) { addFiles(e.dataTransfer?.files ?? null) }
 
 async function doFileUpload() {
-  if (!uploadFiles.value.length || !editing.value) return
+  if (!uploadFiles.value.length || !editing.value || uploading.value) return
   uploading.value = true
   uploadDone.value = 0
   uploadTotal.value = uploadFiles.value.length
@@ -399,7 +399,7 @@ function clearDir() {
 }
 
 async function doDirUpload() {
-  if (!dirPending.value.length || !editing.value || !dirHandle.value) return
+  if (!dirPending.value.length || !editing.value || !dirHandle.value || uploading.value) return
   uploading.value   = true
   uploadDone.value  = 0
   uploadTotal.value = dirPending.value.length
