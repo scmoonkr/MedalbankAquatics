@@ -201,6 +201,7 @@ const dirDoneCount  = ref(0)
 // ── 공통 진행 상태 ───────────────────────────────────────────────────────────
 const uploading     = ref(false)
 const uploadAborted = ref(false)
+let   uploadAC: AbortController | null = null
 const uploadDone    = ref(0)
 const uploadTotal   = ref(0)
 const uploadResults = ref<any[]>([])
@@ -273,6 +274,8 @@ function clearForm() {
 
 function resetUpload() {
   uploadAborted.value = true
+  uploadAC?.abort()
+  uploadAC = null
   uploadFiles.value = []
   uploadResults.value = []
   dirHandle.value = null
@@ -406,6 +409,7 @@ async function doDirUpload() {
   uploadResults.value = []
 
   uploadAborted.value = false
+  uploadAC = new AbortController()
   const pending = [...dirPending.value]
   const folder  = dirName.value
 
@@ -415,28 +419,35 @@ async function doDirUpload() {
 
     const batchItems: { file: File }[] = []
     for (const h of batch) {
+      if (uploadAborted.value) break
       const file = dirFallback.value ? (h as File) : await h.getFile()
       batchItems.push({ file })
     }
+    if (uploadAborted.value) break
 
     const fd = new FormData()
-    fd.append('meet_id', String(editing.value.meet_id))
+    fd.append('meet_id', String(editing.value?.meet_id ?? 0))
     fd.append('date', editDate.value)
     for (const { file } of batchItems) fd.append('files', file)
 
     try {
-      const res = await $fetch<any>('/api/admin/upload-images', { method: 'POST', body: fd })
+      const res = await $fetch<any>('/api/admin/upload-images', {
+        method: 'POST', body: fd,
+        signal: uploadAC?.signal,
+      })
       uploadResults.value.push(...res.results)
       const names = batchItems.map(({ file }) => file.name)
       markUploaded(folder, names)
       dirDoneCount.value += names.length
-    } catch (e) {
+    } catch (e: any) {
+      if (uploadAborted.value || e?.name === 'AbortError') break
       console.error(`Batch ${i}–${i + BATCH_SIZE} 실패`, e)
     }
 
     uploadDone.value = Math.min(i + BATCH_SIZE, pending.length)
   }
 
+  uploadAC = null
   dirPending.value = []
   uploading.value  = false
 }
@@ -446,7 +457,7 @@ function fmtDate(d: string) {
   return d ? String(d).slice(0, 10) : ''
 }
 
-watch(editing, (val) => { if (!val) resetUpload() })
+watch(editing, (val) => { if (!val) resetUpload() }, { flush: 'sync' })
 
 watch(editDate, (val) => {
   if (editing.value && val && val.length >= 7) {
