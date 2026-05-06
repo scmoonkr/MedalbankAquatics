@@ -105,7 +105,7 @@
               <span v-else class="badge review">미동의</span>
             </td>
             <td class="col-tags">{{ (img.tags ?? []).join(', ') }}</td>
-            <td class="col-category">{{ (img.category ?? []).join(', ') }}</td>
+            <td class="col-category">{{ (Array.isArray(img.category) ? img.category : img.category ? [img.category] : []).join(', ') }}</td>
           </tr>
         </tbody>
       </table>
@@ -333,7 +333,7 @@ const allChecked = computed({
 })
 
 function openEdit(img: any) {
-  editing.value = { ...img, urls: { thumb: '', preview: '', original: '', large: '', ...img.urls }, tagsInput: (img.tags ?? []).join(', '), categoryInput: (img.category ?? []).join(', ') }
+  editing.value = { ...img, urls: { thumb: '', preview: '', original: '', large: '', ...img.urls }, tagsInput: (img.tags ?? []).join(', '), categoryInput: (Array.isArray(img.category) ? img.category : img.category ? [img.category] : []).join(', ') }
   editConsentDate.value = img.consent_date
     ? new Date(img.consent_date).toISOString().slice(0, 10)
     : ''
