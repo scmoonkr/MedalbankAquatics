@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════
    MEDALBANK AQUATICS — SHARED DESIGN SYSTEM
-   사진집/정기간행물/선수목록/촬영서비스/촬영요청/공개요청 공통
+   사진집/정기간행물/선수목록/촬영서비스/촬영요청/확인요청 공통
    index.html(갤러리)는 자체 시스템 → 이 파일 사용 안 함
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -38,10 +38,11 @@ a { color: inherit; }
 button { font-family: inherit; color: inherit; background: none; border: 0; }
 img { -webkit-user-drag: none; user-select: none; }
 
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+/* 네이티브 스크롤바 완전 숨김 — 레이아웃 공간 차지 없음 */
+html {
+  scrollbar-width: none; /* Firefox */
+}
+::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 
 body { opacity: 0; animation: pageIn 0.7s 0.1s ease-out forwards; }
 @keyframes pageIn { to { opacity: 1; } }

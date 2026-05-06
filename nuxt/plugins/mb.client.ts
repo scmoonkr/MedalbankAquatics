@@ -131,6 +131,34 @@ export default defineNuxtPlugin(() => {
     })
   }
 
+  const setupScrollbar = () => {
+    if ((window as any).__mbScrollbarInit) return
+    ;(window as any).__mbScrollbarInit = true
+    let timer: ReturnType<typeof setTimeout>
+    const indicator = document.getElementById('scrollIndicator')
+    const updateIndicator = () => {
+      if (!indicator) return
+      const scrolled = window.scrollY
+      const total = document.documentElement.scrollHeight - window.innerHeight
+      if (total <= 0) return
+      const ratio = scrolled / total
+      const trackH = window.innerHeight
+      const thumbH = Math.max(40, trackH * (window.innerHeight / document.documentElement.scrollHeight))
+      const thumbTop = ratio * (trackH - thumbH)
+      indicator.style.height = thumbH + 'px'
+      indicator.style.transform = `translateY(${thumbTop}px)`
+    }
+    window.addEventListener('scroll', () => {
+      document.documentElement.classList.add('is-scrolling')
+      updateIndicator()
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        document.documentElement.classList.remove('is-scrolling')
+      }, 900)
+    }, { passive: true })
+    updateIndicator()
+  }
+
   const setupClock = () => {
     const clockEl = document.getElementById('clock')
     if (!clockEl) return
@@ -151,6 +179,7 @@ export default defineNuxtPlugin(() => {
     setupMenu()
     setupLightbox()
     setupClock()
+    setupScrollbar()
   }
 
   if (document.readyState === 'loading') {

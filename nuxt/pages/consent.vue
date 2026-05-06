@@ -2,7 +2,7 @@
 <main class="consent-shell" @click="dropOpen = false">
 
   <div class="consent-head">
-    <div class="eyebrow"><span class="num">00</span>Consent Request · 공개 요청</div>
+    <div class="eyebrow"><span class="num">00</span>Consent Request · 확인요청</div>
     <h1>내 사진을 찾아<br /><span class="em">장바구니에 담아주세요.</span></h1>
     <p class="lead">
       본인의 사진을 장바구니에 담아 한 번에 사진집으로 이동할 수 있습니다. 초상권자의 동의가 없는 사진은 모두 이 페이지에 흑백저화질사진으로 나열됩니다. 동의가 완료된 사진만 사진집 또는 선수목록에서 컬러로 확인하실 수 있습니다.
@@ -26,14 +26,14 @@
           </button>
           <div class="disc-block">
             <h4>동의 철회</h4>
-            <p>사용 동의를 철회하시려는 경우, <a href="mailto:consent@medalbank.com?subject=%5B%EB%8F%99%EC%9D%98%20%EC%B2%A0%ED%9A%8C%20%EC%9A%94%EC%B2%AD%5D">consent@medalbank.com</a>으로 요청해 주시기 바랍니다. 갤러리에서 철회를 원하는 사진을 캡처하여 첨부해 주시고, 메일 본문에 동의 시 사용하신 이메일 주소를 함께 기재해 주시면 처리가 빠릅니다.</p>
+            <p>사용 동의를 철회하시려는 경우, <a href="mailto:press@medalbank.com?subject=%5B%EB%8F%99%EC%9D%98%20%EC%B2%A0%ED%9A%8C%20%EC%9A%94%EC%B2%AD%5D">press@medalbank.com</a>으로 요청해 주시기 바랍니다. 갤러리에서 철회를 원하는 사진을 캡처하여 첨부해 주시고, 메일 본문에 동의 시 사용하신 이메일 주소를 함께 기재해 주시면 처리가 빠릅니다.</p>
             <p>접수 순서에 따라 처리되며, 영업일 기준 5일 이내에 처리 완료 메일을 발송해 드립니다. 철회 후 재동의는 언제든 가능합니다.</p>
           </div>
         </div>
       </div>
     </Teleport>
     <p class="meta-inline">
-      현재 {{ currentEvent.count }}장 · {{ currentPage }} / {{ pages }}
+      현재 {{ currentEvent.count }}장
     </p>
   </div>
 
@@ -43,44 +43,60 @@
   </div>
 
   <div class="consent-controls">
+    <!-- 대회 dropdown -->
     <div class="event-select" :class="{ open: dropOpen }">
       <button class="event-select-btn" type="button" aria-haspopup="listbox" :aria-expanded="String(dropOpen)"
         @click.stop="dropOpen = !dropOpen">
-        <span class="label">{{ currentEvent.label }}</span>
+        <span class="label">{{ currentEvent.displayLabel }}</span>
         <svg class="caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
           <polyline points="1 1.5, 5 5, 9 1.5"/>
         </svg>
       </button>
       <div class="event-select-list" role="listbox" aria-label="대회 선택">
-        <button v-for="ev in events" :key="ev.id" type="button"
-          :class="{ active: eventId === ev.id }"
-          @click.stop="selectEvent(ev.id)">
-          {{ ev.label }}<span class="count">{{ ev.count }}장</span>
+        <button type="button" :class="{ active: eventId === 'all' }" @click.stop="selectEvent('all')">
+          전체 대회<span class="count">{{ allCount }}장</span>
+        </button>
+        <template v-for="g in meetsGrouped" :key="g.year">
+          <div class="group-label">{{ g.year }}</div>
+          <button v-for="ev in g.meets" :key="ev.id" type="button"
+            :class="{ active: eventId === ev.id }"
+            @click.stop="selectEvent(ev.id)">
+            {{ ev.short }} · {{ ev.label }}<span class="count">{{ ev.count }}장</span>
+          </button>
+        </template>
+      </div>
+    </div>
+
+    <!-- 카테고리 dropdown -->
+    <div v-if="categoriesSorted.length" class="event-select cat-select" :class="{ open: catDropOpen }">
+      <button class="event-select-btn" type="button" :aria-expanded="String(catDropOpen)"
+        @click.stop="catDropOpen = !catDropOpen">
+        <span class="label">{{ activeCategoryLabel }}</span>
+        <svg class="caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+          <polyline points="1 1.5, 5 5, 9 1.5"/>
+        </svg>
+      </button>
+      <div class="event-select-list" role="listbox">
+        <button type="button" :class="{ active: activeCategory === null }" @click.stop="selectCategory(null)">
+          전체 카테고리
+        </button>
+        <button v-for="cat in categoriesSorted" :key="cat" type="button"
+          :class="{ active: activeCategory === cat }"
+          @click.stop="selectCategory(cat)">
+          {{ cat }}
         </button>
       </div>
     </div>
-    <span class="consent-help">사진을 클릭하면 선택됩니다 · 다시 클릭하면 해제</span>
 
-    <!-- 태그 필터 -->
+    <!-- 태그 버튼 -->
     <div v-if="tagsData?.length" class="category-filter">
-      <button type="button"
-        class="cat-btn tag-btn-accent" :class="{ active: activeTag === null }"
-        @click="selectTag(null)">전체</button>
+      <button type="button" class="cat-btn tag-btn-accent" :class="{ active: activeTag === null }" @click="selectTag(null)">전체 카테고리</button>
       <button v-for="tag in tagsData" :key="tag" type="button"
         class="cat-btn tag-btn-accent" :class="{ active: activeTag === tag }"
         @click="selectTag(tag)">{{ tag }}</button>
     </div>
-
-    <!-- 카테고리 필터 -->
-    <div v-if="categoriesData?.length" class="category-filter">
-      <button type="button"
-        class="cat-btn" :class="{ active: activeCategory === null }"
-        @click="selectCategory(null)">전체</button>
-      <button v-for="cat in categoriesData" :key="cat" type="button"
-        class="cat-btn" :class="{ active: activeCategory === cat }"
-        @click="selectCategory(cat)">{{ cat }}</button>
-    </div>
   </div>
+  <p class="consent-help">사진을 클릭하면 선택됩니다 · 다시 클릭하면 해제</p>
 
   <div class="consent-grid">
     <button v-for="img in galleryImages" :key="img.image_id"
@@ -100,17 +116,10 @@
     </button>
   </div>
 
-  <nav class="pagination" aria-label="페이지 네비게이션">
-    <div class="page-numbers">
-      <button v-for="p in pages" :key="p"
-        type="button"
-        class="page-num"
-        :class="{ active: p === currentPage }"
-        :aria-label="`${p} 페이지로 이동`"
-        :aria-current="p === currentPage ? 'page' : undefined"
-        @click="goToPage(p)">{{ p }}</button>
-    </div>
-  </nav>
+  <div ref="sentinelEl" class="scroll-sentinel" />
+  <div v-if="loadingMore" class="load-more-spinner">
+    <span /><span /><span />
+  </div>
 
   <NuxtLink class="cart-fab" to="/cart" :class="{ visible: cart.size > 0 }" aria-label="선택한 사진 보기">
     <span class="count">
@@ -126,28 +135,38 @@
 
 <script setup lang="ts">
 definePageMeta({ ssr: false })
-useHead({ title: "메달뱅크 아쿠아틱스 — 공개 요청" })
+useHead({ title: "메달뱅크 아쿠아틱스 — 확인요청" })
 
-const PER_PAGE = 100
+const PER_PAGE = 60
 const CART_KEY = 'medalbank_consent_cart'
 
 type GalleryImage = { image_id: number; urls: { preview: string } }
-type EventItem    = { id: number | 'all'; label: string; count: number }
+type EventItem    = { id: number | 'all'; label: string; short?: string; date?: string; count: number }
 
-const events        = ref<EventItem[]>([{ id: 'all', label: '전체 대회', count: 0 }])
-const galleryImages = ref<GalleryImage[]>([])
-const pages         = ref(1)
-const eventId       = ref<number | 'all'>('all')
+const events         = ref<EventItem[]>([{ id: 'all', label: '전체 대회', count: 0 }])
+const galleryImages  = ref<GalleryImage[]>([])
+const eventId        = ref<number | 'all'>('all')
 const activeCategory = ref<string | null>(null)
 const activeTag      = ref<string | null>(null)
-const dropOpen      = ref(false)
-const currentPage   = ref(1)
-const cart          = ref(new Set<number>())
-const infoOpen      = ref(false)
-const restoredCount = ref(0)
+const dropOpen       = ref(false)
+const catDropOpen    = ref(false)
+const cart           = ref(new Set<number>())
+const infoOpen       = ref(false)
+const restoredCount  = ref(0)
+const loadingMore    = ref(false)
+const hasMore        = ref(true)
+const apiPage        = ref(1)
+const sentinelEl     = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
 
 const { data: categoriesData } = useFetch<string[]>('/api/categories')
 const { data: tagsData }       = useFetch<string[]>('/api/tags')
+
+watch(categoriesData, (val) => {
+  if (val?.length && activeCategory.value === null) {
+    activeCategory.value = [...val].sort().reverse()[0]
+  }
+}, { immediate: true })
 
 function clearRestoredCart() {
   cart.value = new Set()
@@ -155,20 +174,59 @@ function clearRestoredCart() {
   try { localStorage.removeItem(CART_KEY) } catch {}
 }
 
-const currentEvent = computed(() => events.value.find(e => e.id === eventId.value) ?? events.value[0])
+const currentEvent = computed(() => {
+  const ev = events.value.find(e => e.id === eventId.value) ?? events.value[0]
+  const displayLabel = ev.id === 'all' || !ev.short ? ev.label : `${ev.short} · ${ev.label}`
+  return { ...ev, displayLabel }
+})
 
-async function fetchImages() {
-  const query: Record<string, number | string> = { page: currentPage.value, per_page: PER_PAGE }
+const allCount = computed(() => events.value.find(e => e.id === 'all')?.count ?? 0)
+
+const categoriesSorted = computed(() =>
+  [...(categoriesData.value ?? [])].sort().reverse()
+)
+
+const activeCategoryLabel = computed(() =>
+  activeCategory.value ?? '전체 카테고리'
+)
+
+const meetsGrouped = computed(() => {
+  const groups = new Map<string, EventItem[]>()
+  for (const ev of events.value) {
+    if (ev.id === 'all') continue
+    const year = ev.short?.slice(0, 4) ?? '기타'
+    if (!groups.has(year)) groups.set(year, [])
+    groups.get(year)!.push(ev)
+  }
+  return [...groups.entries()]
+    .map(([year, meets]) => ({ year, meets }))
+    .sort((a, b) => b.year.localeCompare(a.year))
+})
+
+async function loadMore() {
+  if (!hasMore.value || loadingMore.value) return
+  loadingMore.value = true
+  const query: Record<string, number | string> = { page: apiPage.value, per_page: PER_PAGE }
   if (eventId.value !== 'all') query.meet_id = eventId.value
   if (activeCategory.value) query.category = activeCategory.value
   if (activeTag.value)      query.tag      = activeTag.value
   try {
     const data = await $fetch<{ images: GalleryImage[]; pages: number }>('/api/images', { query: { ...query, consented: 'false' } })
-    galleryImages.value = data.images
-    pages.value = data.pages
+    galleryImages.value = [...galleryImages.value, ...data.images]
+    hasMore.value = apiPage.value < data.pages
+    apiPage.value++
   } catch {
-    galleryImages.value = []
+    hasMore.value = false
+  } finally {
+    loadingMore.value = false
   }
+}
+
+function resetAndLoad() {
+  galleryImages.value = []
+  hasMore.value = true
+  apiPage.value = 1
+  loadMore()
 }
 
 function toggleSelect(id: number) {
@@ -181,27 +239,21 @@ function toggleSelect(id: number) {
 
 function selectEvent(id: number | 'all') {
   eventId.value = id
-  currentPage.value = 1
+  activeCategory.value = null
   dropOpen.value = false
 }
 
 function selectCategory(cat: string | null) {
   activeCategory.value = cat
-  currentPage.value = 1
+  eventId.value = 'all'
+  catDropOpen.value = false
 }
 
 function selectTag(tag: string | null) {
   activeTag.value = tag
-  currentPage.value = 1
 }
 
-function goToPage(n: number) {
-  if (n === currentPage.value) return
-  currentPage.value = n
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-watch([eventId, activeCategory, activeTag, currentPage], fetchImages)
+watch([eventId, activeCategory, activeTag], resetAndLoad)
 
 onMounted(async () => {
   try {
@@ -216,14 +268,32 @@ onMounted(async () => {
   } catch {}
 
   try {
-    const data = await $fetch<{ total: number; meets: { meet_id: number; label: string; photo_count: number }[] }>('/api/meets')
+    const data = await $fetch<{ total: number; meets: { meet_id: number; label: string; short: string; date: string; photo_count: number }[] }>('/api/meets')
     events.value = [
       { id: 'all', label: '전체 대회', count: data.total },
-      ...data.meets.map(m => ({ id: m.meet_id as number | 'all', label: m.label, count: m.photo_count })),
+      ...data.meets.map(m => ({ id: m.meet_id as number | 'all', label: m.label, short: m.short, date: m.date, count: m.photo_count })),
     ]
   } catch {}
 
-  await fetchImages()
+  await loadMore()
+
+  observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) loadMore()
+  }, { rootMargin: '300px' })
+
+  if (sentinelEl.value) observer.observe(sentinelEl.value)
+
+  document.addEventListener('click', (e) => {
+    const t = e.target as Node
+    const sel = document.querySelector('.consent-controls .event-select:not(.cat-select)')
+    if (sel && !sel.contains(t)) dropOpen.value = false
+    const cat = document.querySelector('.consent-controls .cat-select')
+    if (cat && !cat.contains(t)) catDropOpen.value = false
+  })
+})
+
+onUnmounted(() => {
+  observer?.disconnect()
 })
 </script>
 
@@ -371,14 +441,14 @@ onMounted(async () => {
 
 /* ── 컨트롤 ───── */
 .consent-controls {
-  padding: 4px 32px 24px;
+  padding: 4px 32px 10px;
   display: flex;
-  align-items: center;
-  gap: 18px;
+  align-items: stretch;
+  gap: 8px;
   flex-wrap: wrap;
 }
-.category-filter { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%; }
-.cat-btn { padding: 5px 14px; background: none; border: 1px solid var(--line); border-radius: 4px; color: var(--fg-faint); font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.07em; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; white-space: nowrap; }
+.category-filter { display: flex; align-items: stretch; gap: 6px; flex-wrap: wrap; }
+.cat-btn { padding: 10px 12px; background: none; border: 1px solid var(--line); color: var(--fg-faint); font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.07em; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; white-space: nowrap; }
 .cat-btn:hover { color: var(--fg); border-color: var(--fg-dim); }
 .cat-btn.active { color: #a371f7; border-color: #a371f7; background: rgba(163,113,247,0.06); }
 .tag-btn-accent.active { color: var(--accent, #38b6ff); border-color: var(--accent, #38b6ff); background: rgba(56,182,255,0.06); }
@@ -412,8 +482,9 @@ onMounted(async () => {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
+  width: max-content;
   min-width: 100%;
-  max-height: 320px;
+  max-height: min(70vh, 700px);
   overflow-y: auto;
   padding: 6px 0;
   opacity: 0;
@@ -422,6 +493,19 @@ onMounted(async () => {
   transition: opacity 0.25s, transform 0.25s var(--ease-out);
   z-index: 30;
 }
+.event-select-list .group-label {
+  padding: 8px 16px 4px;
+  color: var(--fg-faint);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 4px;
+}
+.event-select-list .group-label:first-child { border-top: 0; margin-top: 0; }
 .event-select.open .event-select-list { opacity: 1; pointer-events: auto; transform: translateY(0); }
 .event-select-list button {
   display: block;
@@ -436,6 +520,7 @@ onMounted(async () => {
   transition: color 0.2s, background 0.2s;
   background: none;
   border: 0;
+  white-space: nowrap;
 }
 .event-select-list button:hover,
 .event-select-list button.active { color: var(--fg); background: rgba(255,255,255,0.04); }
@@ -445,9 +530,9 @@ onMounted(async () => {
   font-variant-numeric: tabular-nums;
   margin-left: 16px;
 }
-.consent-help { color: var(--fg-faint); font-size: 11px; letter-spacing: 0.04em; margin-left: auto; }
+.consent-help { padding: 0 32px 16px; color: var(--fg-faint); font-size: 11px; letter-spacing: 0.04em; }
 @media (max-width: 768px) {
-  .consent-controls { padding: 0 18px 22px; }
+  .consent-controls { padding: 0 18px 10px; }
   .event-select-btn { min-width: 200px; padding: 9px 14px; font-size: 11px; }
   .consent-help { width: 100%; margin-left: 0; }
 }
@@ -529,55 +614,26 @@ onMounted(async () => {
   .photo-tile .num { font-size: 13px; bottom: 6px; left: 8px; }
 }
 
-/* ── 페이지네이션 ──────────────────────── */
-.pagination {
-  margin: 56px 0 0;
-  padding: 0 14px 0;
+/* ── 인피니티 스크롤 ──────────────────── */
+.scroll-sentinel { height: 1px; }
+.load-more-spinner {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 40px 0;
 }
-.page-numbers {
-  display: flex;
-  align-items: baseline;
-  gap: 2px;
-  flex-wrap: wrap;
-  justify-content: flex-start;
+.load-more-spinner span {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--fg-faint);
+  animation: spinnerPulse 1.2s ease-in-out infinite;
 }
-.page-num {
-  background: none;
-  border: 0;
-  color: var(--fg-dim);
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: 17px;
-  letter-spacing: -0.01em;
-  line-height: 1;
-  min-width: 26px;
-  height: 30px;
-  padding: 0 5px;
-  cursor: pointer;
-  font-variant-numeric: tabular-nums;
-  transition: color 0.3s ease, transform 0.3s var(--ease-out);
-  position: relative;
-}
-.page-num:not(.active):hover { color: var(--fg); }
-.page-num.active { color: var(--fg); font-size: 21px; transform: translateY(-1px); }
-.page-num.active::after {
-  content: '';
-  position: absolute;
-  left: 50%; bottom: -4px;
-  transform: translateX(-50%);
-  width: 12px; height: 1px;
-  background: var(--fg);
-}
-@media (max-width: 768px) {
-  .pagination { margin-top: 40px; padding-bottom: 0; }
-  .page-numbers { gap: 1px; }
-  .page-num { font-size: 14px; min-width: 22px; height: 26px; padding: 0 3px; }
-  .page-num.active { font-size: 17px; }
-  .page-num.active::after { width: 9px; bottom: -3px; }
+.load-more-spinner span:nth-child(2) { animation-delay: 0.2s; }
+.load-more-spinner span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes spinnerPulse {
+  0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
 }
 
 /* ── Floating Cart 버튼 ────────────────── */

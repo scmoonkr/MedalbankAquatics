@@ -2,6 +2,7 @@
   <div>
     <div class="vignette"></div>
     <div class="grain"></div>
+    <div class="scroll-indicator" id="scrollIndicator"></div>
 
     <NuxtLink class="logo" to="/" aria-label="메달뱅크 아쿠아틱스 — 메인">
       <img class="logo-img" src="/images/medalbankaquatics.png" alt="Medalbank Aquatics" />
@@ -14,7 +15,7 @@
         <NuxtLink to="/magazines" :class="{ active: route.path === '/magazines' }">정기간행물</NuxtLink>
         <NuxtLink to="/about"     :class="{ active: route.path === '/about' }">촬영서비스</NuxtLink>
         <NuxtLink to="/request"   :class="{ active: route.path === '/request' }">촬영요청</NuxtLink>
-        <NuxtLink to="/consent"   :class="{ active: route.path === '/consent' }">공개요청</NuxtLink>
+        <NuxtLink to="/consent"   :class="{ active: route.path === '/consent' }">확인요청</NuxtLink>
       </nav>
     </header>
 
@@ -29,7 +30,7 @@
         <NuxtLink to="/magazines">정기간행물</NuxtLink>
         <NuxtLink to="/about">촬영서비스</NuxtLink>
         <NuxtLink to="/request">촬영요청</NuxtLink>
-        <NuxtLink to="/consent">공개요청</NuxtLink>
+        <NuxtLink to="/consent">확인요청</NuxtLink>
       </nav>
     </div>
 
@@ -103,13 +104,20 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
 }
 html, body, #__nuxt { background: #07090f; color: #fff; }
 body { overflow-x: hidden; }
-html { scrollbar-width: thin; scrollbar-color: transparent transparent; }
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0); border-radius: 6px; transition: background 0.4s ease; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.35) !important; }
-body.is-scrolling ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); transition: background 0.1s ease; }
-body.is-scrolling { scrollbar-color: rgba(255,255,255,0.18) transparent; }
+.scroll-indicator {
+  position: fixed;
+  right: 3px;
+  top: 0;
+  width: 3px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.28);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 9999;
+  will-change: transform;
+}
+html.is-scrolling .scroll-indicator { opacity: 1; }
 .event-select-btn { background: #0d1119; border: 1px solid rgba(255,255,255,0.08); }
 .event-select-list { background: #0d1119; border: 1px solid rgba(255,255,255,0.08); }
 .lightbox-close { cursor: pointer; }

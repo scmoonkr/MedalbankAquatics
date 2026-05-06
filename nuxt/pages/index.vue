@@ -16,7 +16,7 @@
         <NuxtLink to="/magazines">정기간행물</NuxtLink>
         <NuxtLink to="/about">촬영서비스</NuxtLink>
         <NuxtLink to="/request">촬영요청</NuxtLink>
-        <NuxtLink to="/consent">공개요청</NuxtLink>
+        <NuxtLink to="/consent">확인요청</NuxtLink>
       </nav>
     </header>
 
@@ -31,7 +31,7 @@
         <NuxtLink to="/magazines">정기간행물</NuxtLink>
         <NuxtLink to="/about">촬영서비스</NuxtLink>
         <NuxtLink to="/request">촬영요청</NuxtLink>
-        <NuxtLink to="/consent">공개요청</NuxtLink>
+        <NuxtLink to="/consent">확인요청</NuxtLink>
       </nav>
     </div>
 
@@ -384,7 +384,7 @@ onMounted(async () => {
       const t2 = t1 + 250
       const t3 = t1 + 1100
       const t4 = t2 + 2000
-      setTimeout(() => { document.body.classList.remove('loader-active'); loader.classList.add('gone') }, t1)
+      setTimeout(() => { document.body.classList.add('logo-done'); loader.classList.add('gone') }, t1)
       setTimeout(startGalleryReveal, t2)
       setTimeout(() => loader.classList.add('removed'), t3)
       setTimeout(() => {
@@ -397,10 +397,9 @@ onMounted(async () => {
       }, t4)
     }
 
-    document.body.classList.add('loader-active')
     const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (REDUCED) {
-      document.body.classList.remove('loader-active')
+      document.body.classList.add('logo-done')
       loader.classList.add('removed')
       document.body.classList.add('revealed', 'hint-on')
     } else {
@@ -487,29 +486,27 @@ header.ui {
   padding: 26px 32px; padding-top: max(26px, env(safe-area-inset-top));
   display: flex; justify-content: flex-end; align-items: center;
 }
-.logo {
-  position: fixed; top: max(26px, env(safe-area-inset-top)); left: 32px;
-  z-index: 2100; pointer-events: auto; display: block;
-  line-height: 0; text-decoration: none;
-  mix-blend-mode: difference;
+/* shared.css의 .logo(코너 위치)를 body.is-home 안에서 덮어씀 */
+body.is-home .logo {
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+  animation: loaderLogoIn 0.9s 0.2s cubic-bezier(0.2,0.7,0.2,1) forwards;
   transition: top 1.1s cubic-bezier(0.7,0,0.2,1), left 1.1s cubic-bezier(0.7,0,0.2,1), transform 1.1s cubic-bezier(0.7,0,0.2,1);
 }
-.logo:hover { mix-blend-mode: normal; }
-.logo-img {
-  display: block; width: auto; height: auto; max-width: 220px; max-height: 40px;
-  -webkit-user-drag: none; user-select: none; pointer-events: none;
+body.is-home .logo-img {
+  max-width: min(380px, 60vw); max-height: 80px;
   transition: max-width 1.1s cubic-bezier(0.7,0,0.2,1), max-height 1.1s cubic-bezier(0.7,0,0.2,1);
 }
-body.loader-active .logo {
-  top: 50%; left: 50%; transform: translate(-50%, -50%);
-  pointer-events: none; opacity: 0;
-  animation: loaderLogoIn 0.9s 0.2s cubic-bezier(0.2,0.7,0.2,1) forwards;
+body.is-home.logo-done .logo {
+  top: max(26px, env(safe-area-inset-top)); left: 32px; transform: none;
+  pointer-events: auto;
 }
-body.loader-active .logo-img { max-width: min(380px, 60vw); max-height: 80px; }
+body.is-home.logo-done .logo-img { max-width: 220px; max-height: 40px; }
 @keyframes loaderLogoIn { to { opacity: 1; } }
 @media (max-width: 768px) {
-  .logo { top: max(16px, env(safe-area-inset-top)); left: 18px; }
-  .logo-img { max-width: 150px; max-height: 28px; }
+  body.is-home.logo-done .logo { top: max(16px, env(safe-area-inset-top)); left: 18px; }
+  body.is-home.logo-done .logo-img { max-width: 150px; max-height: 28px; }
 }
 nav.menu { display: flex; gap: 22px; }
 nav.menu a { position: relative; color: var(--fg); text-decoration: none; padding: 4px 0; overflow: hidden; }
@@ -681,7 +678,6 @@ body.hint-on.hint-dismissed .hint { opacity: 0; transition: opacity 1.0s ease-in
   .tile::before { transition: none; }
   .loader { display: none !important; }
   .logo, .logo-img { transition: none !important; }
-  body.loader-active .logo { top: max(26px, env(safe-area-inset-top)); left: 32px; transform: none; animation: none; opacity: 1; }
-  body.loader-active .logo-img { max-width: 220px; max-height: 40px; }
+  .logo { animation: none !important; opacity: 1 !important; }
 }
 </style>

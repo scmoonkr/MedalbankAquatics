@@ -34,43 +34,9 @@
     </div>
 
     <form class="consent-form" id="consentForm" novalidate>
-      <!-- 본인 정보 -->
-      <section class="form-section">
-        <div class="sec-label">01 · 본인 정보</div>
-        <h2>누구의 사진인가요?</h2>
-        <p class="help">동의 인증 메일이 발송될 이메일 주소를 정확히 입력해주세요.</p>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="f-name">이름</label>
-            <input id="f-name" v-model="form.name" name="name" type="text" placeholder="홍길동" required />
-          </div>
-          <div class="field">
-            <label for="f-email">이메일</label>
-            <input id="f-email" v-model="form.email" name="email" type="email" placeholder="example@email.com" required />
-          </div>
-        </div>
-
-        <label class="check-item" for="f-minor">
-          <input id="f-minor" v-model="form.minor" name="minor" type="checkbox" />
-          <span class="box">
-            <svg viewBox="0 0 14 14" aria-hidden="true">
-              <polyline points="2.5 7.5, 6 11, 11.5 3.5" />
-            </svg>
-          </span>
-          <span class="text">
-            <span class="title">피촬영자가 만 14세 미만입니다 — 보호자가 동의를 진행합니다</span>
-            <span class="desc">위 이름 / 이메일은 보호자 정보로 입력해주세요.</span>
-          </span>
-        </label>
-        <div class="minor-warn" :class="{ show: form.minor }">
-          미성년자의 경우, 보호자(부모님 또는 법정대리인)가 직접 동의를 진행하셔야 합니다. 보호자의 이름·이메일을 정확히 입력해주세요.
-        </div>
-      </section>
-
       <!-- 동의 항목 -->
       <section class="form-section">
-        <div class="sec-label">02 · 동의 항목</div>
+        <div class="sec-label">01 · 동의 항목</div>
         <h2>사진들이 어디에 게재되나요?</h2>
         <p class="help">
           선수분의 사진을 다루게 되어 영광입니다.
@@ -110,6 +76,52 @@
               <span class="desc">하이라이트 사진으로 선정되는 경우, 메달뱅크 아쿠아틱스 실물 매거진에 사진이 게재될 수 있습니다.</span>
             </span>
           </label>
+        </div>
+      </section>
+
+      <!-- 본인 정보 -->
+      <section class="form-section">
+        <div class="sec-label">02 · 본인 정보</div>
+        <h2>누구의 사진인가요?</h2>
+        <p class="help">동의 인증 메일이 발송될 이메일 주소를 정확히 입력해주세요.</p>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="f-name">이름</label>
+            <input id="f-name" v-model="form.name" name="name" type="text" placeholder="홍길동" required />
+          </div>
+          <div class="field">
+            <label for="f-email">이메일</label>
+            <input id="f-email" v-model="form.email" name="email" type="email" placeholder="example@email.com" required />
+          </div>
+        </div>
+
+        <label class="check-item" for="f-minor">
+          <input id="f-minor" v-model="form.minor" name="minor" type="checkbox" />
+          <span class="box">
+            <svg viewBox="0 0 14 14" aria-hidden="true">
+              <polyline points="2.5 7.5, 6 11, 11.5 3.5" />
+            </svg>
+          </span>
+          <span class="text">
+            <span class="title">본인 또는 보호자를 사칭하여 무단으로 취득하는 사진의 사용은 유사시 법의 저촉을 받아 처벌 받을 수 있습니다.</span>
+          </span>
+        </label>
+
+        <label class="check-item check-item--spaced" for="f-minor-confirm">
+          <input id="f-minor-confirm" v-model="form.minorConfirm" name="minor_confirm" type="checkbox" />
+          <span class="box">
+            <svg viewBox="0 0 14 14" aria-hidden="true">
+              <polyline points="2.5 7.5, 6 11, 11.5 3.5" />
+            </svg>
+          </span>
+          <span class="text">
+            <span class="title">선수가 미성년자, 유년부, 초등부, 중등부, 고등부입니다 — 보호자가 동의를 진행합니다.</span>
+          </span>
+        </label>
+
+        <div class="minor-warn" :class="{ show: form.minorConfirm }">
+          미성년자의 경우, 보호자(부모님 또는 법정대리인)가 직접 동의를 진행하셔야 합니다. 보호자의 이름·이메일을 정확히 입력해주세요.
         </div>
       </section>
 
@@ -161,7 +173,7 @@ const submitted  = ref(false)
 const submitting = ref(false)
 const submitError = ref('')
 const form = reactive({
-  name: '', email: '', minor: false,
+  name: '', email: '', minor: false, minorConfirm: false,
   consent_insta: true, consent_mag: true,
 })
 
@@ -169,7 +181,8 @@ const canSubmit = computed(() =>
   cartImages.value.length > 0 &&
   form.name.trim() !== '' &&
   form.email.includes('@') &&
-  !submitting.value
+  !submitting.value &&
+  form.minor
 )
 
 function removeFromCart(id: number) {
@@ -510,6 +523,7 @@ onMounted(async () => {
     transform: scale(1);
   }
   .check-item:hover .box { border-color: var(--fg-dim); }
+  .check-item--spaced { margin-top: 20px; }
   .check-item .text {
     display: grid; gap: 4px;
   }

@@ -3,6 +3,7 @@
 
   <!-- ─── HERO ─── -->
   <section class="about-hero">
+    <div class="hero-bg" :style="heroStyle"></div>
     <div class="hero-inner">
       <div class="hero-eyebrow"><span class="num">00</span>About · Medalbank Aquatics</div>
       <h1 class="hero-title">
@@ -335,7 +336,7 @@
     <p>대회 촬영 신청, 협업 문의, 또는 그냥 수영 이야기도 환영합니다.</p>
 
     <div class="cta-area">
-      <NuxtLink class="cta-button" to="/request">촬영 요청</NuxtLink>
+      <NuxtLink class="cta-button" to="/request">촬영요청</NuxtLink>
       <p class="cta-tagline">그냥 수영하는, 수영 좋아하는 사람입니다.</p>
     </div>
 
@@ -346,7 +347,7 @@
       </div>
       <div class="contact-block">
         <h4>Email</h4>
-        <a class="big" href="mailto:magazine@medalbank.com">magazine@medalbank.com</a>
+        <a class="big" href="mailto:press@medalbank.com">press@medalbank.com</a>
       </div>
     </div>
 
@@ -367,7 +368,7 @@
 
       <!-- <div class="disc-block">
         <h4>동의 철회</h4>
-        <p>사용 동의를 철회하시려는 경우, <a href="mailto:consent@medalbank.com?subject=%5B%EB%8F%99%EC%9D%98%20%EC%B2%A0%ED%9A%8C%20%EC%9A%94%EC%B2%AD%5D">consent@medalbank.com</a>으로 요청해 주시기 바랍니다. 갤러리에서 철회를 원하는 사진을 캡처하여 첨부해 주시고, 메일 본문에 동의 시 사용하신 이메일 주소를 함께 기재해 주시면 처리가 빠릅니다.</p>
+        <p>사용 동의를 철회하시려는 경우, <a href="mailto:press@medalbank.com?subject=%5B%EB%8F%99%EC%9D%98%20%EC%B2%A0%ED%9A%8C%20%EC%9A%94%EC%B2%AD%5D">press@medalbank.com</a>으로 요청해 주시기 바랍니다. 갤러리에서 철회를 원하는 사진을 캡처하여 첨부해 주시고, 메일 본문에 동의 시 사용하신 이메일 주소를 함께 기재해 주시면 처리가 빠릅니다.</p>
         <p>접수 순서에 따라 처리되며, 영업일 기준 5일 이내에 처리 완료 메일을 발송해 드립니다. 철회 후 재동의는 언제든 가능합니다.</p>
       </div> -->
 
@@ -384,6 +385,18 @@
 <script setup lang="ts">
 definePageMeta({ ssr: false })
 useHead({ title: "메달뱅크 아쿠아틱스 — 촬영서비스" })
+
+const { data: galleryData } = useFetch<{ image_id: number; urls: { thumb?: string; original?: string } }[]>('/api/gallery')
+const heroUrl = ref('')
+watch(galleryData, (docs) => {
+  if (docs?.length) {
+    const pick = docs[Math.floor(Math.random() * docs.length)]
+    heroUrl.value = pick.urls.original ?? pick.urls.thumb ?? ''
+  }
+}, { immediate: true })
+const heroStyle = computed(() =>
+  heroUrl.value ? { backgroundImage: `url(${heroUrl.value})` } : {}
+)
 
 onMounted(() => {
   // hero clock
@@ -429,11 +442,16 @@ onMounted(() => {
     height: 100vh;
     height: 100dvh;
     min-height: 640px;
-    background-image: url('/images/xl/xl-005.jpg');
-    background-size: cover;
-    background-position: center;
     background-color: var(--bg-soft);
     overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    width: 100vw; /* 스크롤바 영역까지 덮음 */
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
   }
   .about-hero::after {
     content: '';

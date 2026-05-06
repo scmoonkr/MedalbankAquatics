@@ -1,16 +1,20 @@
 <template>
   <main class="photos-shell">
     <div class="photos-head">
-      <h1>사진집</h1>
-      <span v-if="activeMeetId !== null" class="vol">— {{ activeLabel }}</span>
-      <span class="meta-inline">
-        전체 <span>{{ activeTotalCount }}</span>장 ·
-        <span>{{ currentPage }} / {{ totalPages }}</span>
-      </span>
+      <div class="eyebrow"><span class="num">00</span>Photos · 사진집</div>
+      <div class="head-title-row">
+        <h1>사진집</h1>
+        <span v-if="activeMeetId !== null" class="vol">— {{ activeLabel }}</span>
+        <span class="meta-inline">
+          전체 <span>{{ activeTotalCount }}</span>장 ·
+          <span>{{ currentPage }} / {{ totalPages }}</span>
+        </span>
+      </div>
     </div>
-    <p class="photos-sub">아래 드롭다운 메뉴 또는 대회명 버튼을 통해 각 대회를 선택하여 사진을 열람할 수 있습니다.</p>
+    <p class="photos-sub">아래 드롭다운 메뉴 또는 태그 버튼을 통해 각 태그를 선택하여 사진을 열람할 수 있습니다.</p>
 
     <div class="photos-controls">
+      <!-- 대회 dropdown -->
       <div class="event-select" :class="{ open: dropOpen }">
         <button class="event-select-btn" type="button" :aria-expanded="dropOpen" @click="dropOpen = !dropOpen">
           <span class="label">{{ activeLabel }}</span>
@@ -19,9 +23,7 @@
           </svg>
         </button>
         <div class="event-select-list" role="listbox">
-          <button type="button"
-            :class="{ active: activeMeetId === null }"
-            @click="selectMeet(null)">
+          <button type="button" :class="{ active: activeMeetId === null }" @click="selectMeet(null)">
             전체 대회<span class="count">{{ meetsData?.total ?? 0 }}장</span>
           </button>
           <template v-for="g in meetsGrouped" :key="g.year">
@@ -35,41 +37,29 @@
         </div>
       </div>
 
-      <!-- 데스크탑: 최근 10개 -->
-      <div class="quick-meets quick-meets--desktop">
-        <button v-for="m in quickMeetsDesktop" :key="m.meet_id" type="button"
-          class="quick-btn" :class="{ active: activeMeetId === m.meet_id }"
-          :title="m.label"
-          @click="selectMeet(m.meet_id)">
-          {{ m.label }}
+      <!-- 카테고리 dropdown -->
+      <div v-if="categoriesSorted.length" class="event-select cat-select" :class="{ open: catDropOpen }">
+        <button class="event-select-btn" type="button" :aria-expanded="catDropOpen" @click="catDropOpen = !catDropOpen">
+          <span class="label">{{ activeCategoryLabel }}</span>
+          <svg class="caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+            <polyline points="1 1.5, 5 5, 9 1.5"/>
+          </svg>
         </button>
+        <div class="event-select-list" role="listbox">
+          <button type="button" :class="{ active: activeCategory === null }" @click="selectCategory(null)">
+            전체 카테고리
+          </button>
+          <button v-for="cat in categoriesSorted" :key="cat" type="button"
+            :class="{ active: activeCategory === cat }"
+            @click="selectCategory(cat)">
+            {{ cat }}
+          </button>
+        </div>
       </div>
 
-      <!-- 태블릿/모바일: 최근 30일 대회 -->
-      <div v-if="quickMeetsMobile.length" class="quick-meets quick-meets--mobile">
-        <button v-for="m in quickMeetsMobile" :key="m.meet_id" type="button"
-          class="quick-btn" :class="{ active: activeMeetId === m.meet_id }"
-          :title="m.short"
-          @click="selectMeet(m.meet_id)">
-          {{ m.label }}
-        </button>
-      </div>
-
-      <!-- 카테고리 필터 -->
-      <div v-if="categoriesData?.length" class="tag-filter">
-        <button type="button"
-          class="tag-btn category-btn" :class="{ active: activeCategory === null }"
-          @click="selectCategory(null)">전체</button>
-        <button v-for="cat in categoriesData" :key="cat" type="button"
-          class="tag-btn category-btn" :class="{ active: activeCategory === cat }"
-          @click="selectCategory(cat)">{{ cat }}</button>
-      </div>
-
-      <!-- 태그 필터 -->
+      <!-- 태그 버튼들 -->
       <div v-if="tagsData?.length" class="tag-filter">
-        <button type="button"
-          class="tag-btn" :class="{ active: activeTag === null }"
-          @click="selectTag(null)">전체</button>
+        <button type="button" class="tag-btn" :class="{ active: activeTag === null }" @click="selectTag(null)">전체</button>
         <button v-for="tag in tagsData" :key="tag" type="button"
           class="tag-btn" :class="{ active: activeTag === tag }"
           @click="selectTag(tag)">{{ tag }}</button>
@@ -122,6 +112,7 @@ const activeTag       = ref<string | null>(null)
 const activeCategory  = ref<string | null>(null)
 const currentPage     = ref(1)
 const dropOpen        = ref(false)
+const catDropOpen     = ref(false)
 const clickedId       = ref<number | null>(null)
 
 const { data: tagsData }       = useFetch<string[]>('/api/tags')
@@ -169,6 +160,16 @@ const meetsGrouped = computed(() => {
     .sort((a, b) => b.year.localeCompare(a.year))
 })
 
+const categoriesSorted = computed(() =>
+  [...(categoriesData.value ?? [])].sort().reverse()
+)
+
+const quickCategories = computed(() => categoriesSorted.value.slice(0, 6))
+
+const activeCategoryLabel = computed(() =>
+  activeCategory.value ?? '전체 카테고리'
+)
+
 const totalPages = computed(() => imagesData.value?.pages ?? 1)
 
 const activeTotalCount = computed(() =>
@@ -185,9 +186,10 @@ const activeLabel = computed(() => {
 
 // ── Actions ───────────────────────────────────────────────────────────────────
 function selectMeet(meetId: number | null) {
-  activeMeetId.value = meetId
-  currentPage.value  = 1
-  dropOpen.value     = false
+  activeMeetId.value   = meetId
+  activeCategory.value = null
+  currentPage.value    = 1
+  dropOpen.value       = false
 }
 
 function selectTag(tag: string | null) {
@@ -197,7 +199,9 @@ function selectTag(tag: string | null) {
 
 function selectCategory(category: string | null) {
   activeCategory.value = category
+  activeMeetId.value   = null
   currentPage.value    = 1
+  catDropOpen.value    = false
 }
 
 function goToPage(n: number) {
@@ -216,8 +220,11 @@ function onTileClick(img: { image_id: number; urls: { thumb: string; original: s
 
 onMounted(() => {
   document.addEventListener('click', (e) => {
-    const sel = document.querySelector('.event-select')
-    if (sel && !sel.contains(e.target as Node)) dropOpen.value = false
+    const t = e.target as Node
+    const sel = document.querySelector('.event-select:not(.cat-select)')
+    if (sel && !sel.contains(t)) dropOpen.value = false
+    const cat = document.querySelector('.cat-select')
+    if (cat && !cat.contains(t)) catDropOpen.value = false
   })
 })
 </script>
@@ -225,40 +232,35 @@ onMounted(() => {
 <style scoped>
 :root { --grid-margin: 14px; }
 .photos-shell { min-height: 100vh; min-height: 100dvh; padding-top: 96px; padding-bottom: 80px; }
-.photos-head { padding: 8px 32px 24px; display: flex; align-items: baseline; gap: 22px; flex-wrap: wrap; }
-.photos-head h1 { font-family: var(--font-myungjo); font-size: 44px; font-weight: 400; letter-spacing: -0.01em; line-height: 1; }
+.photos-head { padding: 8px 32px 24px; }
+.photos-head .eyebrow { color: var(--fg-faint); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 500; margin-bottom: 22px; }
+.photos-head .eyebrow .num { font-family: var(--font-serif); font-style: italic; font-size: 14px; margin-right: 10px; color: var(--accent); letter-spacing: -0.01em; }
+.head-title-row { display: flex; align-items: baseline; gap: 22px; flex-wrap: wrap; }
+.photos-head h1 { font-family: var(--font-myungjo); font-size: clamp(36px, 5vw, 60px); font-weight: 400; line-height: 1.18; letter-spacing: -0.018em; }
 .photos-head .vol { font-family: var(--font-serif); font-style: italic; font-size: 24px; color: var(--fg-faint); letter-spacing: -0.01em; }
 .photos-head .meta-inline { margin-left: auto; color: var(--fg-dim); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
-@media (max-width: 768px) { .photos-head { padding: 4px 18px 20px; gap: 14px; } .photos-head h1 { font-size: 32px; } .photos-head .vol { font-size: 18px; } .photos-head .meta-inline { font-size: 10px; width: 100%; margin-left: 0; } }
+@media (max-width: 768px) { .photos-head { padding: 4px 18px 20px; } .head-title-row { gap: 14px; } .photos-head h1 { font-size: 32px; } .photos-head .vol { font-size: 18px; } .photos-head .meta-inline { font-size: 10px; width: 100%; margin-left: 0; } }
 .photos-sub { padding: 0 32px 24px; color: var(--fg-dim); font-family: var(--font-myungjo); font-size: clamp(13px, 1.2vw, 15px); line-height: 1.7; letter-spacing: -0.005em; max-width: 680px; }
 @media (max-width: 768px) { .photos-sub { padding: 0 18px 20px; font-size: 13px; } }
-.photos-controls { padding: 4px 32px 26px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.photos-controls { padding: 4px 32px 26px; display: flex; align-items: stretch; gap: 8px; flex-wrap: wrap; }
 .event-select { position: relative; }
 .event-select-btn { display: inline-flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--fg); font-family: var(--font-sans); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: border-color 0.3s, background 0.3s; min-width: 240px; text-align: left; -webkit-appearance: none; appearance: none; }
 .event-select-btn:hover { border-color: var(--accent-dim); background: rgba(56,182,255,0.04); }
 .event-select-btn .label { flex: 1; }
 .event-select-btn .caret { width: 10px; height: 10px; transform: rotate(0deg); transition: transform 0.3s var(--ease-out); }
 .event-select.open .event-select-btn .caret { transform: rotate(180deg); }
-.event-select-list { position: absolute; top: calc(100% + 6px); left: 0; min-width: 100%; max-height: 320px; overflow-y: auto; padding: 6px 0; opacity: 0; pointer-events: none; transform: translateY(-4px); transition: opacity 0.25s, transform 0.25s var(--ease-out); z-index: 30; }
+.event-select-list { position: absolute; top: calc(100% + 6px); left: 0; width: max-content; min-width: 100%; max-height: 320px; overflow-y: auto; padding: 6px 0; opacity: 0; pointer-events: none; transform: translateY(-4px); transition: opacity 0.25s, transform 0.25s var(--ease-out); z-index: 30; }
 .event-select.open .event-select-list { opacity: 1; pointer-events: auto; transform: translateY(0); }
-.event-select-list button { display: block; width: 100%; text-align: left; padding: 10px 16px; color: var(--fg-dim); font-family: var(--font-sans); font-size: 12px; letter-spacing: 0.04em; cursor: pointer; transition: color 0.2s, background 0.2s; background: none; border: 0; }
+.event-select-list button { display: block; width: 100%; text-align: left; padding: 10px 16px; color: var(--fg-dim); font-family: var(--font-sans); font-size: 12px; letter-spacing: 0.04em; cursor: pointer; transition: color 0.2s, background 0.2s; background: none; border: 0; white-space: nowrap; }
 .event-select-list button:hover, .event-select-list button.active { color: var(--fg); background: rgba(255,255,255,0.04); }
 .event-select-list button .count { float: right; color: var(--fg-faint); font-variant-numeric: tabular-nums; margin-left: 16px; }
 .event-select-list .group-label { padding: 8px 16px 4px; color: var(--fg-faint); font-family: var(--font-sans); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; pointer-events: none; font-variant-numeric: tabular-nums; border-top: 1px solid rgba(255,255,255,0.06); margin-top: 4px; }
 .event-select-list .group-label:first-child { border-top: 0; margin-top: 0; }
-.quick-meets { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.quick-meets--mobile { display: none; }
-@media (max-width: 1199px) { .quick-meets--desktop { display: none; } .quick-meets--mobile { display: flex; } }
-.quick-btn { padding: 7px 12px; background: none; border: 1px solid var(--line); color: var(--fg-faint); font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.07em; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.quick-btn:hover { color: var(--fg); border-color: var(--fg-dim); }
-.quick-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(56,182,255,0.06); }
 @media (max-width: 768px) { .photos-controls { padding: 0 18px 22px; } .event-select-btn { min-width: 200px; padding: 9px 14px; font-size: 11px; } }
-.tag-filter { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%; padding-top: 4px; }
-.tag-btn { padding: 5px 12px; background: none; border: 1px solid var(--line); border-radius: 20px; color: var(--fg-faint); font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.07em; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; white-space: nowrap; }
+.tag-filter { display: flex; align-items: stretch; gap: 6px; flex-wrap: wrap; }
+.tag-btn { padding: 10px 12px; background: none; border: 1px solid var(--line); color: var(--fg-faint); font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.07em; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; white-space: nowrap; }
 .tag-btn:hover { color: var(--fg); border-color: var(--fg-dim); }
 .tag-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(56,182,255,0.06); }
-.category-btn { border-radius: 4px; }
-.category-btn.active { color: #a371f7; border-color: #a371f7; background: rgba(163,113,247,0.06); }
 .photos-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; padding: 0 14px; }
 @media (max-width: 1199px) { .photos-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 10px; } }
 @media (max-width: 768px) { .photos-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 8px; } }
