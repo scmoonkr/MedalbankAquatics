@@ -35,6 +35,13 @@ async function s3Upload(buffer, key) {
   return key
 }
 
+function toPublicUrl(key) {
+  if (!key) return null
+  if (key.startsWith('http')) return key
+  const base = _publicBase ?? process.env.CLOUD_PUBLIC_URL ?? ''
+  return base ? `${base}/${key}` : key
+}
+
 async function resizeWidth(buf, width) {
   return sharp(buf).resize(width, null, { withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer()
 }
@@ -96,7 +103,15 @@ export default function (app) {
           created_at: new Date(),
         })
 
-        results.push({ image_id: imageId, urls: { thumb: thumbUrl, preview: previewUrl, large: largeUrl, original: originalUrl } })
+        results.push({
+          image_id: imageId,
+          urls: {
+            thumb:    toPublicUrl(thumbUrl),
+            preview:  toPublicUrl(previewUrl),
+            large:    toPublicUrl(largeUrl),
+            original: toPublicUrl(originalUrl),
+          },
+        })
       }
 
       res.json({ ok: true, count: results.length, results })

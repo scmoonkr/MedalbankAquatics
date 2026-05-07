@@ -93,24 +93,45 @@
           <input v-model="editing.competition_id" />
         </div>
         <div class="field-row">
+          <label>categories</label>
+          <input v-model="editing.categoryInput" placeholder="cat1, cat2, ..." />
+        </div>
+        <div class="field-row">
           <label>tags</label>
           <input v-model="editing.tagsInput" placeholder="tag1, tag2, ..." />
         </div>
 
-        <div class="section-label">이미지 업로드</div>
+        <div class="section-label-row">
+          <span class="section-label">이미지 업로드</span>
+          <button v-if="(uploadedRecordCount + legacyRecordCount) > 0" class="record-clear-btn" :disabled="uploading"
+            @click="clearUploadRecord"
+            :title="`이 대회 ${uploadedRecordCount}장 + 이전 ${legacyRecordCount}장 = ${uploadedRecordCount + legacyRecordCount}장 지우기`">
+            기록 {{ uploadedRecordCount + legacyRecordCount }}장 지우기
+          </button>
+        </div>
 
         <!-- 업로드 버튼 행 -->
         <div class="upload-area" @dragover.prevent @drop.prevent="onDrop">
           <input ref="fileInput" type="file" accept="image/*" multiple hidden @change="onFileChange" />
           <input ref="dirInput" type="file" accept="image/*" multiple hidden webkitdirectory @change="onDirInputChange" />
-          <button class="btn-upload" @click="fileInput?.click()">파일 선택</button>
-          <button class="btn-upload btn-upload-dir" @click="selectDirectory">
+          <button class="btn-upload" :disabled="uploading" @click="fileInput?.click()">파일 선택</button>
+          <button class="btn-upload btn-upload-dir" :disabled="uploading" @click="selectDirectory">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" width="13" height="13">
               <path d="M1 4.5C1 3.67 1.67 3 2.5 3H6l1.5 2H13.5C14.33 5 15 5.67 15 6.5V12.5C15 13.33 14.33 14 13.5 14H2.5C1.67 14 1 13.33 1 12.5V4.5Z"/>
             </svg>
             폴더 선택
           </button>
           <span class="upload-hint">또는 드래그</span>
+        </div>
+
+        <!-- 이전 폴더 재연결 (FSA, 권한 만료 시) -->
+        <div v-if="pendingRestoreName && !dirHandle" class="reconnect-row">
+          <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13" class="dir-icon">
+            <path d="M1 4.5C1 3.67 1.67 3 2.5 3H6l1.5 2H13.5C14.33 5 15 5.67 15 6.5V12.5C15 13.33 14.33 14 13.5 14H2.5C1.67 14 1 13.33 1 12.5V4.5Z"/>
+          </svg>
+          <span class="reconnect-name">이전: {{ pendingRestoreName }}/</span>
+          <button class="reconnect-btn" @click="reconnectDir">재연결</button>
+          <button class="reconnect-x" @click="forgetRestore" title="잊기">✕</button>
         </div>
 
         <!-- 폴더 모드 정보 카드 -->
@@ -120,12 +141,14 @@
               <path d="M1 4.5C1 3.67 1.67 3 2.5 3H6l1.5 2H13.5C14.33 5 15 5.67 15 6.5V12.5C15 13.33 14.33 14 13.5 14H2.5C1.67 14 1 13.33 1 12.5V4.5Z"/>
             </svg>
             <span class="dir-name">{{ dirName }}/</span>
-            <button class="dir-clear" @click="clearDir" title="폴더 해제">✕</button>
+            <button class="dir-clear" @click="clearDir" :disabled="uploading" title="폴더 해제">✕</button>
           </div>
           <div class="dir-stats">
             <span class="stat-item pending">대기 <strong>{{ dirPending.length }}</strong>장</span>
             <span class="stat-sep">·</span>
-            <span class="stat-item done">완료 <strong>{{ dirDoneCount }}</strong>장 (uploaded/)</span>
+            <span class="stat-item done">완료 <strong>{{ dirDoneCount }}</strong>장</span>
+            <span v-if="dirSkipped" class="stat-sep">·</span>
+            <span v-if="dirSkipped" class="stat-item skipped">스킵 <strong>{{ dirSkipped }}</strong>장 (기록됨)</span>
           </div>
         </div>
 
@@ -143,7 +166,12 @@
           <div class="progress-bar">
             <div class="progress-fill" :style="{ width: uploadTotal ? `${Math.round(uploadDone / uploadTotal * 100)}%` : '0%' }" />
           </div>
-          <span class="progress-text">{{ uploadDone }} / {{ uploadTotal }}장 완료</span>
+          <div class="progress-row">
+            <span class="progress-text">{{ uploadDone }} / {{ uploadTotal }}장 완료</span>
+            <button class="btn-cancel" @click="cancelUpload" :disabled="cancelling">
+              {{ cancelling ? '취소 중…' : '취소' }}
+            </button>
+          </div>
         </div>
 
         <!-- 결과 -->
@@ -197,6 +225,11 @@ const dirFallback   = ref(false)       // webkitdirectory fallback
 const dirName       = ref('')
 const dirPending    = ref<any[]>([])   // FileSystemFileHandle[] or File[]
 const dirDoneCount  = ref(0)
+const dirSkipped    = ref(0)           // localStorage 기록으로 스킵된 수
+
+// ── FSA 핸들 복원 (Chrome/Edge: IndexedDB로 meet_id별 폴더 핸들 영속화) ──────
+const pendingRestoreHandle = ref<any>(null)
+const pendingRestoreName   = ref('')
 
 // ── 공통 진행 상태 ───────────────────────────────────────────────────────────
 const uploading     = ref(false)
@@ -205,6 +238,11 @@ let   uploadAC: AbortController | null = null
 const uploadDone    = ref(0)
 const uploadTotal   = ref(0)
 const uploadResults = ref<any[]>([])
+const cancelling    = ref(false)
+
+// ── localStorage 업로드 기록 카운트 ────────────────────────────────────────
+const uploadedRecordCount = ref(0)   // 현재 meet_id 신규 스킴 기록 수
+const legacyRecordCount   = ref(0)   // master 구 스킴(mb_dir_uploaded) 전체 누적 수
 
 // ── 필터 옵션 ────────────────────────────────────────────────────────────────
 const locationOptions = computed(() => {
@@ -254,22 +292,32 @@ const allChecked = computed({
 })
 
 // ── 편집 패널 열기 ────────────────────────────────────────────────────────────
-function openEdit(m: any) {
-  editing.value = { ...m, tagsInput: (m.tags ?? []).join(', ') }
+async function openEdit(m: any) {
+  editing.value = {
+    ...m,
+    tagsInput:     (m.tags ?? []).join(', '),
+    categoryInput: (Array.isArray(m.category) ? m.category : m.category ? [m.category] : []).join(', '),
+  }
   editDate.value = m.date ? new Date(m.date).toISOString().slice(0, 10) : ''
   resetUpload()
+  refreshUploadedCount()
+  await tryRestoreDirHandle()
 }
 
 function openNew() {
-  editing.value = { label: '', short: '', location: '', competition_id: '', tagsInput: '' }
+  editing.value = { label: '', short: '', location: '', competition_id: '', tagsInput: '', categoryInput: '' }
   editDate.value = ''
   resetUpload()
+  uploadedRecordCount.value = 0
+  legacyRecordCount.value   = countLegacyRecords()
 }
 
 function clearForm() {
-  editing.value = { label: '', short: '', location: '', competition_id: '', tagsInput: '' }
+  editing.value = { label: '', short: '', location: '', competition_id: '', tagsInput: '', categoryInput: '' }
   editDate.value = ''
   resetUpload()
+  uploadedRecordCount.value = 0
+  legacyRecordCount.value   = countLegacyRecords()
 }
 
 function resetUpload() {
@@ -283,19 +331,27 @@ function resetUpload() {
   dirName.value = ''
   dirPending.value = []
   dirDoneCount.value = 0
+  dirSkipped.value = 0
   uploading.value = false
+  cancelling.value = false
   uploadDone.value = 0
   uploadTotal.value = 0
+  pendingRestoreHandle.value = null
+  pendingRestoreName.value = ''
 }
 
 // ── 파일 모드 ────────────────────────────────────────────────────────────────
 function addFiles(files: FileList | null) {
   if (!files) return
   dirHandle.value = null  // 폴더 모드 해제
+  const uploadedSet = getUploadedSet(editing.value?.meet_id)
+  let skipped = 0
   for (const file of Array.from(files)) {
     if (!IMAGE_RE.test(file.name)) continue
+    if (uploadedSet.has(file.name)) { skipped++; continue }
     uploadFiles.value.push({ file, preview: URL.createObjectURL(file) })
   }
+  if (skipped > 0) alert(`이미 업로드된 ${skipped}장은 제외했습니다. (재업로드하려면 "기록 지우기")`)
 }
 
 function onFileChange(e: Event) {
@@ -327,24 +383,205 @@ async function doFileUpload() {
   }
 }
 
-// ── localStorage 업로드 기록 (파일시스템 쓰기 대신 사용) ──────────────────────
-const LS_KEY = 'mb_dir_uploaded'
+// ── localStorage 업로드 기록 (meet_id 단위) ─────────────────────────────────
+function recordKey(meetId: number | string) { return `meet_uploaded_${meetId}` }
 
-function getUploadedNames(folder: string): Set<string> {
+function getUploadedSet(meetId: number | string | undefined): Set<string> {
+  if (!meetId) return new Set()
   try {
-    const map = JSON.parse(localStorage.getItem(LS_KEY) ?? '{}')
-    return new Set(map[folder] ?? [])
+    const raw = localStorage.getItem(recordKey(meetId))
+    return new Set<string>(raw ? JSON.parse(raw) : [])
   } catch { return new Set() }
 }
 
-function markUploaded(folder: string, names: string[]) {
+function saveUploadedSet(meetId: number | string, set: Set<string>) {
+  try { localStorage.setItem(recordKey(meetId), JSON.stringify([...set])) } catch {}
+}
+
+function markUploaded(meetId: number | string | undefined, names: string[]) {
+  if (!meetId || !names.length) return
+  const set = getUploadedSet(meetId)
+  for (const n of names) set.add(n)
+  saveUploadedSet(meetId, set)
+  uploadedRecordCount.value = set.size
+}
+
+function refreshUploadedCount() {
+  uploadedRecordCount.value = getUploadedSet(editing.value?.meet_id).size
+  legacyRecordCount.value   = countLegacyRecords()
+}
+
+const LEGACY_LS_KEY = 'mb_dir_uploaded'
+
+function countLegacyRecords(): number {
   try {
-    const map = JSON.parse(localStorage.getItem(LS_KEY) ?? '{}')
-    const s = new Set<string>(map[folder] ?? [])
-    for (const n of names) s.add(n)
-    map[folder] = [...s]
-    localStorage.setItem(LS_KEY, JSON.stringify(map))
+    const map = JSON.parse(localStorage.getItem(LEGACY_LS_KEY) ?? '{}')
+    let n = 0
+    for (const k of Object.keys(map)) n += (map[k]?.length ?? 0)
+    return n
+  } catch { return 0 }
+}
+
+async function clearUploadRecord() {
+  if (uploading.value) return
+  const id  = editing.value?.meet_id
+  const cur = uploadedRecordCount.value
+  const leg = legacyRecordCount.value
+  if (cur === 0 && leg === 0) return
+  const parts: string[] = []
+  if (cur > 0) parts.push(`이 대회(#${id})의 기록 ${cur}장`)
+  if (leg > 0) parts.push(`이전 폴더-기준 기록 ${leg}장`)
+  if (!confirm(`${parts.join(' + ')}을 지우시겠습니까?`)) return
+
+  try { if (id) localStorage.removeItem(recordKey(id)) } catch {}
+  try { localStorage.removeItem(LEGACY_LS_KEY) } catch {}
+  uploadedRecordCount.value = 0
+  legacyRecordCount.value   = 0
+
+  // 폴더가 열려 있으면 재스캔(FSA) 또는 재선택 안내(Safari)
+  if (dirHandle.value) {
+    if (!dirFallback.value) {
+      await rescanDir()
+    } else {
+      clearDir()
+      alert('업로드 기록을 지웠습니다. 폴더를 다시 선택해 주세요.')
+    }
+  }
+}
+
+// ── IndexedDB: FileSystemDirectoryHandle 영속화 (Chrome/Edge) ───────────────
+const IDB_NAME  = 'meet-uploads'
+const IDB_STORE = 'dir-handles'
+
+function openIDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, 1)
+    req.onupgradeneeded = () => {
+      const db = req.result
+      if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE)
+    }
+    req.onsuccess = () => resolve(req.result)
+    req.onerror   = () => reject(req.error)
+  })
+}
+
+async function idbSet(meetId: number | string, value: any) {
+  if (typeof indexedDB === 'undefined') return
+  try {
+    const db = await openIDB()
+    await new Promise<void>((res, rej) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite')
+      tx.objectStore(IDB_STORE).put(value, String(meetId))
+      tx.oncomplete = () => res()
+      tx.onerror    = () => rej(tx.error)
+    })
+    db.close()
+  } catch (e) { console.warn('idbSet failed', e) }
+}
+
+async function idbGet(meetId: number | string): Promise<any> {
+  if (typeof indexedDB === 'undefined') return null
+  try {
+    const db = await openIDB()
+    const handle = await new Promise<any>((res, rej) => {
+      const tx = db.transaction(IDB_STORE, 'readonly')
+      const req = tx.objectStore(IDB_STORE).get(String(meetId))
+      req.onsuccess = () => res(req.result)
+      req.onerror   = () => rej(req.error)
+    })
+    db.close()
+    return handle ?? null
+  } catch { return null }
+}
+
+async function idbDelete(meetId: number | string) {
+  if (typeof indexedDB === 'undefined') return
+  try {
+    const db = await openIDB()
+    await new Promise<void>((res, rej) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite')
+      tx.objectStore(IDB_STORE).delete(String(meetId))
+      tx.oncomplete = () => res()
+      tx.onerror    = () => rej(tx.error)
+    })
+    db.close()
   } catch {}
+}
+
+async function verifyPermission(handle: any, request = false): Promise<boolean> {
+  if (!handle?.queryPermission) return false
+  const opts = { mode: 'read' as const }
+  try {
+    if ((await handle.queryPermission(opts)) === 'granted') return true
+    if (request && (await handle.requestPermission(opts)) === 'granted') return true
+  } catch {}
+  return false
+}
+
+// ── 폴더 핸들 복원 / 재연결 / 적용 / 재스캔 ─────────────────────────────────
+async function tryRestoreDirHandle() {
+  const id = editing.value?.meet_id
+  if (!id) return
+  const handle = await idbGet(id)
+  if (!handle) return
+  if (await verifyPermission(handle, false)) {
+    await applyDirHandle(handle)
+  } else {
+    pendingRestoreHandle.value = handle
+    pendingRestoreName.value   = handle.name ?? '(이전 폴더)'
+  }
+}
+
+async function reconnectDir() {
+  if (!pendingRestoreHandle.value) return
+  if (await verifyPermission(pendingRestoreHandle.value, true)) {
+    await applyDirHandle(pendingRestoreHandle.value)
+    pendingRestoreHandle.value = null
+    pendingRestoreName.value   = ''
+  } else {
+    alert('폴더 권한이 거부되었습니다.')
+  }
+}
+
+function forgetRestore() {
+  if (!editing.value?.meet_id) return
+  idbDelete(editing.value.meet_id)
+  pendingRestoreHandle.value = null
+  pendingRestoreName.value   = ''
+}
+
+async function applyDirHandle(handle: any) {
+  dirHandle.value     = handle
+  dirFallback.value   = false
+  dirName.value       = handle.name ?? ''
+  dirPending.value    = []
+  dirDoneCount.value  = 0
+  dirSkipped.value    = 0
+  uploadFiles.value   = []
+  uploadResults.value = []
+  await rescanDir()
+}
+
+async function rescanDir() {
+  if (!dirHandle.value || dirFallback.value) return
+  const handle = dirHandle.value
+  dirPending.value   = []
+  dirDoneCount.value = 0
+  dirSkipped.value   = 0
+  const uploadedSet = getUploadedSet(editing.value?.meet_id)
+  for await (const [name, h] of (handle as any).entries()) {
+    if (h.kind !== 'file' || !IMAGE_RE.test(name)) continue
+    if (uploadedSet.has(name)) { dirSkipped.value++; continue }
+    dirPending.value.push(h)
+  }
+  dirDoneCount.value = dirSkipped.value
+}
+
+function cancelUpload() {
+  if (!uploading.value) return
+  cancelling.value = true
+  uploadAborted.value = true
+  uploadAC?.abort()
 }
 
 // ── 폴더 모드 ────────────────────────────────────────────────────────────────
@@ -352,19 +589,11 @@ async function selectDirectory() {
   if (typeof (window as any).showDirectoryPicker === 'function') {
     try {
       const handle = await (window as any).showDirectoryPicker({ mode: 'read' })
-      const uploaded = getUploadedNames(handle.name)
-      dirHandle.value    = handle
-      dirFallback.value  = false
-      dirName.value      = handle.name
-      dirPending.value   = []
-      dirDoneCount.value = uploaded.size
-      uploadFiles.value  = []
-      uploadResults.value = []
-
-      for await (const [name, h] of (handle as any).entries()) {
-        if (h.kind === 'file' && IMAGE_RE.test(name) && !uploaded.has(name))
-          dirPending.value.push(h)
-      }
+      await applyDirHandle(handle)
+      pendingRestoreHandle.value = null
+      pendingRestoreName.value   = ''
+      // meet_id별 IndexedDB에 핸들 저장 (다음 세션에서 복원)
+      if (editing.value?.meet_id) await idbSet(editing.value.meet_id, handle)
     } catch (e: any) {
       if (e.name !== 'AbortError') alert('폴더 접근 실패: ' + e.message)
     }
@@ -378,17 +607,22 @@ function onDirInputChange(e: Event) {
     .filter(f => IMAGE_RE.test(f.name))
   if (!all.length) return
 
-  const rel = (all[0] as any).webkitRelativePath as string
-  const folderName = rel ? rel.split('/')[0] : '선택된 폴더'
-  const uploaded = getUploadedNames(folderName)
-  const pending = all.filter(f => !uploaded.has(f.name))
+  const uploadedSet = getUploadedSet(editing.value?.meet_id)
+  const pending: File[] = []
+  let skipped = 0
+  for (const f of all) {
+    if (uploadedSet.has(f.name)) { skipped++; continue }
+    pending.push(f)
+  }
 
-  dirHandle.value    = true
-  dirFallback.value  = true
-  dirDoneCount.value = uploaded.size
-  uploadFiles.value  = []
+  const rel = (all[0] as any).webkitRelativePath as string
+  dirHandle.value     = true
+  dirFallback.value   = true
+  dirDoneCount.value  = uploadedSet.size
+  dirSkipped.value    = skipped
+  uploadFiles.value   = []
   uploadResults.value = []
-  dirName.value    = folderName
+  dirName.value    = rel ? rel.split('/')[0] : '선택된 폴더'
   dirPending.value = pending
 
   if (dirInput.value) dirInput.value.value = ''
@@ -396,14 +630,19 @@ function onDirInputChange(e: Event) {
 
 function clearDir() {
   dirHandle.value = null
+  dirFallback.value = false
   dirName.value = ''
   dirPending.value = []
   dirDoneCount.value = 0
+  dirSkipped.value = 0
+  // meet_id의 IndexedDB 핸들도 해제
+  if (editing.value?.meet_id) idbDelete(editing.value.meet_id)
 }
 
 async function doDirUpload() {
   if (!dirPending.value.length || !editing.value || !dirHandle.value || uploading.value) return
   uploading.value   = true
+  cancelling.value  = false
   uploadDone.value  = 0
   uploadTotal.value = dirPending.value.length
   uploadResults.value = []
@@ -411,7 +650,9 @@ async function doDirUpload() {
   uploadAborted.value = false
   uploadAC = new AbortController()
   const pending = [...dirPending.value]
-  const folder  = dirName.value
+  const meetId  = editing.value.meet_id
+
+  const completedNames = new Set<string>()
 
   for (let i = 0; i < pending.length; i += BATCH_SIZE) {
     if (uploadAborted.value) break
@@ -426,7 +667,7 @@ async function doDirUpload() {
     if (uploadAborted.value) break
 
     const fd = new FormData()
-    fd.append('meet_id', String(editing.value?.meet_id ?? 0))
+    fd.append('meet_id', String(meetId ?? 0))
     fd.append('date', editDate.value)
     for (const { file } of batchItems) fd.append('files', file)
 
@@ -437,7 +678,8 @@ async function doDirUpload() {
       })
       uploadResults.value.push(...res.results)
       const names = batchItems.map(({ file }) => file.name)
-      markUploaded(folder, names)
+      markUploaded(meetId, names)
+      for (const n of names) completedNames.add(n)
       dirDoneCount.value += names.length
     } catch (e: any) {
       if (uploadAborted.value || e?.name === 'AbortError') break
@@ -448,8 +690,15 @@ async function doDirUpload() {
   }
 
   uploadAC = null
-  dirPending.value = []
+  // 완료 항목을 pending에서 제거
+  if (dirFallback.value) {
+    dirPending.value = dirPending.value.filter(f => !completedNames.has((f as File).name))
+  } else {
+    // FSA: localStorage 기록 기준으로 재스캔
+    await rescanDir()
+  }
   uploading.value  = false
+  cancelling.value = false
 }
 
 // ── 저장 / 삭제 ──────────────────────────────────────────────────────────────
@@ -474,6 +723,7 @@ async function save() {
     location:       editing.value.location ?? '',
     competition_id: editing.value.competition_id ?? '',
     tags:           (editing.value.tagsInput ?? '').split(',').map((t: string) => t.trim()).filter(Boolean),
+    category:       (editing.value.categoryInput ?? '').split(',').map((t: string) => t.trim()).filter(Boolean),
   }
   try {
     if (meet_id) {
@@ -551,7 +801,29 @@ input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-colo
 .edit-footer { padding: 16px 20px; border-top: 1px solid #30363d; display: flex; justify-content: space-between; gap: 10px; }
 
 /* ── 업로드 영역 ── */
-.section-label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.08em; padding-top: 6px; border-top: 1px solid #30363d; }
+.section-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 6px; border-top: 1px solid #30363d; }
+.section-label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.08em; }
+.record-clear-btn { background: transparent; border: 1px solid #30363d; border-radius: 4px; color: #8b949e; font-size: 10px; padding: 3px 8px; cursor: pointer; white-space: nowrap; }
+.record-clear-btn:hover:not(:disabled) { border-color: #f85149; color: #f85149; }
+.record-clear-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-upload:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-upload:disabled:hover { background: #21262d; }
+.dir-clear:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.reconnect-row { display: flex; align-items: center; gap: 7px; padding: 6px 12px; background: #0d1117; border: 1px dashed #388bfd; border-radius: 6px; font-size: 11px; }
+.reconnect-name { flex: 1; color: #8b949e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reconnect-btn { background: #21262d; border: 1px solid #388bfd; border-radius: 4px; color: #58a6ff; font-size: 11px; padding: 3px 10px; cursor: pointer; }
+.reconnect-btn:hover { background: rgba(56,139,253,0.1); }
+.reconnect-x { background: none; border: none; color: #8b949e; cursor: pointer; font-size: 13px; line-height: 1; padding: 0 2px; }
+.reconnect-x:hover { color: #f85149; }
+
+.stat-item.skipped strong { color: #8b949e; }
+
+.progress-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.btn-cancel { background: transparent; border: 1px solid #f85149; border-radius: 4px; color: #f85149; font-size: 11px; padding: 3px 10px; cursor: pointer; white-space: nowrap; }
+.btn-cancel:hover:not(:disabled) { background: rgba(248,81,73,0.1); }
+.btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .upload-area { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px dashed #30363d; border-radius: 6px; flex-wrap: wrap; }
 .btn-upload { padding: 5px 12px; background: #21262d; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; font-size: 12px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
 .btn-upload:hover { background: #30363d; }
