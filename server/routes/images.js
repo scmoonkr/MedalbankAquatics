@@ -29,10 +29,23 @@ function toUrl(key) {
 
 function toKey(val) {
   if (!val) return null
+  const base = process.env.CLOUD_PUBLIC_URL ?? ''
+  if (base && val.startsWith(base + '/')) return val.slice(base.length + 1)
+  if (base && val === base)               return ''
   if (val.startsWith('http')) {
-    try { return new URL(val).pathname.slice(1) } catch { return null }
+    try { return new URL(val).pathname.replace(/^\//, '') } catch { return null }
   }
   return val
+}
+
+function stripUrls(urls) {
+  if (!urls) return urls
+  return {
+    thumb:    toKey(urls.thumb),
+    preview:  toKey(urls.preview),
+    large:    toKey(urls.large),
+    original: toKey(urls.original),
+  }
 }
 
 function resolveUrls(urls) {
@@ -98,7 +111,7 @@ export default function (app) {
       const update = { athlete_id: parseInt(athlete_id), meet_id: parseInt(meet_id), date }
       if (consent_date) update.consent_date = new Date(consent_date)
       else update.consent_date = null
-      if (urls) update.urls = urls
+      if (urls) update.urls = stripUrls(urls)
       update.tags     = Array.isArray(tags)     ? tags     : (tags     ? tags.split(',').map(t => t.trim()).filter(Boolean)     : [])
       update.category = Array.isArray(category) ? category : (category ? category.split(',').map(t => t.trim()).filter(Boolean) : [])
       await images().updateOne({ image_id }, { $set: update })
