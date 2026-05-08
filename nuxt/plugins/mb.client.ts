@@ -1,5 +1,7 @@
 export default defineNuxtPlugin(() => {
   const setupCursor = () => {
+    if ((window as any).__mbCursorInit) return
+    ;(window as any).__mbCursorInit = true
     const cursorEl = document.getElementById('cursor')
     const labelEl  = cursorEl?.querySelector<HTMLElement>('.label') ?? null
     if (!cursorEl) return
