@@ -5,7 +5,7 @@
   <section class="about-hero">
     <div class="hero-bg" :style="heroStyle"></div>
     <div class="hero-inner">
-      <div class="hero-eyebrow"><span class="num">00</span>About · Medalbank Aquatics</div>
+      <div class="hero-eyebrow">About<span class="dot">·</span>Medalbank Aquatics</div>
       <h1 class="hero-title">
         수영인이 찍고,<br />
         수영인에게 <span class="em">돌려드립니다</span>.
@@ -16,12 +16,9 @@
       </div>
     </div>
 
-    <!-- Hero 정적 meta band (footer 정보를 맨 위에서만 노출) -->
+    <!-- Hero 정적 meta band -->
     <div class="hero-meta">
       <div class="col">
-        <div class="insta-mobile">
-          <a class="insta" href="https://www.instagram.com/medalbankaquatics" target="_blank" rel="noopener noreferrer">@medalbankaquatics</a>
-        </div>
         <div>50+ MEETS · 1,000+ ATHLETES · 1M+ FRAMES</div>
         <div>600MM F4 · 300MM F2.8 · 70-200MM F2.8</div>
         <div class="strong">SINCE 2019 · <span id="clock-hero">KST 00:00:00</span></div>
@@ -36,33 +33,31 @@
   </section>
 
 
-  <!-- ─── PRESS KIT ─── -->
+  <!-- ─── 00 · PORTFOLIO + WHO WE ARE (merged) ─── -->
   <section class="sec presskit reveal">
     <div class="sec-eyebrow"><span class="num">00</span>Portfolio · Press Kit · 2026</div>
-    <h2 class="presskit-title">수영 대회 전문<br/>사진 기록.</h2>
-    <p>
-      우리 모두의 결정적 순간을, <strong>세계 선수권 포토풀과 동일한 장비</strong>로.
-      어떤 조명 아래서도, <strong>출판 가능한 품질</strong>로.
-      벌써 7년간 국내외 수영 대회를 기록해왔습니다.
-    </p>
-    <p>
-      촬영된 선수 <strong>전원에게 편리하게 제공할 수 있는 시스템</strong> 완비.
-    </p>
-    <p class="presskit-tagline">
-      촬영 — 관리 — 공유부터 개개인의 동의서명까지, 모두 적법한 절차대로.
-    </p>
-  </section>
+    <h2 class="presskit-title">
+      수영 대회 사진 기록 전문.<br />
+      수영 대회 촬영, <span class="em">좋아하고 잘 해냅니다.</span>
+    </h2>
 
-    <!-- ─── INTRO ─── -->
-  <section class="sec reveal">
-    <div class="sec-eyebrow"><span class="num">01</span>Who we are</div>
-    <h2>메달뱅크 아쿠아틱스,<br />수영 대회 촬영, <span class="em">좋아하고 잘 해냅니다.</span></h2>
+    <p>
+      지난 7년, <strong>오직 수영을 사랑하는 마음으로</strong> 국내외 수영 대회를 기록해왔습니다.
+      2026년, 촬영대상 <strong>전원에게 편리하게 제공할 수 있는 시스템</strong> 완비하였습니다.
+    </p>
+
     <p>
       모든 동료들에게 <strong>내가 느끼는 보람을 그대로 전달한다</strong>는 목표로 걸어왔습니다.
-      선수의 시선과 감각으로 대회 현장을 기록합니다. 국내외 수영대회 시합 촬영만 50회 이상,
-      1,000명 이상의 선수를 사진기에 담아왔습니다. 전문체육 선수든 마스터즈 선수든,
-      첫 대회든 수십 번째 대회든 — 수영장에 뛰어드는 모든 사람의 땀과 감동은
-      <strong>누구에게나 동등하게, 가장 훌륭한 수준으로</strong> 기록합니다.
+      실력과 노력 사이의 감동을 <strong>누구에게나 동등하게, 가장 훌륭한 수준으로</strong> 기록합니다.
+    </p>
+
+    <p>
+      우리 모두의 결정적 순간을, <strong>선수의 시선과 감각으로</strong>.
+      <strong>세계 선수권 포토풀과 동일한 장비</strong>로, <strong>출판 가능한 품질</strong>로.
+    </p>
+
+    <p class="presskit-tagline">
+      촬영 — 관리 — 공유부터 개개인의 동의서명까지, 모두 적법한 절차대로.
     </p>
   </section>
 
@@ -88,9 +83,9 @@
     </div>
   </section>
 
-  <!-- ─── MISSION ─── -->
+  <!-- ─── 01 · MISSION ─── -->
   <section class="sec reveal">
-    <div class="sec-eyebrow"><span class="num">02</span>Mission</div>
+    <div class="sec-eyebrow"><span class="num">01</span>Mission</div>
     <h2>소속상관없이,<br /><span class="em">수영인의 마음으로.</span></h2>
     <p>
       각 선수가 자신의 사진을 찾아 동의 절차를 거치면 <strong>화보로 출판이 가능한 수준의 컬러 원본</strong>이 공개되어
@@ -99,18 +94,18 @@
       제3자에게 양도하지 않습니다.
     </p>
     <p>
-      모든 사진은 본인 또는 보호자의 동의를 받은 후에만 공개됩니다. 동의하지 않은 사진은
-      <strong>초저화질의 흑백사진</strong>으로만 식별 목적 표시되며, 게시·배포되지 않습니다.
+      모든 사진은 <strong>본인 또는 보호자가 확인한 후에 사용</strong>됩니다.
+      확인되지 않은 사진은 <strong>저화질의 흑백사진</strong>으로, 식별 목적으로만 표시됩니다.
     </p>
     <p>
-      동의가 완료된 촬영 사진은 <strong>대한민국 수영 커뮤니티에 무료로 환원</strong>합니다.
+      촬영한 사진은 <strong>대한민국 수영인 모두에게 무료로 환원</strong>합니다.
       동의된 사진은 원본 화질로 다운로드 가능하며, 대회명과 함께 보관·관리됩니다.
     </p>
   </section>
 
-  <!-- ─── VALUES ─── -->
+  <!-- ─── 02 · VALUES ─── -->
   <section class="sec reveal">
-    <div class="sec-eyebrow"><span class="num">03</span>Values · 우리가 지키는 것들</div>
+    <div class="sec-eyebrow"><span class="num">02</span>Values · 우리가 지키는 것들</div>
     <div class="values">
       <div class="value-item">
         <span class="v-num">01</span>
@@ -137,15 +132,15 @@
         <span class="v-num">04</span>
         <div>
           <h3>퀄리티</h3>
-          <p>수영을 아는 사람만이 알아챌 수 있는 한 순간 — 거리, 빛, 디테일까지 놓치지 않습니다.</p>
+          <p>수영을 아는 사람만이 알아챌 수 있는 모든 순간들 — 풀, 킥, 글라이드, 호흡, 시선, 놓치지 않겠습니다.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ─── EQUIPMENT ─── -->
+  <!-- ─── 03 · EQUIPMENT ─── -->
   <section class="sec reveal">
-    <div class="sec-eyebrow"><span class="num">04</span>Equipment</div>
+    <div class="sec-eyebrow"><span class="num">03</span>Equipment</div>
     <h2>최상급의 전문 장비,<br />그리고 <span class="em">수영인의 눈.</span></h2>
     <p>
       <strong>600mm F4 등 최상급 장비</strong>로, 수영을 아는 사람만 포착할 수 있는 순간을
@@ -191,172 +186,167 @@
   </section>
 
 
-  <!-- ─── TESTIMONIALS ─── -->
+  <!-- ─── 04 · TESTIMONIALS / VOICES ─── -->
   <section class="sec testimonials reveal">
-    <div class="sec-eyebrow"><span class="num">05</span>Testimonials</div>
-    <h2>현장에서 듣는 말들.</h2>
-    <p>대회 운영진, 코치, 동료 선수, 학부모 — 그동안 사진을 통해 만난 수영인들의 이야기.</p>
+    <div class="sec-eyebrow"><span class="num">04</span>Voices · 대회장에서 받은 피드백 · 메시지 · 제보</div>
+    <h2>대회장에서 받은 소중한 <span class="em">피드백.</span></h2>
+
+    <!-- Sub-divider: 피드백 -->
+    <div class="testi-subdivider testi-subdivider--lead">
+      <h3 class="testi-subhead">피드백</h3>
+      <p class="testi-subdesc">대회 운영진, 코치, 동료 선수, 학부모 — 그동안 사진을 통해 만난 수영인들의 이야기.</p>
+    </div>
 
     <div class="testi-grid">
-      <article class="testi-card">
+      <article v-for="(t, i) in testimonials" :key="i" class="testi-card">
         <div class="testi-head">
-          <img class="testi-avatar" src="/images/avatars/avatar_011.jpeg" alt="" />
+          <img class="testi-avatar" :src="t.avatar" alt="" />
           <div>
-            <div class="testi-name">○○○</div>
-            <div class="testi-role">수영대회 운영위원</div>
+            <div class="testi-role">{{ t.role }}</div>
+            <div class="testi-name">{{ t.name }}</div>
           </div>
         </div>
-        <blockquote class="testi-quote">대회 홍보에 쓸 사진이 항상 부족했는데, 메달뱅크 덕분에 공식 대회 사진을 따로 의뢰하지 않아도 될 정도가 됐습니다.</blockquote>
-      </article>
-
-      <article class="testi-card">
-        <div class="testi-head">
-          <img class="testi-avatar" src="/images/avatars/avatar_005.jpeg" alt="" />
-          <div>
-            <div class="testi-name">○○○</div>
-            <div class="testi-role">○○ 수영 연맹 관계자</div>
-          </div>
-        </div>
-        <blockquote class="testi-quote">수영선수로 경기도 자주 나오시는 분이라서 선수들 동선도 잘 알고, 있는 듯 없는 듯 조용히 계셨는데 어느새 이렇게 사진을 많이 찍었다는 게 놀랍네요.</blockquote>
-      </article>
-
-      <article class="testi-card">
-        <div class="testi-head">
-          <img class="testi-avatar" src="/images/avatars/avatar_007.jpeg" alt="" />
-          <div>
-            <div class="testi-name">○○○</div>
-            <div class="testi-role">코치</div>
-          </div>
-        </div>
-        <blockquote class="testi-quote">항상 전문가는 아니라고 겸손하게 말씀하셨는데 올림픽 사진사분들과 같은 엄청난 장비라는 건 저도 잘 알고 있어요. 타팀인데도 저희 아이들까지 찍어주셔서 감사합니다. 학부모님들께서 좋아하셨고 저도 뿌듯해요.</blockquote>
-      </article>
-
-      <article class="testi-card">
-        <div class="testi-head">
-          <img class="testi-avatar" src="/images/avatars/avatar_003.jpeg" alt="" />
-          <div>
-            <div class="testi-name">김○○</div>
-            <div class="testi-role">어린이 수영클럽 코치</div>
-          </div>
-        </div>
-        <blockquote class="testi-quote">경기 직후 선수들이 가장 먼저 찾는 게 메달뱅크 사진이에요. 이 정도 품질을 무료로 받을 수 있다는 게 믿기지 않는다는 말을 매번 듣습니다.</blockquote>
-      </article>
-
-      <article class="testi-card">
-        <div class="testi-head">
-          <img class="testi-avatar" src="/images/avatars/avatar_004.jpeg" alt="" />
-          <div>
-            <div class="testi-name">○○○</div>
-            <div class="testi-role">○○도 공인 심판</div>
-          </div>
-        </div>
-        <blockquote class="testi-quote">심판으로 선수님과 스쳐 지나친 적도 여러 번 있었는데, 제가 선수로 참가할 땐 사진작가님으로 제 사진도 찍어주시고, 항상 고맙습니다.</blockquote>
-      </article>
-
-      <article class="testi-card">
-        <div class="testi-head">
-          <img class="testi-avatar" src="/images/avatars/avatar_001.png" alt="" />
-          <div>
-            <div class="testi-name">○○○</div>
-            <div class="testi-role">12년차 베테랑 선수</div>
-          </div>
-        </div>
-        <blockquote class="testi-quote">어려서부터 선수생활을 하며 해외 대회도 여러 번 나갔지만, 단독으로 이런 사진을 받게 되는 경험은 처음이었어요. 해외 매거진에서만 봤던 월드클래스 같은 느낌이어서 놀랍네요.</blockquote>
-      </article>
-
-      <article class="testi-card">
-        <div class="testi-head">
-          <img class="testi-avatar" src="/images/avatars/avatar_010.png" alt="" />
-          <div>
-            <div class="testi-name">박○○</div>
-            <div class="testi-role">마스터즈 선수</div>
-          </div>
-        </div>
-        <blockquote class="testi-quote">월드 마스터즈 챔피언십에서 사진 한 장당 5불에 판매하는 걸 봤어요. 더 나은 품질의 사진을 지난 수년간 무료로 제공해준 메달뱅크에게 감사하게 생각합니다.</blockquote>
-      </article>
-
-      <article class="testi-card">
-        <div class="testi-head">
-          <img class="testi-avatar" src="/images/avatars/avatar_002.jpeg" alt="" />
-          <div>
-            <div class="testi-name">이○○</div>
-            <div class="testi-role">10년차 마스터즈 선수</div>
-          </div>
-        </div>
-        <blockquote class="testi-quote">올림픽 선수들 급의 사진으로 제 평영 레이스를 볼 줄은 몰랐어요. 부모님께서 출력해서 액자에 넣으셨는데 화질이 선명합니다.</blockquote>
-      </article>
-
-      <article class="testi-card">
-        <div class="testi-head">
-          <img class="testi-avatar" src="/images/avatars/avatar_009.jpeg" alt="" />
-          <div>
-            <div class="testi-name">○○○</div>
-            <div class="testi-role">마스터즈 수영인</div>
-          </div>
-        </div>
-        <blockquote class="testi-quote">처음 마스터즈 대회에 출전했던 게 23년도인데 그때부터 지금까지 벌써 10번 이상 사진을 찍혔습니다. 덕분에 좋은 추억을 간직하게 됐고 고맙게 생각합니다.</blockquote>
-      </article>
-
-      <article class="testi-card">
-        <div class="testi-head">
-          <img class="testi-avatar" src="/images/avatars/avatar_012.jpeg" alt="" />
-          <div>
-            <div class="testi-name">○○○</div>
-            <div class="testi-role">수영선수 학부모</div>
-          </div>
-        </div>
-        <blockquote class="testi-quote">우리 아이가 국가대표 선수처럼 나온 모습을 보면서 아이도 저희 가족도 모두 행복하게 웃었어요. 사진을 무료로 공유해도 좋다고 하시니 기쁘게 사용하고 있습니다.</blockquote>
-      </article>
-
-      <article class="testi-card">
-        <div class="testi-head">
-          <img class="testi-avatar" src="/images/avatars/avatar_006.jpeg" alt="" />
-          <div>
-            <div class="testi-name">○○○</div>
-            <div class="testi-role">인스타그램 팔로워, 수영인</div>
-          </div>
-        </div>
-        <blockquote class="testi-quote">경기 끝나고 나면 메달뱅크 인스타그램 새로고침을 하루에 한두 번씩 합니다. 하이라이트에 뽑히시는 분들은 항상 멋있는 분들이어서 서로의 스토리를 보고 공감할 수 있어 좋아요.</blockquote>
-      </article>
-
-      <article class="testi-card">
-        <div class="testi-head">
-          <img class="testi-avatar" src="/images/avatars/avatar_008.jpeg" alt="" />
-          <div>
-            <div class="testi-name">○○○</div>
-            <div class="testi-role">2년차 꿈나무 선수</div>
-          </div>
-        </div>
-        <blockquote class="testi-quote">카메라 삼촌이 이번에 대회장에 오는지 친구들과 고민을 하고, 대회 나가는 게 너무 기대가 돼요! 매번 대회 때마다 우리의 작은 꿈이 이루어진 모습을 미리 보는 것 같아서 행복해요!!!</blockquote>
+        <blockquote class="testi-quote">{{ t.quote }}</blockquote>
       </article>
     </div>
+
+    <!-- Sub-divider: 짤막한 메시지들 -->
+    <div class="testi-subdivider">
+      <h3 class="testi-subhead">짤막한 메시지들</h3>
+      <p class="testi-subdesc">짧은 한마디부터 일정 공지까지, 수영인들로부터 받은 짤막한 메시지들.</p>
+    </div>
+
+    <div class="invite-feed">
+      <div v-for="(r, i) in requestsBoard" :key="i" class="invite-row">
+        <div class="invite-head">
+          <span class="invite-avatar" aria-hidden="true">{{ r.name.charAt(0) }}</span>
+          <div class="invite-name">{{ r.name }}</div>
+        </div>
+        <p class="invite-msg">{{ r.msg }}</p>
+        <div class="invite-meta">
+          <span>{{ r.org }}</span><span class="sep">·</span><span>{{ r.meet }} 출전 예정</span><span class="sep">·</span><span>{{ r.date }}</span><span class="sep">·</span><span>{{ fmtFullDate(r.when) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-divider: 제보 남기기 -->
+    <div class="testi-subdivider">
+      <h3 class="testi-subhead">제보 남기기</h3>
+      <p class="testi-subdesc">담당자도 그냥 수영인입니다. 저희가 알아야 할 내용이 있다면 알려주세요.<br />한마디 남겨주시면 충분합니다. 가볍게, 친구에게 보내듯이.</p>
+    </div>
+
+    <form class="form-wrap" @submit.prevent="submitForm" novalidate>
+      <p class="form-privacy">
+        이름 · 소속 · 이메일 주소는 모두 알아볼 수 없는 형태로 <strong>마스킹되어 게시</strong>됩니다.
+      </p>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="f-name">이름</label>
+          <input id="f-name" v-model="form.name" type="text" placeholder="○○○" />
+        </div>
+        <div class="form-field">
+          <label for="f-org">소속</label>
+          <input id="f-org" v-model="form.org" type="text" placeholder="○○초등학교" />
+        </div>
+      </div>
+
+      <div class="form-row full">
+        <div class="form-field">
+          <label for="f-email">이메일 <span class="opt">(답장이 필요한 경우)</span></label>
+          <input id="f-email" v-model="form.email" type="email" placeholder="example@email.com" />
+        </div>
+      </div>
+
+      <div class="form-row full">
+        <div class="form-field">
+          <label for="f-msg">내용</label>
+          <textarea id="f-msg" v-model="form.msg" placeholder="예) 5월 10일 서울 꿈나무 수영대회 나가요!! 와주세요~" required></textarea>
+        </div>
+      </div>
+
+      <button class="form-submit" type="submit">제보 남기기</button>
+    </form>
   </section>
 
-    <!-- ─── CONTACT ─── -->
+
+  <!-- ─── 05 · COMMUNITY EDITION ─── -->
   <section class="sec reveal">
-    <div class="sec-eyebrow"><span class="num">06</span>Get in touch</div>
-    <h2>수영대회 사진기록이 필요하신가요?</h2>
-    <p>대회 촬영 신청, 협업 문의, 또는 그냥 수영 이야기도 환영합니다.</p>
+    <div class="sec-eyebrow"><span class="num">05</span>Community Edition · 연맹·대회 협업 <span class="eyebrow-note">※ 수영대회 관계자께 드리는 안내입니다</span></div>
+    <h2>촬영부터 공유까지,<br /><span class="em">한 흐름으로.</span></h2>
+    <p>
+      <strong>데크레벨(수영장층) 입장 승인이 가능한 수영 대회</strong>에 한해,
+      준비 · 촬영 · 컬링 · 동의 · 공유 · 관리, 전 과정을 비용 없이 진행합니다.
+      촬영이 끝난 후, 모든 사진은 각 선수 또는 보호자의 확인 절차가 완료된 경우에 한해 자동으로 공개됩니다.
+    </p>
 
-    <div class="cta-area">
-      <NuxtLink class="cta-button" to="/request">촬영요청</NuxtLink>
-      <p class="cta-tagline">그냥 수영하는, 수영 좋아하는 사람입니다.</p>
-    </div>
-
-    <div class="contact-grid">
-      <div class="contact-block">
-        <h4>Instagram</h4>
-        <a class="big accent" href="https://www.instagram.com/medalbankaquatics" target="_blank" rel="noopener noreferrer">@medalbankaquatics</a>
+    <div class="free-grid">
+      <div class="free-card">
+        <span class="num">01</span>
+        <h3>선수 우선</h3>
+        <p>안전과 동선이 항상 우선합니다. 경기 흐름을 방해하지 않는 위치에서 촬영합니다.</p>
       </div>
-      <div class="contact-block">
-        <h4>Email</h4>
-        <a class="big" href="mailto:press@medalbank.com">press@medalbank.com</a>
+      <div class="free-card">
+        <span class="num">02</span>
+        <h3>컬링 · 에디팅</h3>
+        <p>현장 컷 선별과 기본 톤 보정까지 일관된 흐름으로 진행합니다.</p>
+      </div>
+      <div class="free-card">
+        <span class="num">03</span>
+        <h3>초상권 동의 시스템</h3>
+        <p>본인 또는 보호자의 이메일 동의 한 번이면 사진 공개요청과 사용 동의가 완료되고, 컬러 원본 다운로드가 활성화됩니다. 별도의 추가 절차가 필요하지 않습니다.</p>
+      </div>
+      <div class="free-card">
+        <span class="num">04</span>
+        <h3>온라인 공유</h3>
+        <p>고용량 사진을 온라인에 게재하고 관리합니다. 선수·코치·가족이 어디서든 열람 가능합니다.</p>
       </div>
     </div>
-
   </section>
 
-  <!-- ─── DISCLAIMER ─── -->
+
+  <!-- ─── 06 · EDITIONS (정식 의뢰) ─── -->
+  <section class="sec reveal">
+    <div class="sec-eyebrow"><span class="num">06</span>Editions · 정식 의뢰</div>
+    <h2><span class="em">수영대회 촬영</span> 및 스포츠 대회 촬영.</h2>
+
+    <!-- SWIM MEET (Community Edition pricing face) -->
+    <div class="paid-box">
+      <div>
+        <span class="badge">Swim Meet</span>
+        <h3>장비 · 인건비 · 출장비 및 일체 포함. 하이라이트 사진 1000장+</h3>
+        <p class="desc">
+          수영을 사랑합니다. 수영대회인 경우에만, 별도의 비용 없이 장비와 인력부터 준비와 촬영
+          그리고 공개동의와 공유의 과정까지 모두 메달뱅크가 지원합니다.
+        </p>
+      </div>
+      <div class="price-block">
+        <div class="price"><span class="strike">₩1,200,000</span>0원</div>
+        <div class="unit">Swimming Edition</div>
+        <div class="free-note">※ 수영대회일 경우에만 해당되는 내용입니다.</div>
+        <div class="free-note">※ 연맹·대회 측의 데크 액세스 제공이 가능한 경우에만 제공 가능.</div>
+      </div>
+    </div>
+
+    <!-- PREMIUM (정식 의뢰) -->
+    <div class="paid-box">
+      <div>
+        <span class="badge">Premium</span>
+        <h3>장비 · 인건비 · 출장비 포함, 하이라이트 300장+</h3>
+        <p class="desc">
+          수영대회가 아닌 촬영에 관련된 내용입니다. 단체·팀·클럽 단위 사전 의뢰도 가능합니다.
+        </p>
+      </div>
+      <div class="price-block">
+        <div class="price">₩1,200,000</div>
+        <div class="unit">/ 명 / 일</div>
+        <div class="free-note">※ 수영대회일 경우 위 내용을 확인해 주세요.</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ─── 07 · DISCLAIMER ─── -->
   <section class="sec disclaimer reveal">
     <div class="sec-eyebrow"><span class="num">07</span>Disclaimer</div>
     <h2>꼭 알아두실 <span class="em">안내.</span></h2>
@@ -368,12 +358,6 @@
         <p>사진 속 인물의 초상권은 해당 인물 본인에게 있으며, 사진의 공개는 본인의 동의 절차를 거쳐 이루어집니다. 동의는 본 웹사이트 및 검색 서비스 내 공개, 공인 인스타그램 계정(@medalbankaquatics)의 온라인 게재, 정기간행물 출판 시 게재에 적용됩니다.</p>
         <p>동의 완료 사진에 한하여 본인의 개인적 사용 목적으로의 다운로드가 허용되며, 상업적 목적의 무단 사용 및 제3자 재배포는 금합니다.</p>
       </div>
-
-      <!-- <div class="disc-block">
-        <h4>동의 철회</h4>
-        <p>사용 동의를 철회하시려는 경우, <a href="mailto:press@medalbank.com?subject=%5B%EB%8F%99%EC%9D%98%20%EC%B2%A0%ED%9A%8C%20%EC%9A%94%EC%B2%AD%5D">press@medalbank.com</a>으로 요청해 주시기 바랍니다. 갤러리에서 철회를 원하는 사진을 캡처하여 첨부해 주시고, 메일 본문에 동의 시 사용하신 이메일 주소를 함께 기재해 주시면 처리가 빠릅니다.</p>
-        <p>접수 순서에 따라 처리되며, 영업일 기준 5일 이내에 처리 완료 메일을 발송해 드립니다. 철회 후 재동의는 언제든 가능합니다.</p>
-      </div> -->
 
       <div class="disc-block">
         <h4>© Medalbank Aquatics</h4>
@@ -400,6 +384,49 @@ watch(galleryData, (docs) => {
 const heroStyle = computed(() =>
   heroUrl.value ? { backgroundImage: `url(${heroUrl.value})` } : {}
 )
+
+interface Testi { avatar: string; role: string; name: string; quote: string }
+const testimonials: Testi[] = [
+  { avatar: '/images/avatars/avatar_011.jpeg', role: '수영대회 운영위원',           name: '○○○', quote: '대회 홍보에 쓸 사진이 항상 부족했는데, 메달뱅크 덕분에 공식 대회 사진을 따로 의뢰하지 않아도 될 정도가 됐습니다.' },
+  { avatar: '/images/avatars/avatar_005.jpeg', role: '○○ 수영 연맹 관계자',         name: '○○○', quote: '수영선수로 경기도 자주 나오시는 분이라서 선수들 동선도 잘 알고, 있는 듯 없는 듯 조용히 계셨는데 어느새 이렇게 사진을 많이 찍었다는 게 놀랍네요.' },
+  { avatar: '/images/avatars/avatar_007.jpeg', role: '코치',                        name: '○○○', quote: '항상 전문가는 아니라고 겸손하게 말씀하셨는데 올림픽 사진사분들과 같은 엄청난 장비라는 건 저도 잘 알고 있어요. 타팀인데도 저희 아이들까지 찍어주셔서 감사합니다. 학부모님들께서 좋아하셨고 저도 뿌듯해요.' },
+  { avatar: '/images/avatars/avatar_003.jpeg', role: '어린이 수영클럽 코치',         name: '김○○', quote: '경기 직후 선수들이 가장 먼저 찾는 게 메달뱅크 사진이에요. 이 정도 품질을 무료로 받을 수 있다는 게 믿기지 않는다는 말을 매번 듣습니다.' },
+  { avatar: '/images/avatars/avatar_004.jpeg', role: '○○도 공인 심판',              name: '○○○', quote: '심판으로 선수님과 스쳐 지나친 적도 여러 번 있었는데, 제가 선수로 참가할 땐 사진작가님으로 제 사진도 찍어주시고, 항상 고맙습니다.' },
+  { avatar: '/images/avatars/avatar_001.png',  role: '12년차 베테랑 선수',           name: '○○○', quote: '어려서부터 선수생활을 하며 해외 대회도 여러 번 나갔지만, 단독으로 이런 사진을 받게 되는 경험은 처음이었어요. 해외 매거진에서만 봤던 월드클래스 같은 느낌이어서 놀랍네요.' },
+  { avatar: '/images/avatars/avatar_010.png',  role: '마스터즈 선수',                name: '박○○', quote: '월드 마스터즈 챔피언십에서 사진 한 장당 5불에 판매하는 걸 봤어요. 더 나은 품질의 사진을 지난 수년간 무료로 제공해준 메달뱅크에게 감사하게 생각합니다.' },
+  { avatar: '/images/avatars/avatar_002.jpeg', role: '10년차 마스터즈 선수',         name: '이○○', quote: '올림픽 선수들 급의 사진으로 제 평영 레이스를 볼 줄은 몰랐어요. 부모님께서 출력해서 액자에 넣으셨는데 화질이 선명합니다.' },
+  { avatar: '/images/avatars/avatar_009.jpeg', role: '마스터즈 수영인',              name: '○○○', quote: '처음 마스터즈 대회에 출전했던 게 23년도인데 그때부터 지금까지 벌써 10번 이상 사진을 찍혔습니다. 덕분에 좋은 추억을 간직하게 됐고 고맙게 생각합니다.' },
+  { avatar: '/images/avatars/avatar_012.jpeg', role: '수영선수 학부모',              name: '○○○', quote: '우리 아이가 국가대표 선수처럼 나온 모습을 보면서 아이도 저희 가족도 모두 행복하게 웃었어요. 사진을 무료로 공유해도 좋다고 하시니 기쁘게 사용하고 있습니다.' },
+  { avatar: '/images/avatars/avatar_006.jpeg', role: '인스타그램 팔로워, 수영인',     name: '○○○', quote: '경기 끝나고 나면 메달뱅크 인스타그램 새로고침을 하루에 한두 번씩 합니다. 하이라이트에 뽑히시는 분들은 항상 멋있는 분들이어서 서로의 스토리를 보고 공감할 수 있어 좋아요.' },
+  { avatar: '/images/avatars/avatar_008.jpeg', role: '2년차 꿈나무 선수',             name: '○○○', quote: '카메라 삼촌이 이번에 대회장에 오는지 친구들과 고민을 하고, 대회 나가는 게 너무 기대가 돼요! 매번 대회 때마다 우리의 작은 꿈이 이루어진 모습을 미리 보는 것 같아서 행복해요!!!' },
+]
+
+interface ReqRow { name: string; org: string; meet: string; date: string; msg: string; when: string }
+const requestsBoard: ReqRow[] = [
+  { name: '이○○', org: '○○중학교 수영부',    meet: '2026 전국소년체육대회 수영',          date: '5월 23일', msg: '삼촌 저희 소년체전 나가요!! 친구들이 다 삼촌 사진 찍히고 싶다고 했어요. 꼭 와주시면 좋겠어요 🙏', when: '2026.05.01' },
+  { name: '박○○', org: '○○고등학교',          meet: '2026 경기도 고등부 수영대회',         date: '4월 19일', msg: '저번에 강남 마스터즈에서 저 찍어주셨잖아요. 이번엔 고등부 대회인데 친구들도 찍어주실 수 있을까요? 다들 엄청 기대하고 있어요!', when: '2026.04.02' },
+  { name: '김○○', org: '○○ 수영클럽',          meet: '2026 배럴 스프린트 챌린지',           date: '6월 8일',  msg: '클럽 아이들이 첫 대회 나가는데 메달뱅크 사진으로 기념 남기고 싶어요. 일정 맞으시면 꼭 부탁드립니다!', when: '2026.04.28' },
+  { name: '최○○', org: '○○초등학교',           meet: '2026 서울 꿈나무 수영대회',           date: '5월 10일', msg: '카메라 삼촌!! 저 이번에 50m 자유형 나가요. 엄마 아빠한테 보여드리고 싶어서요. 와주세요!!!!!', when: '2026.04.25' },
+  { name: '정○○', org: '○○중학교',             meet: '2026 인천 마스터즈 & 청소년 오픈',    date: '6월 21일', msg: '작년에 찍어주신 사진 아직도 카톡 프사로 쓰고 있어요. 이번엔 개인혼영도 나가는데 부탁드려요 ㅎㅎ', when: '2026.04.20' },
+  { name: '윤○○', org: '○○고등학교 수영부',    meet: '2026 서울시 고등부 선수권',           date: '3월 22일', msg: '작년에도 와주셨는데 올해도 부탁드려요. 팀 전체가 기다리고 있습니다. 감사합니다!', when: '2026.03.01' },
+]
+
+const DAYS_KO = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일']
+function fmtFullDate(s: string): string {
+  const [y, m, d] = s.split('.').map(Number)
+  const dt = new Date(y, m - 1, d)
+  return `${y}년 ${m}월 ${d}일 ${DAYS_KO[dt.getDay()]}`
+}
+
+const form = reactive({ name: '', org: '', email: '', msg: '' })
+function submitForm() {
+  if (!form.msg.trim()) {
+    alert('한마디를 남겨주세요.')
+    return
+  }
+  alert('제보가 접수되었습니다. 감사합니다.\n\n(현재는 데모 — 실제 제출은 추후 연동됩니다)')
+  form.name = ''; form.org = ''; form.email = ''; form.msg = ''
+}
 
 onMounted(() => {
   // hero clock
@@ -434,6 +461,9 @@ onMounted(() => {
 <style scoped>
 
   .about-shell {
+    /* 이 페이지에 한해 명조(Nanum Myeongjo) 대신 고딕(--font-sans) 폴백 사용
+       — 머지 HTML의 실제 렌더링(맑은 고딕/Pretendard)과 동일한 모양 */
+    --font-myungjo: var(--font-sans);
     min-height: 100vh;
     padding-top: 0;
     padding-bottom: 80px;
@@ -552,7 +582,7 @@ onMounted(() => {
   }
   .sec h2 {
     font-family: var(--font-myungjo);
-    font-size: clamp(28px, 4vw, 48px);
+    font-size: clamp(28px, 3.6vw, 44px);
     font-weight: 400;
     line-height: 1.3;
     letter-spacing: -0.012em;
@@ -562,7 +592,7 @@ onMounted(() => {
   }
   .sec p {
     font-family: var(--font-myungjo);
-    font-size: clamp(16px, 1.4vw, 19px);
+    font-size: clamp(16px, 1.4vw, 18px);
     line-height: 1.78;
     color: var(--fg-dim);
     letter-spacing: -0.005em;
@@ -932,20 +962,20 @@ onMounted(() => {
     flex-shrink: 0;
     filter: grayscale(0.3) brightness(0.95);
   }
-  .testi-name {
+  .testi-role {
     font-family: var(--font-myungjo);
     font-size: 16px;
     font-weight: 700;
     color: var(--fg);
     letter-spacing: -0.005em;
-    line-height: 1.2;
-    margin-bottom: 3px;
+    line-height: 1.3;
+    margin-bottom: 4px;
   }
-  .testi-role {
+  .testi-name {
     color: var(--fg-faint);
     font-family: var(--font-sans);
     font-size: 11px;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
   }
   .testi-quote {
     color: var(--fg-dim);
@@ -1044,5 +1074,367 @@ onMounted(() => {
     .hero-meta .col.right { display: none; }   /* 모바일에선 좌측만 */
   }
 
+
+  /* ════════════════════════════════════════════
+     ↓↓↓  ADDED FROM 20260608_about_merged.html  ↓↓↓
+     기존 CSS는 그대로 두고, 머지 HTML이 추가로 사용하는
+     클래스들만 아래에 신규 정의합니다.
+     ════════════════════════════════════════════ */
+
+  /* hero-eyebrow의 dot 구분자 */
+  .hero-eyebrow .dot { color: var(--accent); margin: 0 8px; }
+
+  /* eyebrow 옆 작은 안내 note */
+  .sec-eyebrow .eyebrow-note {
+    margin-left: 12px;
+    color: var(--accent);
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 13px;
+    letter-spacing: -0.005em;
+    text-transform: none;
+    font-weight: 400;
+    opacity: 0.85;
+  }
+
+  /* sub-divider — Voices 섹션 내 소제목 */
+  .testi-subdivider { margin: 72px 0 28px; text-align: left; }
+  .testi-subdivider--lead { margin: 24px 0 28px; }
+  .testi-subdivider + .testi-grid,
+  .testi-subdivider + .invite-feed { margin-top: 28px; }
+  .testi-subhead {
+    font-family: var(--font-myungjo);
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--fg-dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin: 0 0 10px;
+    line-height: 1.4;
+    opacity: 0.65;
+  }
+  .testi-subdesc {
+    color: var(--fg-dim);
+    font-family: var(--font-myungjo);
+    font-size: 13px;
+    line-height: 1.65;
+    letter-spacing: -0.003em;
+    margin: 0;
+    max-width: 640px;
+    opacity: 0.7;
+  }
+  @media (max-width: 768px) {
+    .testi-subdivider { margin: 52px 0 22px; }
+    .testi-subhead { font-size: 11px; letter-spacing: 0.18em; }
+    .testi-subdesc { font-size: 12.5px; }
+  }
+
+  /* 초대장 / 짤막한 메시지들 — testi-card 구조 미러, yellow accent */
+  .invite-feed {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+  }
+  .invite-row {
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    padding: 28px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    transition: border-color 0.4s ease, transform 0.4s ease;
+  }
+  .invite-row:hover {
+    border-color: rgba(255,255,255,0.18);
+    transform: translateY(-2px);
+  }
+  .invite-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .invite-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--bg);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-myungjo);
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--fg-dim);
+    letter-spacing: 0;
+    line-height: 1;
+  }
+  .invite-name {
+    font-family: var(--font-myungjo);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--fg);
+    letter-spacing: -0.005em;
+    line-height: 1.3;
+  }
+  .invite-meta {
+    margin-top: 14px;
+    color: var(--fg-faint);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    line-height: 1.7;
+    opacity: 0.85;
+  }
+  .invite-meta .sep { margin: 0 5px; opacity: 0.5; }
+  .invite-msg {
+    color: var(--fg-dim);
+    font-family: var(--font-myungjo);
+    font-size: 14.5px;
+    line-height: 1.7;
+    letter-spacing: -0.003em;
+    margin: 0;
+    padding-left: 14px;
+    border-left: 1px solid #ffc91f;
+  }
+  @media (max-width: 1199px) {
+    .invite-feed { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 768px) {
+    .invite-feed { grid-template-columns: 1fr; gap: 18px; }
+    .invite-row  { padding: 22px 20px; }
+    .invite-msg  { font-size: 14px; }
+    .invite-meta { font-size: 10.5px; }
+    .invite-meta .sep { margin: 0 5px; }
+    .invite-avatar { width: 40px; height: 40px; font-size: 16px; }
+  }
+
+  /* 제보 폼 */
+  .form-wrap {
+    margin-top: 40px;
+    border: 1px solid var(--line);
+    padding: 36px 32px;
+    background: var(--bg-soft);
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 18px;
+  }
+  .form-row.full { grid-template-columns: 1fr; }
+  .form-field { display: flex; flex-direction: column; gap: 8px; }
+  .form-field label {
+    color: var(--fg-faint);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .form-field label .opt {
+    color: var(--fg-faint);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0.04em;
+    margin-left: 6px;
+    opacity: 0.7;
+  }
+  .form-field input,
+  .form-field textarea {
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    color: var(--fg);
+    font-family: var(--font-myungjo);
+    font-size: 16px;
+    padding: 10px 0;
+    transition: border-color 0.3s;
+    width: 100%;
+    resize: vertical;
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 0;
+  }
+  .form-field textarea {
+    min-height: 120px;
+    line-height: 1.6;
+  }
+  .form-field input:focus,
+  .form-field textarea:focus {
+    outline: none;
+    border-bottom-color: var(--accent);
+  }
+  .form-field input::placeholder,
+  .form-field textarea::placeholder {
+    color: var(--fg-faint);
+  }
+  .form-privacy {
+    margin: 0 0 26px 0;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+    color: var(--fg-faint);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    line-height: 1.6;
+  }
+  .form-privacy strong {
+    color: var(--fg-dim);
+    font-weight: 500;
+  }
+  .form-submit {
+    margin-top: 24px;
+    display: inline-block;
+    padding: 16px 48px;
+    background: var(--fg);
+    color: var(--bg);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border: 0;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s, transform 0.3s var(--ease-out);
+  }
+  .form-submit:hover {
+    background: var(--accent);
+    transform: translateY(-1px);
+  }
+  @media (max-width: 768px) {
+    .form-wrap { padding: 28px 22px; }
+    .form-row { grid-template-columns: 1fr; gap: 14px; }
+  }
+
+  /* Community Edition · 4개 서비스 카드 */
+  .free-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+    margin-top: 40px;
+  }
+  .free-card {
+    border: 1px solid var(--line);
+    padding: 28px 26px;
+    background: rgba(255,255,255,0.015);
+  }
+  .free-card .num {
+    display: block;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 36px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 18px;
+  }
+  .free-card h3 {
+    font-family: var(--font-myungjo);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--fg);
+    letter-spacing: -0.005em;
+    margin-bottom: 10px;
+  }
+  .free-card p {
+    font-family: var(--font-myungjo);
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--fg-dim);
+    letter-spacing: -0.003em;
+    margin: 0;
+  }
+  @media (max-width: 768px) {
+    .free-grid { grid-template-columns: 1fr; gap: 16px; margin-top: 28px; }
+    .free-card { padding: 22px 20px; }
+    .free-card .num { font-size: 30px; margin-bottom: 14px; }
+    .free-card h3 { font-size: 18px; }
+    .free-card p { font-size: 14px; }
+  }
+
+  /* 유료 서비스 박스 (Editions) */
+  .paid-box {
+    margin-top: 40px;
+    border: 1px solid var(--line);
+    padding: 36px 32px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+    align-items: center;
+    background: rgba(56,182,255,0.025);
+  }
+  .paid-box + .paid-box { margin-top: 24px; }
+  .paid-box .badge {
+    display: inline-block;
+    padding: 5px 12px;
+    background: var(--accent);
+    color: var(--bg);
+    font-family: var(--font-sans);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .paid-box h3 {
+    font-family: var(--font-myungjo);
+    font-size: clamp(20px, 1.8vw, 26px);
+    font-weight: 400;
+    color: var(--fg);
+    margin-bottom: 8px;
+    letter-spacing: -0.005em;
+  }
+  .paid-box .desc {
+    color: var(--fg-dim);
+    font-family: var(--font-myungjo);
+    font-size: 14.5px;
+    line-height: 1.65;
+    letter-spacing: -0.003em;
+    max-width: 540px;
+  }
+  .paid-box .price-block {
+    text-align: right;
+    border-left: 1px solid var(--line);
+    padding-left: 36px;
+    min-width: 260px;
+  }
+  .paid-box .price {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: clamp(28px, 3.2vw, 42px);
+    color: var(--fg);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .paid-box .price .strike {
+    color: var(--fg-faint);
+    text-decoration: line-through;
+    font-size: 0.62em;
+    margin-right: 6px;
+    text-decoration-color: var(--accent-dim);
+  }
+  .paid-box .unit {
+    color: var(--fg-faint);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+  .paid-box .free-note {
+    color: var(--accent);
+    font-family: var(--font-myungjo);
+    font-size: 14px;
+    margin-top: 14px;
+    letter-spacing: -0.003em;
+  }
+  @media (max-width: 768px) {
+    .paid-box { grid-template-columns: 1fr; gap: 24px; padding: 28px 22px; }
+    .paid-box .price-block { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; padding-top: 24px; text-align: left; }
+  }
 
 </style>

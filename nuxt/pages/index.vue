@@ -321,9 +321,7 @@ onMounted(async () => {
     }
     menuToggle.addEventListener('click', () =>
       document.body.classList.contains('menu-open') ? closeMenu() : openMenu())
-    menuOverlay.addEventListener('click', (e) => {
-      if (!(e.target as Element).closest('nav.menu-fullscreen a')) closeMenu()
-    })
+    menuOverlay.addEventListener('click', () => closeMenu())
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && document.body.classList.contains('menu-open')) closeMenu()
     })

@@ -3,6 +3,8 @@ export default defineNuxtPlugin(() => {
     const cursorEl = document.getElementById('cursor')
     const labelEl  = cursorEl?.querySelector<HTMLElement>('.label') ?? null
     if (!cursorEl) return
+    if ((cursorEl as any).__mbCursorInit) return
+    ;(cursorEl as any).__mbCursorInit = true
 
     const S = { px: -1e4, py: -1e4, cx: 0, cy: 0 }
     const tick = () => {
@@ -36,6 +38,8 @@ export default defineNuxtPlugin(() => {
     const menuToggle  = document.getElementById('menuToggle')
     const menuOverlay = document.getElementById('menuOverlay')
     if (!menuToggle || !menuOverlay) return
+    if ((menuToggle as any).__mbMenuInit) return
+    ;(menuToggle as any).__mbMenuInit = true
 
     menuOverlay.querySelectorAll<HTMLElement>('nav.menu-fullscreen a')
       .forEach((a, i) => a.style.setProperty('--menu-delay', `${i * 60}ms`))
@@ -55,9 +59,7 @@ export default defineNuxtPlugin(() => {
 
     menuToggle.addEventListener('click', () =>
       document.body.classList.contains('menu-open') ? closeMenu() : openMenu())
-    menuOverlay.addEventListener('click', (e) => {
-      if (!(e.target as Element).closest('nav.menu-fullscreen a')) closeMenu()
-    })
+    menuOverlay.addEventListener('click', () => closeMenu())
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && document.body.classList.contains('menu-open')) closeMenu()
     })
@@ -162,6 +164,8 @@ export default defineNuxtPlugin(() => {
   const setupClock = () => {
     const clockEl = document.getElementById('clock')
     if (!clockEl) return
+    if ((clockEl as any).__mbClockInit) return
+    ;(clockEl as any).__mbClockInit = true
     const tick = () => {
       clockEl.textContent = 'KST ' + new Date().toLocaleTimeString('en-GB', {
         hour12: false, timeZone: 'Asia/Seoul',
