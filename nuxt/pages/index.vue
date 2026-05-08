@@ -15,7 +15,6 @@
         <NuxtLink to="/athletes">선수목록</NuxtLink>
         <NuxtLink to="/magazines">정기간행물</NuxtLink>
         <NuxtLink to="/about">촬영서비스</NuxtLink>
-        <NuxtLink to="/request">촬영요청</NuxtLink>
         <NuxtLink to="/consent">확인요청</NuxtLink>
       </nav>
     </header>
@@ -30,7 +29,6 @@
         <NuxtLink to="/athletes">선수목록</NuxtLink>
         <NuxtLink to="/magazines">정기간행물</NuxtLink>
         <NuxtLink to="/about">촬영서비스</NuxtLink>
-        <NuxtLink to="/request">촬영요청</NuxtLink>
         <NuxtLink to="/consent">확인요청</NuxtLink>
       </nav>
     </div>
@@ -100,8 +98,8 @@ onMounted(async () => {
       bufferTiles: 1, imageCount,
     }
 
-    const imgUrl = (idx: number) => galleryImages[idx]?.urls?.thumb ?? `/images/thumbs/thumb-${String(idx + 1).padStart(3, '0')}.jpg`
-    const xlUrl  = (idx: number) => galleryImages[idx]?.urls?.original ?? `/images/xl/xl-${String(idx + 1).padStart(3, '0')}.jpg`
+    const imgUrl = (idx: number) => galleryImages[idx]?.urls?.thumb ?? ''
+    const xlUrl  = (idx: number) => galleryImages[idx]?.urls?.original ?? ''
     const URL_CACHE: string[] = []
     for (let i = 0; i < CFG.imageCount; i++) URL_CACHE[i] = `url("${imgUrl(i)}")`
 
@@ -300,30 +298,6 @@ onMounted(async () => {
     lightboxClose.addEventListener('click', (e) => { e.stopPropagation(); closeLightbox() })
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox()
-    })
-
-    // Menu
-    const menuToggle  = document.getElementById('menuToggle')!
-    const menuOverlay = document.getElementById('menuOverlay')!
-    menuOverlay.querySelectorAll<HTMLElement>('nav.menu-fullscreen a')
-      .forEach((a, i) => a.style.setProperty('--menu-delay', `${i * 60}ms`))
-    const openMenu  = () => {
-      document.body.classList.add('menu-open')
-      menuOverlay.setAttribute('aria-hidden', 'false')
-      menuToggle.setAttribute('aria-expanded', 'true')
-      menuToggle.setAttribute('aria-label', '메뉴 닫기')
-    }
-    const closeMenu = () => {
-      document.body.classList.remove('menu-open')
-      menuOverlay.setAttribute('aria-hidden', 'true')
-      menuToggle.setAttribute('aria-expanded', 'false')
-      menuToggle.setAttribute('aria-label', '메뉴 열기')
-    }
-    menuToggle.addEventListener('click', () =>
-      document.body.classList.contains('menu-open') ? closeMenu() : openMenu())
-    menuOverlay.addEventListener('click', () => closeMenu())
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && document.body.classList.contains('menu-open')) closeMenu()
     })
 
     // Clock
@@ -559,8 +533,6 @@ body.is-home footer.ui {
 }
 .loader.gone { opacity: 0; }
 .loader.removed { display: none; }
-body.is-home nav.menu-fullscreen a { cursor: none; }
-@media (hover: none), (pointer: coarse) { body.is-home nav.menu-fullscreen a { cursor: auto; } }
 @media (min-width: 1200px) { .menu-toggle, .menu-overlay { display: none !important; } }
 @media (max-width: 1199px) { nav.menu-inline { display: none; } .menu-toggle { display: flex; } header.ui { display: none; } }
 .lightbox {
@@ -597,9 +569,6 @@ body.is-home nav.menu-fullscreen a { cursor: none; }
 .lightbox-close svg { display: block; width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.4; fill: none; stroke-linecap: round; }
 @media (max-width: 1199px) { .lightbox { --lb-margin-x: 30px; } .lightbox-close { width: 36px; height: 36px; top: 12px; right: 12px; } }
 @media (max-width: 767px) { .lightbox { --lb-margin-x: 10px; --lb-margin-y: 60px; } .lightbox-close { width: 34px; height: 34px; top: 10px; right: 10px; } .lightbox-close svg { width: 16px; height: 16px; } }
-body.is-home .lightbox,
-body.is-home .lightbox-close { cursor: none; }
-@media (hover: none), (pointer: coarse) { body.is-home .lightbox, body.is-home .lightbox-close { cursor: auto; } }
 body.lb-open .grain { opacity: 0.06; }
 .vignette { position: fixed; inset: 0; pointer-events: none; z-index: 5; background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.45) 100%); }
 .hint {
