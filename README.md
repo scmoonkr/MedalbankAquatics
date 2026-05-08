@@ -17,3 +17,11 @@ git push origin main
 git pull origin main
 token=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
 ```
+
+cd C:\Develop\MedalbankAquatics\server
+npm run dev      # 개발 (파일 변경 감지 자동 재시작)
+# 또는
+npm start        # 일반 실행
+
+cd C:\Develop\MedalbankAquatics\nuxt
+npm run dev

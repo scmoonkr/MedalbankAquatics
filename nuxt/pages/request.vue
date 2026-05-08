@@ -28,7 +28,7 @@
       <div class="price-block">
         <div class="price">₩1,200,000</div>
         <div class="unit">/ 명 / 일</div>
-        <div class="free-note">※ 프레스패스 지급 시 Community Edition으로 전환됩니다.</div>
+        <div class="free-note">※ 수영대회일 경우 아래 내용을 확인해 주세요.</div>
       </div>
     </div>
 
@@ -45,7 +45,7 @@
       <div class="price-block">
         <div class="price"><span class="strike">₩1,200,000</span>0원</div>
         <div class="unit">Swimming Edition</div>
-        <div class="free-note">※ 프레스패스 지급 시 Community Edition으로 전환됩니다.</div>
+        <div class="free-note">※ 수영대회일 경우 해당되는 내용입니다.</div>
         <div class="free-note">※ 연맹·대회 측의 데크 액세스 제공이 가능한 경우에만 제공 가능.</div>
       </div>
     </div>
@@ -75,7 +75,7 @@
       <div class="free-card">
         <span class="num">03</span>
         <h3>초상권 동의 시스템</h3>
-        <p>본인 또는 보호자의 이메일 동의 한 번이면 사진 공개요청과 사용 동의가 완료되고, 컬러 원본 다운로드가 활성화됩니다. 별도의 추가 절차가 필요하지 않습니다.</p>
+        <p>본인 또는 보호자의 이메일 동의 한 번이면 사진 확인요청과 사용 동의가 완료되고, 컬러 원본 다운로드가 활성화됩니다. 별도의 추가 절차가 필요하지 않습니다.</p>
       </div>
       <div class="free-card">
         <span class="num">04</span>
@@ -118,7 +118,7 @@
   <!-- ─── 요청 남기기 폼 (간소화) ─── -->
   <section class="sec reveal">
     <div class="sec-eyebrow"><span class="num">04</span>Submit · 제보하기</div>
-    <h2>대회 정보 제보 및<br /><span class="em">촬영 요청.</span></h2>
+    <h2>대회 정보 제보 및<br /><span class="em">촬영요청.</span></h2>
     <p>
       담당자도 그냥 수영인입니다. 저희가 알아야 할 내용이 있다면 알려주세요.<br/>
       한마디 남겨주시면 충분합니다. 가볍게, 친구에게 보내듯이.
@@ -185,12 +185,12 @@
       </div>
       <div class="organizer-item">
         <span class="o-num">03</span>
-        <p>데크레벨(수영장층) 촬영 승인이 가능한 경우, 준비 · 촬영 · 컬링 · 동의 · 공유 · 관리, 전 과정 Community Edition으로 진행합니다.</p>
+        <p>데크레벨(수영장층) 촬영 승인이 가능한 경우, 준비 · 촬영 · 컬링 · 동의 · 공유 · 관리, 전 과정 Swim Meet Edition으로 진행합니다.</p>
       </div>
     </div>
 
     <p class="organizer-contact">
-      촬영 협업 문의 — <a class="link-line" href="mailto:magazine@medalbank.com">magazine@medalbank.com</a>
+      촬영 협업 문의 — <a class="link-line" href="mailto:press@medalbank.com">press@medalbank.com</a>
     </p>
   </section>
 
@@ -199,7 +199,7 @@
 
 <script setup lang="ts">
 definePageMeta({ ssr: false })
-useHead({ title: "메달뱅크 아쿠아틱스 — 촬영 요청" })
+useHead({ title: "메달뱅크 아쿠아틱스 — 촬영요청" })
 
 interface Request {
   request_id: number

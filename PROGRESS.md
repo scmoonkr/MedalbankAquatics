@@ -28,7 +28,7 @@
 | `pages/photos.vue` | 전체 사진 — consent_date 있는 이미지만 노출, image_id 표시 |
 | `pages/magazines.vue` | 정기간행물 — vol별 타일 그리드 |
 | `pages/request.vue` | 촬영요청 게시판 + 폼 (MongoDB request 컬렉션 연동) |
-| `pages/consent.vue` | 공개 요청 — consent_date 없는 이미지만 노출, 장바구니 |
+| `pages/consent.vue` | 확인요청 — consent_date 없는 이미지만 노출, 장바구니 |
 | `pages/cart.vue` | 동의 신청 — 선택 이미지 미리보기, 폼 제출, 이메일 발송 |
 | `pages/verify.vue` | 이메일 인증 — 토큰 검증, 완료/오류 화면 |
 
@@ -188,7 +188,7 @@
 ### 8. 이메일 설정
 
 - **동의 인증 메일**: Naver SMTP (`scmoonkr@naver.com`)
-- **magazine@medalbank.com**: Naver Works + 가비아 DNS MX 레코드 설정 예정
+- **press@medalbank.com**: Naver Works + 가비아 DNS MX 레코드 설정 예정
   - MX: `mx1.worksmobile.com` (우선순위 10), `mx2.worksmobile.com` (20)
   - SPF: `v=spf1 include:worksmobile.com ~all`
 
@@ -219,7 +219,7 @@ EMAIL_USER=...
 EMAIL_PASS=...
 EMAIL_FROM=...
 
-MAGAZINE_EMAIL=magazine@medalbank.com
+MAGAZINE_EMAIL=press@medalbank.com
 MAGAZINE_EMAIL_PASS=...
 
 CONSENT_TOKEN_SECRET=...
@@ -257,6 +257,6 @@ CONSENT_TOKEN_SECRET=...
 
 - [ ] 로컬/서버 화면 차이 원인 파악 및 해결
 - [ ] 서버 `.env`에 R2 환경변수 5개 추가 필요 (`R2_ENDPOINT` 등)
-- [ ] magazine@medalbank.com Naver Works 이메일 MX 레코드 적용 확인
+- [ ] press@medalbank.com Naver Works 이메일 MX 레코드 적용 확인
 - [ ] 백엔드 페이지 인증/접근 제한 (현재 비인증 공개 상태)
 - [ ] 이미지 업로드 후 athlete_id 매칭 (현재 0으로 저장됨)

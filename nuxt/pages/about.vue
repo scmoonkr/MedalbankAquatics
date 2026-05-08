@@ -19,15 +19,18 @@
     <!-- Hero 정적 meta band (footer 정보를 맨 위에서만 노출) -->
     <div class="hero-meta">
       <div class="col">
+        <div class="insta-mobile">
+          <a class="insta" href="https://www.instagram.com/medalbankaquatics" target="_blank" rel="noopener noreferrer">@medalbankaquatics</a>
+        </div>
         <div>50+ MEETS · 1,000+ ATHLETES · 1M+ FRAMES</div>
         <div>600MM F4 · 300MM F2.8 · 70-200MM F2.8</div>
         <div class="strong">SINCE 2019 · <span id="clock-hero">KST 00:00:00</span></div>
       </div>
       <div class="col right">
+        <div><a class="accent" href="https://www.instagram.com/medalbankaquatics" target="_blank" rel="noopener noreferrer">@medalbankaquatics</a></div>
         <div>EVERY HEAT · EVERY ATHLETE</div>
         <div>NATIONAL · INTERNATIONAL MEETS</div>
         <div>CHAMPIONSHIP-GRADE COVERAGE</div>
-        <div><a class="accent" href="https://www.instagram.com/medalbankaquatics" target="_blank" rel="noopener noreferrer">@medalbankaquatics</a></div>
       </div>
     </div>
   </section>
