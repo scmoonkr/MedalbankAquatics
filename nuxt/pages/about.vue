@@ -390,16 +390,17 @@
 definePageMeta({ ssr: false })
 useHead({ title: "메달뱅크 아쿠아틱스 — 촬영서비스" })
 
+const cloudBase = useRuntimeConfig().public.cloudPublicUrl
 const heroUrl = ref('')
 onMounted(async () => {
   try {
-    const res = await $fetch<{ images: { urls: { large?: string; original?: string; thumb?: string } }[] }>(
+    const res = await $fetch<{ images: { urls: { large?: string } }[] }>(
       '/api/images', { query: { per_page: 30 } }
     )
-    const pool = res.images.filter(d => d.urls.large || d.urls.original || d.urls.thumb)
+    const pool = res.images.filter(d => d.urls.large)
     if (pool.length) {
-      const pick = pool[Math.floor(Math.random() * pool.length)]
-      heroUrl.value = pick.urls.large ?? pick.urls.original ?? pick.urls.thumb ?? ''
+      const key = pool[Math.floor(Math.random() * pool.length)].urls.large!
+      heroUrl.value = key.startsWith('http') ? key : `${cloudBase}/${key}`
     }
   } catch { /* hero image unavailable */ }
 })

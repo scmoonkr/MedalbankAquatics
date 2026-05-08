@@ -3,6 +3,12 @@ import { fileURLToPath } from 'url'
 export default defineNuxtConfig({
   devtools: { enabled: false },
 
+  runtimeConfig: {
+    public: {
+      cloudPublicUrl: process.env.CLOUD_PUBLIC_URL ?? '',
+    },
+  },
+
   devServer: { port: 6631 },
 
   css: ['~/assets/css/shared.css'],
