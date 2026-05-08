@@ -823,7 +823,7 @@ onMounted(() => {
     padding-bottom: 12px;
     border-bottom: 1px solid var(--line);
   }
-  .disc-block p { margin: 0; font-family: inherit; font-size: inherit; line-height: inherit; color: inherit; }
+  .disc-block p { margin: 0; font-family: inherit; }
   .disc-block p + p { margin-top: 0.7em; }
   .disc-block a {
     color: var(--accent);
