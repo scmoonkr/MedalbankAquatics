@@ -390,14 +390,19 @@
 definePageMeta({ ssr: false })
 useHead({ title: "메달뱅크 아쿠아틱스 — 촬영서비스" })
 
-const { data: galleryData } = useFetch<{ image_id: number; urls: { thumb?: string; original?: string } }[]>('/api/gallery')
 const heroUrl = ref('')
-watch(galleryData, (docs) => {
-  if (docs?.length) {
-    const pick = docs[Math.floor(Math.random() * docs.length)]
-    heroUrl.value = pick.urls.original ?? pick.urls.thumb ?? ''
-  }
-}, { immediate: true })
+onMounted(async () => {
+  try {
+    const res = await $fetch<{ images: { urls: { large?: string; original?: string; thumb?: string } }[] }>(
+      '/api/images', { query: { per_page: 30 } }
+    )
+    const pool = res.images.filter(d => d.urls.large || d.urls.original || d.urls.thumb)
+    if (pool.length) {
+      const pick = pool[Math.floor(Math.random() * pool.length)]
+      heroUrl.value = pick.urls.large ?? pick.urls.original ?? pick.urls.thumb ?? ''
+    }
+  } catch { /* hero image unavailable */ }
+})
 const heroStyle = computed(() =>
   heroUrl.value ? { backgroundImage: `url(${heroUrl.value})` } : {}
 )
