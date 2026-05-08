@@ -394,12 +394,11 @@ const cloudBase = useRuntimeConfig().public.cloudPublicUrl
 const heroUrl = ref('')
 onMounted(async () => {
   try {
-    const res = await $fetch<{ images: { urls: { large?: string } }[] }>(
-      '/api/images', { query: { per_page: 30 } }
-    )
-    const pool = res.images.filter(d => d.urls.large)
+    const docs = await $fetch<{ image_id: number; urls: { large?: string; original?: string; thumb?: string } }[]>('/api/gallery')
+    const pool = docs.filter(d => d.urls.large || d.urls.original || d.urls.thumb)
     if (pool.length) {
-      const key = pool[Math.floor(Math.random() * pool.length)].urls.large!
+      const u = pool[Math.floor(Math.random() * pool.length)].urls
+      const key = u.large ?? u.original ?? u.thumb ?? ''
       heroUrl.value = key.startsWith('http') ? key : `${cloudBase}/${key}`
     }
   } catch { /* hero image unavailable */ }
