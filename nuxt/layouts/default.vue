@@ -14,7 +14,6 @@
         <NuxtLink to="/athletes"  :class="{ active: route.path.startsWith('/athlete') }">선수목록</NuxtLink>
         <NuxtLink to="/magazines" :class="{ active: route.path === '/magazines' }">정기간행물</NuxtLink>
         <NuxtLink to="/about"     :class="{ active: route.path === '/about' }">촬영서비스</NuxtLink>
-        <NuxtLink to="/request"   :class="{ active: route.path === '/request' }">촬영요청</NuxtLink>
         <NuxtLink to="/consent"   :class="{ active: route.path === '/consent' }">확인요청</NuxtLink>
       </nav>
     </header>
@@ -29,7 +28,6 @@
         <NuxtLink to="/athletes">선수목록</NuxtLink>
         <NuxtLink to="/magazines">정기간행물</NuxtLink>
         <NuxtLink to="/about">촬영서비스</NuxtLink>
-        <NuxtLink to="/request">촬영요청</NuxtLink>
         <NuxtLink to="/consent">확인요청</NuxtLink>
       </nav>
     </div>
