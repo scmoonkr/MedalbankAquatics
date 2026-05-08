@@ -4,6 +4,22 @@ import { getDB } from '../db.js'
 
 const CHOSEONG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ']
 
+const toUrl = (key) => {
+  if (!key) return null
+  if (key.startsWith('http')) return key
+  return `${process.env.CLOUD_PUBLIC_URL ?? ''}/${key}`
+}
+
+const resolveUrls = (urls) => {
+  if (!urls) return urls
+  return {
+    thumb:    toUrl(urls.thumb),
+    preview:  toUrl(urls.preview),
+    large:    toUrl(urls.large),
+    original: toUrl(urls.original),
+  }
+}
+
 function getGroup(name) {
   const first = name?.[0]
   if (!first) return '?'
@@ -125,7 +141,7 @@ export default function (app) {
           image_id: i.image_id,
           meet_id:  i.meet_id,
           date:     i.date,
-          urls:     i.urls,
+          urls:     resolveUrls(i.urls),
         })),
       })
     } catch (e) {

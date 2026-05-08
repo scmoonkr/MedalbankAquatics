@@ -33,8 +33,7 @@ export default defineNuxtConfig({
 
   nitro: {
     publicAssets: [
-      { dir: fileURLToPath(new URL('../html/images', import.meta.url)), baseURL: '/images', maxAge: 0 },
-      { dir: fileURLToPath(new URL('../html/data',   import.meta.url)), baseURL: '/data',   maxAge: 0 },
+      { dir: fileURLToPath(new URL('../html/data', import.meta.url)), baseURL: '/data', maxAge: 0 },
     ],
   },
 
