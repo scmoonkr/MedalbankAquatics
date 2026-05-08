@@ -87,7 +87,6 @@ useHead({
 type GalleryImage = { image_id: number; urls: { thumb: string; original: string } }
 
 onMounted(async () => {
-  ;(window as any).__mbCursorInit = true  // index.vue manages cursor on home page
   const galleryImages = await $fetch<GalleryImage[]>('/api/gallery').catch(() => [] as GalleryImage[])
 
   ;(() => {
@@ -353,6 +352,32 @@ onMounted(async () => {
       if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox()
     })
 
+    // Menu
+    const menuToggle  = document.getElementById('menuToggle')!
+    const menuOverlay = document.getElementById('menuOverlay')!
+    menuOverlay.querySelectorAll<HTMLElement>('nav.menu-fullscreen a')
+      .forEach((a, i) => a.style.setProperty('--menu-delay', `${i * 60}ms`))
+    const openMenu  = () => {
+      document.body.classList.add('menu-open')
+      menuOverlay.setAttribute('aria-hidden', 'false')
+      menuToggle.setAttribute('aria-expanded', 'true')
+      menuToggle.setAttribute('aria-label', '메뉴 닫기')
+    }
+    const closeMenu = () => {
+      document.body.classList.remove('menu-open')
+      menuOverlay.setAttribute('aria-hidden', 'true')
+      menuToggle.setAttribute('aria-expanded', 'false')
+      menuToggle.setAttribute('aria-label', '메뉴 열기')
+    }
+    menuToggle.addEventListener('click', () =>
+      document.body.classList.contains('menu-open') ? closeMenu() : openMenu())
+    menuOverlay.addEventListener('click', (e) => {
+      if (!(e.target as Element).closest('nav.menu-fullscreen a')) closeMenu()
+    })
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.body.classList.contains('menu-open')) closeMenu()
+    })
+
     // Clock
     const tick = () => {
       clockEl.textContent = 'KST ' + new Date().toLocaleTimeString('en-GB', {
@@ -580,7 +605,7 @@ body.is-home footer.ui {
 }
 .cursor {
   position: fixed; top: 0; left: 0; width: 32px; height: 32px;
-  pointer-events: none; z-index: 3000; will-change: transform;
+  pointer-events: none; z-index: 9999;
   opacity: 0; transition: opacity 0.3s; mix-blend-mode: difference;
 }
 .cursor.visible { opacity: 1; }

@@ -1,7 +1,5 @@
 export default defineNuxtPlugin(() => {
   const setupCursor = () => {
-    if ((window as any).__mbCursorInit) return
-    ;(window as any).__mbCursorInit = true
     const cursorEl = document.getElementById('cursor')
     const labelEl  = cursorEl?.querySelector<HTMLElement>('.label') ?? null
     if (!cursorEl) return
@@ -149,6 +147,7 @@ export default defineNuxtPlugin(() => {
 
   const router = useRouter()
   const init = () => {
+    if (router.currentRoute.value.path === '/') return  // index.vue handles home page
     setupCursor()
     setupMenu()
     setupLightbox()
