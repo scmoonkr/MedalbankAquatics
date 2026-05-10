@@ -3,7 +3,8 @@
 
   <!-- ─── HERO ─── -->
   <section class="about-hero">
-    <div class="hero-bg" :style="heroStyle"></div>
+    <div class="hero-bg" :style="heroStyleA" :class="{ visible: activeSlot === 0 }"></div>
+    <div class="hero-bg" :style="heroStyleB" :class="{ visible: activeSlot === 1 }"></div>
     <div class="hero-inner">
       <div class="hero-eyebrow">About<span class="dot">·</span>Medalbank Aquatics</div>
       <h1 class="hero-title">
@@ -391,21 +392,39 @@ definePageMeta({ ssr: false })
 useHead({ title: "메달뱅크 아쿠아틱스 — 촬영서비스" })
 
 const cloudBase = useRuntimeConfig().public.cloudPublicUrl
-const heroUrl = ref('')
+const heroUrlA  = ref('')
+const heroUrlB  = ref('')
+const activeSlot = ref(0)   // 0 = A가 보임, 1 = B가 보임
+let heroTimer: ReturnType<typeof setInterval> | null = null
+
+function pickRandom(pool: { urls: { large?: string; original?: string; thumb?: string } }[]) {
+  const u = pool[Math.floor(Math.random() * pool.length)].urls
+  const key = u.large ?? u.original ?? u.thumb ?? ''
+  return key.startsWith('http') ? key : `${cloudBase}/${key}`
+}
+
 onMounted(async () => {
   try {
     const docs = await $fetch<{ image_id: number; urls: { large?: string; original?: string; thumb?: string } }[]>('/api/gallery')
     const pool = docs.filter(d => d.urls.large || d.urls.original || d.urls.thumb)
-    if (pool.length) {
-      const u = pool[Math.floor(Math.random() * pool.length)].urls
-      const key = u.large ?? u.original ?? u.thumb ?? ''
-      heroUrl.value = key.startsWith('http') ? key : `${cloudBase}/${key}`
-    }
+    if (!pool.length) return
+    heroUrlA.value = pickRandom(pool)
+    activeSlot.value = 0
+    heroTimer = setInterval(() => {
+      if (activeSlot.value === 0) {
+        heroUrlB.value = pickRandom(pool)
+        activeSlot.value = 1
+      } else {
+        heroUrlA.value = pickRandom(pool)
+        activeSlot.value = 0
+      }
+    }, 5000)
   } catch { /* hero image unavailable */ }
 })
-const heroStyle = computed(() =>
-  heroUrl.value ? { backgroundImage: `url(${heroUrl.value})` } : {}
-)
+onUnmounted(() => { if (heroTimer) clearInterval(heroTimer) })
+
+const heroStyleA = computed(() => heroUrlA.value ? { backgroundImage: `url(${heroUrlA.value})` } : {})
+const heroStyleB = computed(() => heroUrlB.value ? { backgroundImage: `url(${heroUrlB.value})` } : {})
 
 interface Testi { avatar: string; role: string; name: string; quote: string }
 const testimonials: Testi[] = [
@@ -520,7 +539,10 @@ onMounted(() => {
     background-size: cover;
     background-position: center;
     z-index: 0;
+    opacity: 0;
+    transition: opacity 1.2s ease-in-out;
   }
+  .hero-bg.visible { opacity: 1; }
   .about-hero::after {
     content: '';
     position: absolute;
