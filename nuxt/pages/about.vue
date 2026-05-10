@@ -499,9 +499,6 @@ onMounted(() => {
 <style scoped>
 
   .about-shell {
-    /* 이 페이지에 한해 명조(Nanum Myeongjo) 대신 고딕(--font-sans) 폴백 사용
-       — 머지 HTML의 실제 렌더링(맑은 고딕/Pretendard)과 동일한 모양 */
-    --font-myungjo: var(--font-sans);
     min-height: 100vh;
     padding-top: 0;
     padding-bottom: 80px;
