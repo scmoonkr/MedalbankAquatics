@@ -103,7 +103,7 @@
       type="button"
       class="photo-tile"
       :class="{ selected: cart.has(img.image_id) }"
-      :style="{ backgroundImage: img.urls?.preview ? `url('${img.urls.preview}')` : '' }"
+      :style="{ backgroundImage: img.urls?.thumb ? `url('${img.urls.thumb}')` : '' }"
       :aria-label="`사진 ${img.image_id} 선택`"
       :aria-pressed="String(cart.has(img.image_id))"
       @click="toggleSelect(img.image_id)">
@@ -140,7 +140,7 @@ useHead({ title: "메달뱅크 아쿠아틱스 — 확인요청" })
 const PER_PAGE = 60
 const CART_KEY = 'medalbank_consent_cart'
 
-type GalleryImage = { image_id: number; urls: { preview: string } }
+type GalleryImage = { image_id: number; urls: { thumb: string; preview?: string } }
 type EventItem    = { id: number | 'all'; label: string; short?: string; date?: string; count: number }
 
 const events         = ref<EventItem[]>([{ id: 'all', label: '전체 대회', count: 0 }])
