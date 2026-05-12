@@ -101,6 +101,16 @@
           <input v-model="editing.tagsInput" placeholder="tag1, tag2, ..." />
         </div>
 
+        <!-- 업로드 메타 -->
+        <div class="field-row">
+          <label>category</label>
+          <input v-model="uploadCategory" placeholder="예: freestyle" />
+        </div>
+        <div class="field-row">
+          <label>tags</label>
+          <input v-model="uploadTags" placeholder="tag1, tag2, ..." />
+        </div>
+
         <div class="section-label-row">
           <span class="section-label">이미지 업로드</span>
           <button v-if="(uploadedRecordCount + legacyRecordCount) > 0" class="record-clear-btn" :disabled="uploading"
@@ -215,6 +225,10 @@ const locationFilter  = ref('')
 const monthFilter     = ref('')
 const fileInput     = ref<HTMLInputElement | null>(null)
 const dirInput      = ref<HTMLInputElement | null>(null)
+
+// ── 업로드 메타 입력 ─────────────────────────────────────────────────────────
+const uploadCategory = ref('')
+const uploadTags     = ref('')
 
 // ── 파일 모드 ────────────────────────────────────────────────────────────────
 const uploadFiles   = ref<{ file: File; preview: string }[]>([])
@@ -338,6 +352,8 @@ function resetUpload() {
   uploadTotal.value = 0
   pendingRestoreHandle.value = null
   pendingRestoreName.value = ''
+  uploadCategory.value = ''
+  uploadTags.value = ''
 }
 
 // ── 파일 모드 ────────────────────────────────────────────────────────────────
@@ -371,6 +387,8 @@ async function doFileUpload() {
   const fd = new FormData()
   fd.append('meet_id', String(editing.value.meet_id))
   fd.append('date', editDate.value)
+  if (uploadCategory.value.trim()) fd.append('category', uploadCategory.value.trim())
+  if (uploadTags.value.trim())     fd.append('tags',     uploadTags.value.trim())
   for (const { file } of uploadFiles.value) fd.append('files', file)
 
   try {
@@ -669,6 +687,8 @@ async function doDirUpload() {
     const fd = new FormData()
     fd.append('meet_id', String(meetId ?? 0))
     fd.append('date', editDate.value)
+    if (uploadCategory.value.trim()) fd.append('category', uploadCategory.value.trim())
+    if (uploadTags.value.trim())     fd.append('tags',     uploadTags.value.trim())
     for (const { file } of batchItems) fd.append('files', file)
 
     try {
