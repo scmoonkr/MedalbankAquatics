@@ -52,9 +52,9 @@
       실력과 노력 사이의 감동을 <strong>누구에게나 동등하게, 가장 훌륭한 수준으로</strong> 기록합니다.
     </p>
 
-    <p>
-      우리 모두의 결정적 순간을, <strong>선수의 시선과 감각으로</strong>.
-      <strong>세계 선수권 포토풀과 동일한 장비</strong>로, <strong>출판 가능한 품질</strong>로.
+    <p class="p-white">
+      우리 모두의 결정적 순간을, <span class="em-accent">선수의 시선과 감각으로</span>.
+      <span class="em-accent">세계 선수권 포토풀과 동일한 장비</span>로, <span class="em-accent">출판 가능한 품질</span>로.
     </p>
 
     <p class="presskit-tagline">
@@ -657,6 +657,8 @@ onMounted(() => {
     max-width: 760px;
   }
   .sec p + p { margin-top: 1.2em; }
+  .sec p.p-white { color: var(--fg); }
+  .em-accent { color: var(--accent); }
   .sec p strong { color: var(--fg); font-weight: 400; }
   @media (max-width: 768px) {
     .sec { padding: 70px 20px; }
