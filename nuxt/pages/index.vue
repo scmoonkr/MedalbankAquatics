@@ -12,7 +12,6 @@
     <header class="ui">
       <nav class="menu menu-inline">
         <NuxtLink to="/photos">사진집</NuxtLink>
-        <NuxtLink to="/athletes">선수목록</NuxtLink>
         <NuxtLink to="/magazines">정기간행물</NuxtLink>
         <NuxtLink to="/about">촬영서비스</NuxtLink>
         <NuxtLink to="/consent">확인요청</NuxtLink>
@@ -26,7 +25,6 @@
     <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
       <nav class="menu menu-fullscreen">
         <NuxtLink to="/photos">사진집</NuxtLink>
-        <NuxtLink to="/athletes">선수목록</NuxtLink>
         <NuxtLink to="/magazines">정기간행물</NuxtLink>
         <NuxtLink to="/about">촬영서비스</NuxtLink>
         <NuxtLink to="/consent">확인요청</NuxtLink>
