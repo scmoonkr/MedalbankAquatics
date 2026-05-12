@@ -3,6 +3,7 @@
 
   <!-- ─── 동의 폼 영역 ─── -->
   <div v-if="!submitted" id="formArea">
+  <div class="page-inner">
 
     <div class="cart-head">
       <div class="eyebrow"><span class="num">00</span>Consent · 동의 신청</div>
@@ -136,10 +137,12 @@
       <p v-if="submitError" class="submit-error">{{ submitError }}</p>
     </form>
 
+  </div><!-- /.page-inner -->
   </div>
 
   <!-- ─── 제출 후 화면 ─── -->
-  <div v-if="submitted" class="sent-screen show">
+  <div v-if="submitted" class="page-inner">
+  <div class="sent-screen show">
     <div class="icon">
       <svg viewBox="0 0 28 28" aria-hidden="true">
         <path d="M2 8 L14 16 L26 8" />
@@ -155,7 +158,8 @@
       메일이 도착하지 않으면 스팸 폴더를 확인해주세요. 인증 링크는 24시간 동안 유효합니다.
     </p>
     <NuxtLink class="home-link" to="/">메인으로 돌아가기 →</NuxtLink>
-  </div>
+  </div><!-- /.sent-screen -->
+  </div><!-- /.page-inner -->
 
 </main>
 </template>
@@ -250,8 +254,14 @@ onMounted(async () => {
     padding-bottom: 80px;
   }
 
+  .page-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
   .cart-head {
-    padding: 8px 32px 24px;
+    padding: 8px 0 24px;
   }
   .cart-head .eyebrow {
     color: var(--fg-faint);
@@ -319,7 +329,8 @@ onMounted(async () => {
   }
   .cart-head .count-line .back:hover { color: var(--fg); border-bottom-color: currentColor; }
   @media (max-width: 768px) {
-    .cart-head { padding: 4px 18px 22px; }
+    .page-inner { padding: 0 18px; }
+    .cart-head { padding: 4px 0 22px; }
     .cart-head h1 { line-height: 1.2; }
     .cart-head .lead { font-size: 14.5px; }
     .cart-head .count-line .back { display: block; margin-left: 0; margin-top: 8px; }
@@ -327,12 +338,11 @@ onMounted(async () => {
 
   /* ── 선택 사진 미리보기 그리드 ──────────── */
   .selected-grid {
-    padding: 0 32px;
+    padding: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, 160px);
     justify-content: start;
     gap: 10px;
-    max-width: 1280px;
     margin: 0 0 56px;
   }
   .sel-tile {
@@ -397,7 +407,7 @@ onMounted(async () => {
 
   @media (max-width: 768px) {
     .selected-grid {
-      padding: 0 18px;
+      padding: 0;
       grid-template-columns: repeat(auto-fill, 110px);
       gap: 6px;
       margin-bottom: 36px;
@@ -409,7 +419,7 @@ onMounted(async () => {
   .consent-form {
     max-width: 720px;
     margin: 0 auto;
-    padding: 0 32px;
+    padding: 0;
   }
   .form-section {
     border-top: 1px solid var(--line);
@@ -622,14 +632,14 @@ onMounted(async () => {
     min-width: 240px;
   }
   @media (max-width: 768px) {
-    .consent-form { padding: 0 18px; }
+    .consent-form { padding: 0; }
     .submit-btn { padding: 14px 36px; }
   }
 
   /* 제출 후 상태 */
   .sent-screen {
     display: none;
-    padding: 0 32px;
+    padding: 0;
     max-width: 720px;
     margin: 60px auto 80px;
     text-align: center;
