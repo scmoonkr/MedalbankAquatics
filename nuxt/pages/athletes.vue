@@ -4,7 +4,7 @@
       <div class="eyebrow"><span class="num">{{ athletes.length.toString().padStart(2, '0') }}</span>Athletes · 선수목록</div>
       <h1><span class="em">선수목록.</span></h1>
       <p class="lead">
-        각 선수별 사진을 열람하실 수 있습니다.
+         각 선수별 사진을 열람하실 수 있습니다. 사진집에서 보여지는 사진과 동일한 내용입니다.
       </p>
       <p class="meta-line">전체 <span style="color:var(--fg)">{{ athletes.length }}</span>명 · 동의된 사진 <span style="color:var(--fg)">{{ totalPhotos.toLocaleString() }}</span>장</p>
     </div>

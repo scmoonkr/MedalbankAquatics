@@ -14,7 +14,6 @@
       </p>
       <div class="count-line">
         선택한 사진 <span class="n">{{ cartImages.length }}</span>장
-        <NuxtLink class="back" to="/consent">← 사진 더 선택하기</NuxtLink>
       </div>
     </div>
 
@@ -56,24 +55,24 @@
             </span>
           </label>
 
-          <label class="check-item" for="c-insta">
+          <label class="check-item required locked" for="c-insta">
             <input id="c-insta" v-model="form.consent_insta" name="consent_insta" type="checkbox" />
             <span class="box">
               <svg viewBox="0 0 14 14" aria-hidden="true"><polyline points="2.5 7.5, 6 11, 11.5 3.5"/></svg>
             </span>
             <span class="text">
-              <span class="title">SNS 게재 (인스타그램 등)</span>
+              <span class="title">SNS 게재 (인스타그램 등) <span class="lock-tag">필수</span></span>
               <span class="desc">하이라이트 사진으로 선정되는 경우, @medalbankaquatics 계정에 게재될 수 있습니다.</span>
             </span>
           </label>
 
-          <label class="check-item" for="c-mag">
+          <label class="check-item required locked" for="c-mag">
             <input id="c-mag" v-model="form.consent_mag" name="consent_mag" type="checkbox" />
             <span class="box">
               <svg viewBox="0 0 14 14" aria-hidden="true"><polyline points="2.5 7.5, 6 11, 11.5 3.5"/></svg>
             </span>
             <span class="text">
-              <span class="title">매거진 인쇄 게재</span>
+              <span class="title">매거진 인쇄 게재 <span class="lock-tag">필수</span></span>
               <span class="desc">하이라이트 사진으로 선정되는 경우, 메달뱅크 아쿠아틱스 실물 매거진에 사진이 게재될 수 있습니다.</span>
             </span>
           </label>
@@ -166,7 +165,7 @@
 
 <script setup lang="ts">
 definePageMeta({ ssr: false })
-useHead({ title: "메달뱅크 아쿠아틱스 — 동의 신청" })
+useHead({ title: "메달뱅크 아쿠아틱스 — 내 사진 확인하기" })
 
 const CART_KEY = 'medalbank_consent_cart'
 

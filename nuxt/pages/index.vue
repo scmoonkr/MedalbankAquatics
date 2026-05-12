@@ -71,7 +71,7 @@
 definePageMeta({ layout: false, ssr: false })
 
 useHead({
-  title: 'Medalbank Aquatics — Immersive Archive',
+  title: '@medalbankaquatics',
   bodyAttrs: { class: 'is-home' },
 })
 

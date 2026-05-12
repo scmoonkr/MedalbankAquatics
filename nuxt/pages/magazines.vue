@@ -14,7 +14,7 @@
   <section class="sec sec-tight reveal-el" id="reader-submissions" aria-label="독자 투고">
     <div class="sec-eyebrow"><span class="num">01</span>Reader Submissions · 독자 투고</div>
     <h2>독자 투고 — 다음 호에 적는 <span class="em">나의 한마디.</span></h2>
-    <p>수영을 사랑하는 여러분 누구나 참여 가능합니다. 여러분의 이야기를 선정하여 다음 호 매거진에 싣습니다. 우리가 정말 원하는건 세계수영연맹 대표나 펠프스의 축사가 아닌, 지금 오늘을 함께 걷는 동료 여러분의 응원과 참여입니다. 메달뱅크의 편집부에서는, 작은 지면이지만, 여러분과 함께 하기 위해 오직 수영인의 마음으로만 새롭게 다짐하고, 또 노력하겠습니다.</p>
+    <p>수영을 사랑하는 여러분 누구나 참여 가능합니다. 여러분의 이야기를 선정하여 다음 호 매거진에 싣습니다. 우리가 정말 원하는건 세계수영연맹 대표나 펠프스의 축사가 아닌, 지금 오늘을 함께 걷는 동료 여러분의 응원과 참여입니다. 메달뱅크 편집부는, 오직 수영인의 마음으로만 새롭게 다짐하고, 또 노력하겠습니다.</p>
     <ul class="rs-list">
       <li v-for="(r, idx) in READER_SUBMISSIONS" :key="idx" class="rs-item">
         <span class="rs-title" :title="r.title">{{ r.title }}</span>

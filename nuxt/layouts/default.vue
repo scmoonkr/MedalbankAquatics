@@ -4,7 +4,7 @@
     <div class="grain"></div>
     <div class="scroll-indicator" id="scrollIndicator"></div>
 
-    <NuxtLink class="logo" to="/" aria-label="메달뱅크 아쿠아틱스 — 메인">
+    <NuxtLink class="logo" to="/" aria-label="메달뱅크 아쿠아틱스">
       <img class="logo-img" src="/images/medalbankaquatics.png" alt="Medalbank Aquatics" />
     </NuxtLink>
 
@@ -13,7 +13,7 @@
         <NuxtLink to="/photos"    :class="{ active: route.path === '/photos' }">사진집</NuxtLink>
         <NuxtLink to="/magazines" :class="{ active: route.path === '/magazines' }">정기간행물</NuxtLink>
         <NuxtLink to="/about"     :class="{ active: route.path === '/about' }">촬영서비스</NuxtLink>
-        <NuxtLink to="/consent"   :class="{ active: route.path === '/consent' }">확인요청</NuxtLink>
+        <NuxtLink to="/consent"   :class="{ active: route.path === '/consent' }">내 사진 찾기</NuxtLink>
       </nav>
     </header>
 
@@ -26,7 +26,7 @@
         <NuxtLink to="/photos">사진집</NuxtLink>
         <NuxtLink to="/magazines">정기간행물</NuxtLink>
         <NuxtLink to="/about">촬영서비스</NuxtLink>
-        <NuxtLink to="/consent">확인요청</NuxtLink>
+        <NuxtLink to="/consent">내 사진 찾기</NuxtLink>
       </nav>
     </div>
 

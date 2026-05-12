@@ -53,7 +53,7 @@
     </p>
 
     <p class="p-white">
-      우리 모두의 결정적 순간을, <span class="em-accent">선수의 시선과 감각으로</span>.
+      우리 모두의 결정적 순간을, <span class="em-accent">선수의 시선과 감각</span>으로.
       <span class="em-accent">세계 선수권 포토풀과 동일한 장비</span>로, <span class="em-accent">출판 가능한 품질</span>로.
     </p>
 
@@ -95,53 +95,20 @@
       제3자에게 양도하지 않습니다.
     </p>
     <p>
-      모든 사진은 <strong>본인 또는 보호자가 확인한 후에 사용</strong>됩니다.
-      확인되지 않은 사진은 <strong>저화질의 흑백사진</strong>으로, 식별 목적으로만 표시됩니다.
-    </p>
-    <p>
       촬영한 사진은 <strong>대한민국 수영인 모두에게 무료로 환원</strong>합니다.
       동의된 사진은 원본 화질로 다운로드 가능하며, 대회명과 함께 보관·관리됩니다.
     </p>
+    
+    <p>
+      모든 사진은 <strong>본인이 확인한 후에 사용</strong>됩니다.
+      확인되지 않은 사진은 <strong>저화질의 사진</strong>으로, 식별 목적으로만 표시됩니다.
+    </p>
   </section>
 
-  <!-- ─── 02 · VALUES ─── -->
-  <section class="sec reveal">
-    <div class="sec-eyebrow"><span class="num">02</span>Values · 우리가 지키는 것들</div>
-    <div class="values">
-      <div class="value-item">
-        <span class="v-num">01</span>
-        <div>
-          <h3>선수 우선</h3>
-          <p>선수의 안전, 동선, 대회 진행을 항상 최우선으로 고려하고 촬영 위치를 결정합니다.</p>
-        </div>
-      </div>
-      <div class="value-item">
-        <span class="v-num">02</span>
-        <div>
-          <h3>초상권 존중</h3>
-          <p>모든 사진의 공개 여부는 본인이 직접 확인하고 동의하게 됩니다. 식별만 가능한 사진들이 표시되고, 본인이 동의하면 공개됩니다.</p>
-        </div>
-      </div>
-      <div class="value-item">
-        <span class="v-num">03</span>
-        <div>
-          <h3>커뮤니티 환원</h3>
-          <p>촬영한 사진이 주인을 찾아갈 수 있도록 노력합니다. 맘에 드는 사진이 있으시다면, 모두 간단한 절차를 통해 무료로 원본 화질 다운로드가 가능하며, 앞으로도 보관해드립니다.</p>
-        </div>
-      </div>
-      <div class="value-item">
-        <span class="v-num">04</span>
-        <div>
-          <h3>퀄리티</h3>
-          <p>수영을 아는 사람만이 알아챌 수 있는 모든 순간들 — 풀, 킥, 글라이드, 호흡, 시선, 놓치지 않겠습니다.</p>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- ─── 03 · EQUIPMENT ─── -->
+  <!-- ─── 02 · EQUIPMENT ─── -->
   <section class="sec reveal">
-    <div class="sec-eyebrow"><span class="num">03</span>Equipment</div>
+    <div class="sec-eyebrow"><span class="num">02</span>Equipment</div>
     <h2>최상급의 전문 장비,<br />그리고 <span class="em">수영인의 눈.</span></h2>
     <p>
       <strong>600mm F4 등 최상급 장비</strong>로, 수영을 아는 사람만 포착할 수 있는 순간을
@@ -187,9 +154,9 @@
   </section>
 
 
-  <!-- ─── 04 · TESTIMONIALS / VOICES ─── -->
+  <!-- ─── 03 · TESTIMONIALS / VOICES ─── -->
   <section class="sec testimonials reveal">
-    <div class="sec-eyebrow"><span class="num">04</span>Voices · 대회장에서 받은 피드백 · 메시지 · 제보</div>
+    <div class="sec-eyebrow"><span class="num">03</span>Voices · 대회장에서 받은 피드백 · 메시지 · 제보</div>
     <h2>대회장에서 받은 소중한 <span class="em">피드백.</span></h2>
 
     <!-- Sub-divider: 피드백 -->
@@ -288,44 +255,44 @@
   </section>
 
 
-  <!-- ─── 05 · COMMUNITY EDITION ─── -->
+  <!-- ─── 04 · COMMUNITY EDITION ─── -->
   <section class="sec reveal">
-    <div class="sec-eyebrow"><span class="num">05</span>Community Edition · 연맹·대회 협업 <span class="eyebrow-note">※ 수영대회 관계자께 드리는 안내입니다</span></div>
+    <div class="sec-eyebrow"><span class="num">04</span>Values · 우리가 지키는 것들 <span class="eyebrow-note">※ 수영대회 관계자께 드리는 안내</span></div>
     <h2>촬영부터 공유까지,<br /><span class="em">한 흐름으로.</span></h2>
     <p>
       <strong>데크레벨(수영장층) 입장 승인이 가능한 수영 대회</strong>에 한해,
-      준비 · 촬영 · 컬링 · 동의 · 공유 · 관리, 전 과정을 비용 없이 진행합니다.
-      촬영이 끝난 후, 모든 사진은 각 선수 또는 보호자의 확인 절차가 완료된 경우에 한해 자동으로 공개됩니다.
+      준비 · 촬영 · 컬링 · 동의 · 공유 · 관리, 전 과정을 비용 없이 진행합니다. 촬영이 끝난 후, 모든 사진은 동의 확인 절차가 완료된 경우에 한해 자동으로 공개됩니다.
     </p>
 
     <div class="free-grid">
       <div class="free-card">
         <span class="num">01</span>
-        <h3>선수 우선</h3>
-        <p>안전과 동선이 항상 우선합니다. 경기 흐름을 방해하지 않는 위치에서 촬영합니다.</p>
+        <h3>선수가 먼저.</h3>
+        <p>카메라는 보조 도구일 뿐. 선수로서 밟는 바로 그 동선·안전·집중의 모든 과정을 존중합니다. 선수로서 받고 싶은 서비스를 위해 사진기를 들었습니다. 선수로서 수영을 더 깊이 아는 기록자로 남겠습니다.</p>
       </div>
       <div class="free-card">
         <span class="num">02</span>
-        <h3>컬링 · 에디팅</h3>
-        <p>현장 컷 선별과 기본 톤 보정까지 일관된 흐름으로 진행합니다.</p>
+        <h3>선수 동의 기반 공개.</h3>
+        <p>'내 사진'의 결정권은 언제나 본인에게 있습니다. 편리한 이메일 동의를 통해 인쇄가 가능한 수준의 고화소 사진을 다운로드 할 수 있습니다.
+</p>
       </div>
       <div class="free-card">
         <span class="num">03</span>
-        <h3>초상권 동의 시스템</h3>
-        <p>본인 또는 보호자의 이메일 동의 한 번이면 사진 공개요청과 사용 동의가 완료되고, 컬러 원본 다운로드가 활성화됩니다. 별도의 추가 절차가 필요하지 않습니다.</p>
+        <h3>책임 있는 기록, 그리고 그 기록의 연속성.</h3>
+        <p>쉬운 공유와 관리를 통해, 공개동의가 된 사진들에 한해, 대회명과 함께 온라인상에 게재하고 보관합니다. 선수, 코치, 가족이 어디서든 열람 가능합니다.</p>
       </div>
       <div class="free-card">
         <span class="num">04</span>
-        <h3>온라인 공유</h3>
-        <p>고용량 사진을 온라인에 게재하고 관리합니다. 선수·코치·가족이 어디서든 열람 가능합니다.</p>
+        <h3>디테일에 대한 집착.</h3>
+        <p>풀 · 킥 · 글라이드 · 호흡 · 시선. 수영을 아는, 수영을 하는 사람만이 알아채는 순간들, 놓치지 않겠습니다. 수만 장의 컷에서 의미 있는 순간을 선별하고, 기본 톤 보정까지 일관된 흐름으로 담아내겠습니다.</p>
       </div>
     </div>
   </section>
 
 
-  <!-- ─── 06 · EDITIONS (정식 의뢰) ─── -->
+  <!-- ─── 05 · EDITIONS (정식 의뢰) ─── -->
   <section class="sec reveal">
-    <div class="sec-eyebrow"><span class="num">06</span>Editions · 정식 의뢰</div>
+    <div class="sec-eyebrow"><span class="num">05</span>Editions · 정식 의뢰</div>
     <h2><span class="em">수영대회 촬영</span> 및 스포츠 대회 촬영.</h2>
 
     <!-- SWIM MEET (Community Edition pricing face) -->
@@ -364,9 +331,9 @@
   </section>
 
 
-  <!-- ─── 07 · DISCLAIMER ─── -->
+  <!-- ─── 06 · DISCLAIMER ─── -->
   <section class="sec disclaimer reveal">
-    <div class="sec-eyebrow"><span class="num">07</span>Disclaimer</div>
+    <div class="sec-eyebrow"><span class="num">06</span>Disclaimer</div>
     <h2>꼭 알아두실 <span class="em">안내.</span></h2>
 
     <div class="disc-grid">
