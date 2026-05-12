@@ -260,10 +260,11 @@ onMounted(async () => {
 
     function openLightbox(imgIdx: number) {
       const thumbUrl = imgUrl(imgIdx), bigUrl = xlUrl(imgIdx)
-      lightboxImg.src = thumbUrl
+      lightboxImg.removeAttribute('src')
+      lightboxImg.style.opacity = '0'
       lightboxImg.alt = `Photo #${imgIdx + 1}`
       lightboxImg.dataset.currentIdx = String(imgIdx)
-      lightbox.style.setProperty('--lb-img', `url("${thumbUrl}")`)
+      lightboxBg.style.backgroundImage = `url("${thumbUrl}")`
       lightbox.classList.add('open')
       lightbox.setAttribute('aria-hidden', 'false')
       document.body.classList.add('lb-open')
@@ -273,7 +274,8 @@ onMounted(async () => {
         if (lightbox.classList.contains('open') &&
             lightboxImg.dataset.currentIdx === String(imgIdx)) {
           lightboxImg.src = bigUrl
-          lightbox.style.setProperty('--lb-img', `url("${bigUrl}")`)
+          lightboxImg.style.opacity = '1'
+          lightboxBg.style.backgroundImage = `url("${bigUrl}")`
         }
       }
       hiRes.src = bigUrl
@@ -286,7 +288,8 @@ onMounted(async () => {
       setTimeout(() => {
         if (!lightbox.classList.contains('open')) {
           lightboxImg.removeAttribute('src')
-          lightbox.style.setProperty('--lb-img', 'none')
+          lightboxImg.style.opacity = '0'
+          lightboxBg.style.backgroundImage = ''
         }
       }, 500)
     }
@@ -557,7 +560,7 @@ body.is-home footer.ui {
   box-shadow: 0 30px 80px rgba(0,0,0,0.55);
 }
 .lightbox.open .lightbox-frame { transform: translateX(-50%) scale(1); opacity: 1; }
-.lightbox-img { width: 100%; height: 100%; display: block; object-fit: cover; background-color: var(--tile-bg); pointer-events: none; }
+.lightbox-img { width: 100%; height: 100%; display: block; object-fit: cover; background-color: var(--tile-bg); pointer-events: none; transition: opacity 0.3s ease; }
 .lightbox-close {
   position: absolute; top: 14px; right: 14px; z-index: 3;
   width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
