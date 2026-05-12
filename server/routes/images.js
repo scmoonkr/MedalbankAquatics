@@ -215,14 +215,16 @@ export default function (app) {
       const perPage = Math.min(200, parseInt(req.query.per_page) || PER_PAGE)
       const meetId  = req.query.meet_id ? parseInt(req.query.meet_id) : null
 
-      const tag      = req.query.tag      ? String(req.query.tag)      : null
-      const category = req.query.category ? String(req.query.category) : null
+      const tag        = req.query.tag         ? String(req.query.tag)         : null
+      const category   = req.query.category    ? String(req.query.category)    : null
+      const excludeTag = req.query.exclude_tag ? String(req.query.exclude_tag) : null
 
       const consented = req.query.consented !== 'false'
       const filter = { consent_date: { $exists: consented } }
-      if (meetId)   filter.meet_id  = meetId
-      if (tag)      filter.tags     = tag
-      if (category) filter.category = category
+      if (meetId)     filter.meet_id  = meetId
+      if (tag)        filter.tags     = tag
+      if (category)   filter.category = category
+      if (excludeTag) filter.tags     = { ...(filter.tags ?? {}), $ne: excludeTag }
 
       const [total, docs] = await Promise.all([
         images().countDocuments(filter),
