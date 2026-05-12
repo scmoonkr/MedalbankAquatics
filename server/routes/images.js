@@ -228,7 +228,7 @@ export default function (app) {
         images().countDocuments(filter),
         images()
           .find(filter)
-          .sort({ date: -1, image_id: 1 })
+          .sort({ created_at: -1, image_id: 1 })
           .skip((page - 1) * perPage)
           .limit(perPage)
           .toArray(),
