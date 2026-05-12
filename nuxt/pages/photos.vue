@@ -3,7 +3,7 @@
     <div class="photos-head">
       <div class="eyebrow"><span class="num">00</span>Photos · 사진집</div>
       <div class="head-title-row">
-        <h1>사진집</h1>
+        <h1>사진집.</h1>
         <span v-if="activeMeetId !== null" class="vol">— {{ activeLabel }}</span>
         <span class="meta-inline">
           전체 <span>{{ activeTotalCount }}</span>장 ·
@@ -34,26 +34,6 @@
               {{ m.short }} · {{ m.label }}<span class="count">{{ m.photo_count }}장</span>
             </button>
           </template>
-        </div>
-      </div>
-
-      <!-- 카테고리 dropdown -->
-      <div v-if="categoriesSorted.length" class="event-select cat-select" :class="{ open: catDropOpen }">
-        <button class="event-select-btn" type="button" :aria-expanded="catDropOpen" @click="catDropOpen = !catDropOpen">
-          <span class="label">{{ activeCategoryLabel }}</span>
-          <svg class="caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
-            <polyline points="1 1.5, 5 5, 9 1.5"/>
-          </svg>
-        </button>
-        <div class="event-select-list" role="listbox">
-          <button type="button" :class="{ active: activeCategory === null }" @click="selectCategory(null)">
-            전체 카테고리
-          </button>
-          <button v-for="cat in categoriesSorted" :key="cat" type="button"
-            :class="{ active: activeCategory === cat }"
-            @click="selectCategory(cat)">
-            {{ cat }}
-          </button>
         </div>
       </div>
 
@@ -109,14 +89,11 @@ const { data: meetsData } = useFetch<{
 // ── State ────────────────────────────────────────────────────────────────────
 const activeMeetId    = ref<number | null>(null)
 const activeTag       = ref<string | null>(null)
-const activeCategory  = ref<string | null>(null)
 const currentPage     = ref(1)
 const dropOpen        = ref(false)
-const catDropOpen     = ref(false)
 const clickedId       = ref<number | null>(null)
 
-const { data: tagsData }       = useFetch<string[]>('/api/tags')
-const { data: categoriesData } = useFetch<string[]>('/api/categories')
+const { data: tagsData } = useFetch<string[]>('/api/tags')
 
 // ── Images (reactive query → auto-refetch) ────────────────────────────────────
 const { data: imagesData, status: imagesStatus } = useFetch<{
@@ -129,11 +106,10 @@ const { data: imagesData, status: imagesStatus } = useFetch<{
   query: {
     meet_id:  activeMeetId,
     tag:      activeTag,
-    category: activeCategory,
     page:     currentPage,
     per_page: PER_PAGE,
   },
-  watch: [activeMeetId, activeTag, activeCategory, currentPage],
+  watch: [activeMeetId, activeTag, currentPage],
 })
 
 // ── Computed ─────────────────────────────────────────────────────────────────
@@ -160,16 +136,6 @@ const meetsGrouped = computed(() => {
     .sort((a, b) => b.year.localeCompare(a.year))
 })
 
-const categoriesSorted = computed(() =>
-  [...(categoriesData.value ?? [])].sort().reverse()
-)
-
-const quickCategories = computed(() => categoriesSorted.value.slice(0, 6))
-
-const activeCategoryLabel = computed(() =>
-  activeCategory.value ?? '전체 카테고리'
-)
-
 const totalPages = computed(() => imagesData.value?.pages ?? 1)
 
 const activeTotalCount = computed(() =>
@@ -186,22 +152,14 @@ const activeLabel = computed(() => {
 
 // ── Actions ───────────────────────────────────────────────────────────────────
 function selectMeet(meetId: number | null) {
-  activeMeetId.value   = meetId
-  activeCategory.value = null
-  currentPage.value    = 1
-  dropOpen.value       = false
+  activeMeetId.value = meetId
+  currentPage.value  = 1
+  dropOpen.value     = false
 }
 
 function selectTag(tag: string | null) {
   activeTag.value   = tag
   currentPage.value = 1
-}
-
-function selectCategory(category: string | null) {
-  activeCategory.value = category
-  activeMeetId.value   = null
-  currentPage.value    = 1
-  catDropOpen.value    = false
 }
 
 function goToPage(n: number) {
@@ -221,10 +179,8 @@ function onTileClick(img: { image_id: number; urls: { thumb: string; original: s
 onMounted(() => {
   document.addEventListener('click', (e) => {
     const t = e.target as Node
-    const sel = document.querySelector('.event-select:not(.cat-select)')
+    const sel = document.querySelector('.event-select')
     if (sel && !sel.contains(t)) dropOpen.value = false
-    const cat = document.querySelector('.cat-select')
-    if (cat && !cat.contains(t)) catDropOpen.value = false
   })
 })
 </script>
