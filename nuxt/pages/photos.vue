@@ -37,6 +37,14 @@
         </div>
       </div>
 
+      <!-- 선수별 사진 열람 버튼 -->
+      <NuxtLink class="athlete-browse-btn" to="/athletes">
+        선수별 사진 열람
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="3" y1="8" x2="13" y2="8"/><polyline points="9 4, 13 8, 9 12"/>
+        </svg>
+      </NuxtLink>
+
       <!-- 태그 버튼들 -->
       <div v-if="tagsData?.length" class="tag-filter">
         <button type="button" class="tag-btn" :class="{ active: activeTag === null }" @click="selectTag(null)">전체</button>
@@ -213,6 +221,17 @@ onMounted(() => {
 .event-select-list .group-label { padding: 8px 16px 4px; color: var(--fg-faint); font-family: var(--font-sans); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; pointer-events: none; font-variant-numeric: tabular-nums; border-top: 1px solid rgba(255,255,255,0.06); margin-top: 4px; }
 .event-select-list .group-label:first-child { border-top: 0; margin-top: 0; }
 @media (max-width: 768px) { .photos-controls { padding: 0 18px 22px; } .event-select-btn { min-width: 200px; padding: 9px 14px; font-size: 11px; } }
+.athlete-browse-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  color: var(--fg-dim);
+  font-family: var(--font-sans); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+  text-decoration: none; white-space: nowrap;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.athlete-browse-btn:hover { color: var(--fg); border-color: var(--fg-dim); background: rgba(255,255,255,0.03); }
+.athlete-browse-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
 .tag-filter { display: flex; align-items: stretch; gap: 6px; flex-wrap: wrap; }
 .tag-btn { padding: 10px 12px; background: none; border: 1px solid var(--line); color: var(--fg-faint); font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.07em; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; white-space: nowrap; }
 .tag-btn:hover { color: var(--fg); border-color: var(--fg-dim); }
