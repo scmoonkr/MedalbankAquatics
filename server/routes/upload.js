@@ -1,5 +1,6 @@
 import multer from 'multer'
 import sharp from 'sharp'
+import exifr from 'exifr'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { images } from '../models/Image.js'
 import { getDB } from '../db.js'
@@ -79,6 +80,14 @@ export default function (app) {
         const imageId = await nextImageId()
         const id      = String(imageId)
 
+        // EXIF DateTimeOriginal → created_at (없으면 현재 시각)
+        let createdAt = new Date()
+        try {
+          const exif = await exifr.parse(buf, ['DateTimeOriginal', 'DateTime'])
+          const exifDate = exif?.DateTimeOriginal ?? exif?.DateTime
+          if (exifDate instanceof Date && !isNaN(exifDate)) createdAt = exifDate
+        } catch {}
+
         const [thumbBuf, previewBuf, largeBuf] = await Promise.all([
           resizeWidth(buf, 400),
           resizeWidthGrayscale(buf, 320),
@@ -100,7 +109,7 @@ export default function (app) {
           urls: { thumb: thumbUrl, preview: previewUrl, large: largeUrl, original: originalUrl },
           tags:     tagList,
           category: catList,
-          created_at: new Date(),
+          created_at: createdAt,
         })
 
         results.push({
