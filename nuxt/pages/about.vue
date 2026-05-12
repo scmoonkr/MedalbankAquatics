@@ -391,6 +391,7 @@
 definePageMeta({ ssr: false })
 useHead({ title: "메달뱅크 아쿠아틱스 — 촬영서비스" })
 
+const { about } = useAppConfig()
 const cloudBase = useRuntimeConfig().public.cloudPublicUrl
 const heroUrlA  = ref('')
 const heroUrlB  = ref('')
@@ -418,7 +419,7 @@ onMounted(async () => {
         heroUrlA.value = pickRandom(pool)
         activeSlot.value = 0
       }
-    }, 5000)
+    }, about.heroInterval)
   } catch { /* hero image unavailable */ }
 })
 onUnmounted(() => { if (heroTimer) clearInterval(heroTimer) })
