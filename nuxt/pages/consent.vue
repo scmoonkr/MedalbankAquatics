@@ -157,7 +157,7 @@ async function loadMore() {
   if (activeCategory.value) query.category = activeCategory.value
   if (activeTag.value)      query.tag      = activeTag.value
   try {
-    const data = await $fetch<{ images: GalleryImage[]; pages: number }>('/api/images', { query: { ...query, consented: 'false', exclude_tag: '명예의전당' } })
+    const data = await $fetch<{ images: GalleryImage[]; pages: number }>('/api/images', { query: { ...query, consented: 'false', exclude_tag: '대표사진' } })
     galleryImages.value = [...galleryImages.value, ...data.images]
     hasMore.value = apiPage.value < data.pages
     apiPage.value++
