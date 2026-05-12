@@ -418,7 +418,7 @@ onMounted(async () => {
   /* ── 동의 폼 ──────────────────────────── */
   .consent-form {
     max-width: 720px;
-    margin: 0 auto;
+    margin: 0;
     padding: 0;
   }
   .form-section {
@@ -641,8 +641,8 @@ onMounted(async () => {
     display: none;
     padding: 0;
     max-width: 720px;
-    margin: 60px auto 80px;
-    text-align: center;
+    margin: 60px 0 80px;
+    text-align: left;
   }
   .sent-screen.show { display: block; }
   .sent-screen .icon {
