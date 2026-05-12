@@ -1,12 +1,11 @@
 <template>
-<main class="consent-shell" @click="dropOpen = false">
+<main class="consent-shell">
 
   <div class="consent-head">
     <div class="eyebrow"><span class="num">00</span>Consent Request · 확인요청</div>
-    <h1>내 사진을 찾아<br /><span class="em">장바구니에 담아주세요.</span></h1>
+    <h1>출판 대기중인 사진, <br /><span class="em">본인확인이 필요합니다.</span></h1>
     <p class="lead">
-      본인의 사진을 장바구니에 담아 한 번에 사진집으로 이동할 수 있습니다. 초상권자의 동의가 없는 사진은 모두 이 페이지에 흑백저화질사진으로 나열됩니다. 동의가 완료된 사진만 사진집 또는 선수목록에서 컬러로 확인하실 수 있습니다.
-      일정 기간 동안 동의가 완료되지 않은 사진은 영구적으로 삭제될 수 있습니다.
+      현재 보고계신 사진들은 다음 호에 인쇄 대기중인 후보사진 목록이기도 합니다. 초상권자의 동의가 없는 사진은 고화소로 열람하실 수 없습니다. 본인의 사진을 선택하여 한 번에 사진집으로 이동시킬 수 있습니다. 일정 기간 동안 동의가 완료되지 않은 사진은 영구적으로 삭제될 수 있습니다.
       <button class="info-btn" type="button" @click.stop="infoOpen = true" aria-label="동의 철회 안내">
         <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="9" cy="9" r="7.5"/>
@@ -32,9 +31,6 @@
         </div>
       </div>
     </Teleport>
-    <p class="meta-inline">
-      현재 {{ currentEvent.count }}장
-    </p>
   </div>
 
   <div v-if="restoredCount > 0" class="restored-banner">
@@ -43,30 +39,6 @@
   </div>
 
   <div class="consent-controls">
-    <!-- 대회 dropdown -->
-    <div class="event-select" :class="{ open: dropOpen }">
-      <button class="event-select-btn" type="button" aria-haspopup="listbox" :aria-expanded="String(dropOpen)"
-        @click.stop="dropOpen = !dropOpen">
-        <span class="label">{{ currentEvent.displayLabel }}</span>
-        <svg class="caret" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
-          <polyline points="1 1.5, 5 5, 9 1.5"/>
-        </svg>
-      </button>
-      <div class="event-select-list" role="listbox" aria-label="대회 선택">
-        <button type="button" :class="{ active: eventId === 'all' }" @click.stop="selectEvent('all')">
-          전체 대회<span class="count">{{ allCount }}장</span>
-        </button>
-        <template v-for="g in meetsGrouped" :key="g.year">
-          <div class="group-label">{{ g.year }}</div>
-          <button v-for="ev in g.meets" :key="ev.id" type="button"
-            :class="{ active: eventId === ev.id }"
-            @click.stop="selectEvent(ev.id)">
-            {{ ev.short }} · {{ ev.label }}<span class="count">{{ ev.count }}장</span>
-          </button>
-        </template>
-      </div>
-    </div>
-
     <!-- 카테고리 dropdown -->
     <div v-if="categoriesSorted.length" class="event-select cat-select" :class="{ open: catDropOpen }">
       <button class="event-select-btn" type="button" :aria-expanded="String(catDropOpen)"
@@ -141,14 +113,10 @@ const PER_PAGE = 60
 const CART_KEY = 'medalbank_consent_cart'
 
 type GalleryImage = { image_id: number; urls: { thumb: string; preview?: string } }
-type EventItem    = { id: number | 'all'; label: string; short?: string; date?: string; count: number }
 
-const events         = ref<EventItem[]>([{ id: 'all', label: '전체 대회', count: 0 }])
 const galleryImages  = ref<GalleryImage[]>([])
-const eventId        = ref<number | 'all'>('all')
 const activeCategory = ref<string | null>(null)
 const activeTag      = ref<string | null>(null)
-const dropOpen       = ref(false)
 const catDropOpen    = ref(false)
 const cart           = ref(new Set<number>())
 const infoOpen       = ref(false)
@@ -174,14 +142,6 @@ function clearRestoredCart() {
   try { localStorage.removeItem(CART_KEY) } catch {}
 }
 
-const currentEvent = computed(() => {
-  const ev = events.value.find(e => e.id === eventId.value) ?? events.value[0]
-  const displayLabel = ev.id === 'all' || !ev.short ? ev.label : `${ev.short} · ${ev.label}`
-  return { ...ev, displayLabel }
-})
-
-const allCount = computed(() => events.value.find(e => e.id === 'all')?.count ?? 0)
-
 const categoriesSorted = computed(() =>
   [...(categoriesData.value ?? [])].sort().reverse()
 )
@@ -190,24 +150,10 @@ const activeCategoryLabel = computed(() =>
   activeCategory.value ?? '전체 카테고리'
 )
 
-const meetsGrouped = computed(() => {
-  const groups = new Map<string, EventItem[]>()
-  for (const ev of events.value) {
-    if (ev.id === 'all') continue
-    const year = ev.short?.slice(0, 4) ?? '기타'
-    if (!groups.has(year)) groups.set(year, [])
-    groups.get(year)!.push(ev)
-  }
-  return [...groups.entries()]
-    .map(([year, meets]) => ({ year, meets }))
-    .sort((a, b) => b.year.localeCompare(a.year))
-})
-
 async function loadMore() {
   if (!hasMore.value || loadingMore.value) return
   loadingMore.value = true
   const query: Record<string, number | string> = { page: apiPage.value, per_page: PER_PAGE }
-  if (eventId.value !== 'all') query.meet_id = eventId.value
   if (activeCategory.value) query.category = activeCategory.value
   if (activeTag.value)      query.tag      = activeTag.value
   try {
@@ -237,15 +183,8 @@ function toggleSelect(id: number) {
   try { localStorage.setItem(CART_KEY, JSON.stringify([...c])) } catch {}
 }
 
-function selectEvent(id: number | 'all') {
-  eventId.value = id
-  activeCategory.value = null
-  dropOpen.value = false
-}
-
 function selectCategory(cat: string | null) {
   activeCategory.value = cat
-  eventId.value = 'all'
   catDropOpen.value = false
 }
 
@@ -253,7 +192,7 @@ function selectTag(tag: string | null) {
   activeTag.value = tag
 }
 
-watch([eventId, activeCategory, activeTag], resetAndLoad)
+watch([activeCategory, activeTag], resetAndLoad)
 
 onMounted(async () => {
   try {
@@ -267,14 +206,6 @@ onMounted(async () => {
     }
   } catch {}
 
-  try {
-    const data = await $fetch<{ total: number; meets: { meet_id: number; label: string; short: string; date: string; photo_count: number }[] }>('/api/meets')
-    events.value = [
-      { id: 'all', label: '전체 대회', count: data.total },
-      ...data.meets.map(m => ({ id: m.meet_id as number | 'all', label: m.label, short: m.short, date: m.date, count: m.photo_count })),
-    ]
-  } catch {}
-
   await loadMore()
 
   observer = new IntersectionObserver((entries) => {
@@ -285,8 +216,6 @@ onMounted(async () => {
 
   document.addEventListener('click', (e) => {
     const t = e.target as Node
-    const sel = document.querySelector('.consent-controls .event-select:not(.cat-select)')
-    if (sel && !sel.contains(t)) dropOpen.value = false
     const cat = document.querySelector('.consent-controls .cat-select')
     if (cat && !cat.contains(t)) catDropOpen.value = false
   })
