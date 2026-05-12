@@ -24,7 +24,7 @@
         <NuxtLink to="/consent">사진을 선택하러 가기 →</NuxtLink>
       </div>
       <div v-for="img in cartImages" :key="img.image_id" class="sel-tile">
-        <img :src="img.urls.preview" :alt="`사진 ${img.image_id}`" class="sel-img" />
+        <img :src="img.urls.thumb" :alt="`사진 ${img.image_id}`" class="sel-img" />
         <button class="remove-btn" type="button" :aria-label="`사진 ${img.image_id} 제거`"
           @click="removeFromCart(img.image_id)">
           <svg viewBox="0 0 10 10" aria-hidden="true">
@@ -170,7 +170,7 @@ useHead({ title: "메달뱅크 아쿠아틱스 — 동의 신청" })
 
 const CART_KEY = 'medalbank_consent_cart'
 
-type CartImage = { image_id: number; urls: { preview: string } }
+type CartImage = { image_id: number; urls: { thumb: string } }
 
 const cartImages = ref<CartImage[]>([])
 const submitted  = ref(false)
