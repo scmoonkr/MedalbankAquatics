@@ -186,8 +186,9 @@ export default function (app) {
 
   app.get('/api/gallery', async (req, res) => {
     try {
+      const tag = req.query.tag ? String(req.query.tag) : '대표사진'
       const docs = await images()
-        .find({ tags: '대표사진' }, { projection: { _id: 0, image_id: 1, 'urls.thumb': 1, 'urls.preview': 1, 'urls.large': 1, 'urls.original': 1 } })
+        .find({ tags: tag }, { projection: { _id: 0, image_id: 1, 'urls.thumb': 1, 'urls.preview': 1, 'urls.large': 1, 'urls.original': 1 } })
         .sort({ date: -1 })
         .toArray()
       res.json(docs.map(d => ({ ...d, urls: resolveUrls(d.urls) })))

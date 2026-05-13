@@ -78,7 +78,7 @@ useHead({
 type GalleryImage = { image_id: number; urls: { thumb: string; original: string } }
 
 onMounted(async () => {
-  const galleryImages = await $fetch<GalleryImage[]>('/api/gallery').catch(() => [] as GalleryImage[])
+  const galleryImages = await $fetch<GalleryImage[]>('/api/gallery', { query: { tag: '명예의전당' } }).catch(() => [] as GalleryImage[])
 
   ;(() => {
     'use strict'
