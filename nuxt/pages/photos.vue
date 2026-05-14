@@ -11,7 +11,7 @@
         </span>
       </div>
     </div>
-    <p class="photos-sub">아래 드롭다운 메뉴 또는 태그 버튼을 통해 각 태그를 선택하여 사진을 열람할 수 있습니다.</p>
+    <p class="photos-sub">아래 드롭다운 메뉴에서 대회를 선택하여 사진을 열람할 수 있습니다.</p>
 
     <div class="photos-controls">
       <!-- 대회 dropdown -->
@@ -45,13 +45,6 @@
         </svg>
       </NuxtLink>
 
-      <!-- 태그 버튼들 -->
-      <div v-if="tagsData?.length" class="tag-filter">
-        <button type="button" class="tag-btn" :class="{ active: activeTag === null }" @click="selectTag(null)">전체</button>
-        <button v-for="tag in tagsData" :key="tag" type="button"
-          class="tag-btn" :class="{ active: activeTag === tag }"
-          @click="selectTag(tag)">{{ tag }}</button>
-      </div>
     </div>
 
     <!-- 로딩 -->
@@ -96,12 +89,9 @@ const { data: meetsData } = useFetch<{
 
 // ── State ────────────────────────────────────────────────────────────────────
 const activeMeetId    = ref<number | null>(null)
-const activeTag       = ref<string | null>(null)
 const currentPage     = ref(1)
 const dropOpen        = ref(false)
 const clickedId       = ref<number | null>(null)
-
-const { data: tagsData } = useFetch<string[]>('/api/tags')
 
 // ── Images (reactive query → auto-refetch) ────────────────────────────────────
 const { data: imagesData, status: imagesStatus } = useFetch<{
@@ -113,11 +103,10 @@ const { data: imagesData, status: imagesStatus } = useFetch<{
 }>('/api/images', {
   query: {
     meet_id:  activeMeetId,
-    tag:      activeTag,
     page:     currentPage,
     per_page: PER_PAGE,
   },
-  watch: [activeMeetId, activeTag, currentPage],
+  watch: [activeMeetId, currentPage],
 })
 
 // ── Computed ─────────────────────────────────────────────────────────────────
@@ -163,11 +152,6 @@ function selectMeet(meetId: number | null) {
   activeMeetId.value = meetId
   currentPage.value  = 1
   dropOpen.value     = false
-}
-
-function selectTag(tag: string | null) {
-  activeTag.value   = tag
-  currentPage.value = 1
 }
 
 function goToPage(n: number) {
@@ -232,10 +216,6 @@ onMounted(() => {
 }
 .athlete-browse-btn:hover { color: var(--fg); border-color: var(--fg-dim); background: rgba(255,255,255,0.03); }
 .athlete-browse-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
-.tag-filter { display: flex; align-items: stretch; gap: 6px; flex-wrap: wrap; }
-.tag-btn { padding: 10px 12px; background: none; border: 1px solid var(--line); color: var(--fg-faint); font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.07em; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; white-space: nowrap; }
-.tag-btn:hover { color: var(--fg); border-color: var(--fg-dim); }
-.tag-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(56,182,255,0.06); }
 .photos-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; padding: 0 14px; }
 @media (max-width: 1199px) { .photos-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 10px; } }
 @media (max-width: 768px) { .photos-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 8px; } }
