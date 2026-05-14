@@ -835,10 +835,10 @@ onMounted(() => {
   }
   .disc-block {
     color: var(--fg-faint);
-    font-family: var(--font-sans);
-    font-size: 12px;
+    font-family: var(--font-myungjo);
+    font-size: 13px;
     line-height: 1.85;
-    letter-spacing: -0.002em;
+    letter-spacing: -0.005em;
   }
   .disc-block h4 {
     font-size: 11px;
@@ -864,7 +864,7 @@ onMounted(() => {
   }
   @media (max-width: 768px) {
     .sec.disclaimer { padding-top: 60px; }
-    .disc-block { font-size: 11px; line-height: 1.78; }
+    .disc-block { font-size: 12px; line-height: 1.78; }
   }
 
   /* ── 섹션 fade-in ────────────────────────── */
