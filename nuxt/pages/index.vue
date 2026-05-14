@@ -512,10 +512,6 @@ body.is-home footer.ui {
   .meta-right { display: none; }
   .insta-mobile { display: block; }
   .meta-left { color: var(--fg); display: flex; flex-direction: column; }
-  .meta-left .insta-mobile { order: 1; }
-  .meta-left .row-strong { order: 2; }
-  .meta-left > div:nth-child(1) { order: 3; }
-  .meta-left > div:nth-child(2) { order: 4; }
 }
 .grain {
   position: fixed; inset: -10%; pointer-events: none; z-index: 999;
