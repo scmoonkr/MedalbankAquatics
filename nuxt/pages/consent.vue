@@ -5,7 +5,7 @@
     <div class="eyebrow"><span class="num">00</span>My Photos · 내 사진 찾기</div>
     <h1>출판 대기중인 사진, <br /><span class="em">본인확인이 필요합니다.</span></h1>
     <p class="lead">
-      현재 보고계신 사진들은 다음 호에 인쇄 대기중인 후보사진 목록입니다. 초상권자의 동의가 없는 사진은 고화소로 열람하실 수 없습니다. 본인의 사진을 선택하여 한 번에 사진집으로 이동시킬 수 있습니다. 일정 기간 동안 동의가 완료되지 않은 사진은 영구적으로 삭제될 수 있습니다.
+      현재 보고계신 사진들은 다음 호에 인쇄 대기중인 후보사진 및 최근 대회 사진 목록입니다. 초상권자의 동의가 없는 사진은 고화소로 열람하실 수 없습니다. 본인의 사진을 선택하여 한 번에 사진집으로 이동시킬 수 있습니다. 일정 기간 동안 동의가 완료되지 않은 사진은 영구적으로 삭제될 수 있습니다.
       <button class="info-btn" type="button" @click.stop="infoOpen = true" aria-label="동의 철회 안내">
         <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="9" cy="9" r="7.5"/>
@@ -60,13 +60,6 @@
       </div>
     </div>
 
-    <!-- 태그 버튼 -->
-    <div v-if="tagsData?.length" class="category-filter">
-      <button type="button" class="cat-btn tag-btn-accent" :class="{ active: activeTag === null }" @click="selectTag(null)">전체 카테고리</button>
-      <button v-for="tag in tagsData" :key="tag" type="button"
-        class="cat-btn tag-btn-accent" :class="{ active: activeTag === tag }"
-        @click="selectTag(tag)">{{ tag }}</button>
-    </div>
   </div>
   <p class="consent-help">사진을 클릭하면 선택됩니다 · 다시 클릭하면 해제</p>
 
@@ -116,7 +109,6 @@ type GalleryImage = { image_id: number; urls: { thumb: string; preview?: string 
 
 const galleryImages  = ref<GalleryImage[]>([])
 const activeCategory = ref<string | null>(null)
-const activeTag      = ref<string | null>(null)
 const catDropOpen    = ref(false)
 const cart           = ref(new Set<number>())
 const infoOpen       = ref(false)
@@ -128,7 +120,6 @@ const sentinelEl     = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 
 const { data: categoriesData } = useFetch<string[]>('/api/categories')
-const { data: tagsData }       = useFetch<string[]>('/api/tags')
 
 watch(categoriesData, (val) => {
   if (val?.length && activeCategory.value === null) {
@@ -155,7 +146,6 @@ async function loadMore() {
   loadingMore.value = true
   const query: Record<string, number | string> = { page: apiPage.value, per_page: PER_PAGE }
   if (activeCategory.value) query.category = activeCategory.value
-  if (activeTag.value)      query.tag      = activeTag.value
   try {
     const data = await $fetch<{ images: GalleryImage[]; pages: number }>('/api/images', { query: { ...query, consented: 'false', exclude_tag: '대표사진' } })
     galleryImages.value = [...galleryImages.value, ...data.images]
@@ -188,11 +178,7 @@ function selectCategory(cat: string | null) {
   catDropOpen.value = false
 }
 
-function selectTag(tag: string | null) {
-  activeTag.value = tag
-}
-
-watch([activeCategory, activeTag], resetAndLoad)
+watch([activeCategory], resetAndLoad)
 
 onMounted(async () => {
   try {
@@ -376,11 +362,6 @@ onUnmounted(() => {
   gap: 8px;
   flex-wrap: wrap;
 }
-.category-filter { display: flex; align-items: stretch; gap: 6px; flex-wrap: wrap; }
-.cat-btn { padding: 10px 12px; background: none; border: 1px solid var(--line); color: var(--fg-faint); font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.07em; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; white-space: nowrap; }
-.cat-btn:hover { color: var(--fg); border-color: var(--fg-dim); }
-.cat-btn.active { color: #a371f7; border-color: #a371f7; background: rgba(163,113,247,0.06); }
-.tag-btn-accent.active { color: var(--accent, #38b6ff); border-color: var(--accent, #38b6ff); background: rgba(56,182,255,0.06); }
 .event-select { position: relative; }
 .event-select-btn {
   display: inline-flex;
