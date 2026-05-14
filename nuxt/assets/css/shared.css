@@ -111,14 +111,23 @@ nav.menu-inline a.active::after {
   width: 26px; height: 22px;
   display: none;
   flex-direction: column; justify-content: space-between; align-items: stretch;
-  background: none; border: 0; padding: 0; mix-blend-mode: difference;
+  background: none; border: 0; padding: 0;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+/* 터치 타겟 확장 (시각적 크기는 그대로) */
+.menu-toggle::after {
+  content: '';
+  position: absolute;
+  inset: -14px -14px;
 }
 .menu-toggle span {
   display: block; width: 100%; height: 1.5px;
   background: var(--fg); border-radius: 1px;
   transform-origin: center;
   transition: transform 0.45s var(--ease-soft), opacity 0.3s ease;
+  pointer-events: none;
 }
 body.menu-open .menu-toggle span:nth-child(1) { transform: translateY(10px) rotate(45deg); }
 body.menu-open .menu-toggle span:nth-child(2) { opacity: 0; transform: scaleX(0); }
