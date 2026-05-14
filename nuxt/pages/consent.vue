@@ -119,11 +119,13 @@ const apiPage        = ref(1)
 const sentinelEl     = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 
+const route = useRoute()
 const { data: categoriesData } = useFetch<string[]>('/api/categories')
 
 watch(categoriesData, (val) => {
   if (val?.length && activeCategory.value === null) {
-    activeCategory.value = [...val].sort().reverse()[0]
+    const qCat = route.query.category ? String(route.query.category) : null
+    if (qCat && val.includes(qCat)) activeCategory.value = qCat
   }
 }, { immediate: true })
 
