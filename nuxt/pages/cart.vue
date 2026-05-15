@@ -7,7 +7,7 @@
 
     <div class="cart-head">
       <div class="eyebrow"><span class="num">00</span>Consent · 동의 신청</div>
-      <h1>선택한 사진이 본인 사진이 맞는지<br /><span class="em">다시 한번 확인해주세요.</span></h1>
+      <h1>선택한 사진이 본인 사진이 맞는지<br /><span class="em">꼭 다시 한번 확인해주세요.</span></h1>
       <p class="lead">
         선택하신 사진들의 공개를 위해, 본인 또는 보호자의 동의 절차를 진행합니다.
         입력하신 이메일로 전송된 <strong>인증 링크를 누르시면 바로 사진을 다운로드</strong>하실 수 있습니다.
@@ -19,8 +19,8 @@
 
     <div class="selected-grid">
       <div v-if="cartImages.length === 0" class="sel-empty">
-        선택한 사진이 없습니다.<br />
-        <NuxtLink to="/consent">사진을 선택하러 가기 →</NuxtLink>
+        선택된 사진이 없습니다.<br />
+        <NuxtLink to="/consent">사진 선택하러 가기 →</NuxtLink>
       </div>
       <div v-for="img in cartImages" :key="img.image_id" class="sel-tile">
         <img :src="img.urls.thumb" :alt="`사진 ${img.image_id}`" class="sel-img" />
@@ -55,7 +55,7 @@
             </span>
           </label>
 
-          <label class="check-item required locked" for="c-insta">
+          <!-- <label class="check-item required locked" for="c-insta">
             <input id="c-insta" v-model="form.consent_insta" name="consent_insta" type="checkbox" />
             <span class="box">
               <svg viewBox="0 0 14 14" aria-hidden="true"><polyline points="2.5 7.5, 6 11, 11.5 3.5"/></svg>
@@ -64,7 +64,7 @@
               <span class="title">SNS 게재 (인스타그램 등) <span class="lock-tag">필수</span></span>
               <span class="desc">하이라이트 사진으로 선정되는 경우, @medalbankaquatics 계정에 게재될 수 있습니다.</span>
             </span>
-          </label>
+          </label> -->
 
           <label class="check-item required locked" for="c-mag">
             <input id="c-mag" v-model="form.consent_mag" name="consent_mag" type="checkbox" />
@@ -73,7 +73,7 @@
             </span>
             <span class="text">
               <span class="title">매거진 인쇄 게재 <span class="lock-tag">필수</span></span>
-              <span class="desc">하이라이트 사진으로 선정되는 경우, 메달뱅크 아쿠아틱스 실물 매거진에 사진이 게재될 수 있습니다.</span>
+              <span class="desc">하이라이트 사진으로 <u>선정되는 경우</u>, 메달뱅크 아쿠아틱스 실물 매거진에 사진이 게재될 수 있습니다.</span>
             </span>
           </label>
         </div>
@@ -82,7 +82,7 @@
       <!-- 본인 정보 -->
       <section class="form-section">
         <div class="sec-label">02 · 본인 정보</div>
-        <h2>누구의 사진인가요?</h2>
+        <h2>선수 본인의 동의가 필요합니다.</h2>
         <p class="help">동의 인증 메일이 발송될 이메일 주소를 정확히 입력해주세요.</p>
 
         <div class="field-row">
