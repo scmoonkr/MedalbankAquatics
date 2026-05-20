@@ -28,14 +28,14 @@
       </select>
       <select v-model="f.group">
         <option value="">All Groups</option>
+        <option value="초등부">초등부</option>
         <option v-for="v in opts.groups" :key="v" :value="v">{{ v }}</option>
       </select>
-      <select v-model="f.round">
-        <option value="">All Rounds</option>
-        <option v-for="v in opts.rounds" :key="v" :value="v">{{ v }}</option>
-      </select>
       <input v-model="f.q" placeholder="Search name / meet…" class="be-search" />
-      <button class="be-reset" @click="resetFilters">Reset</button>
+      <div class="be-filter-actions">
+        <button class="be-reset" @click="resetFilters">Reset</button>
+        <button class="be-save" @click="saveCSV">Save CSV</button>
+      </div>
     </div>
 
     <div v-if="pending" class="be-empty">Loading…</div>
@@ -94,7 +94,7 @@ useHead({ title: 'Times — KSR Backend' })
 
 const PER = 100
 const page = ref(1)
-const f = reactive({ gender: '', discipline: '', distance: '', course: '', group: '', round: '', q: '' })
+const f = reactive({ gender: '', discipline: '', distance: '', course: '', group: '', q: '' })
 
 interface TimeDoc {
   id: string; gender: string; discipline: string; distance: string; course: string
@@ -110,7 +110,6 @@ const opts = computed(() => ({
   distances:   [...new Set(rows.value.map(r => r.distance))].filter(Boolean).sort(),
   courses:     [...new Set(rows.value.map(r => r.course))].filter(Boolean).sort(),
   groups:      [...new Set(rows.value.map(r => r.group))].filter(Boolean).sort(),
-  rounds:      [...new Set(rows.value.map(r => r.round))].filter(Boolean).sort(),
 }))
 
 const filtered = computed(() => {
@@ -120,7 +119,6 @@ const filtered = computed(() => {
   if (f.distance)   list = list.filter(r => r.distance === f.distance)
   if (f.course)     list = list.filter(r => r.course === f.course)
   if (f.group)      list = list.filter(r => r.group === f.group)
-  if (f.round)      list = list.filter(r => r.round === f.round)
   if (f.q) {
     const q = f.q.toLowerCase()
     list = list.filter(r => r.name.toLowerCase().includes(q) || r.competitionName.toLowerCase().includes(q))
@@ -134,7 +132,64 @@ watch(filtered, () => { page.value = 1 })
 
 function resetFilters() {
   f.gender = ''; f.discipline = ''; f.distance = ''; f.course = ''
-  f.group = ''; f.round = ''; f.q = ''
+  f.group = ''; f.q = ''
+}
+
+function parseTime(t: string): number {
+  if (!t || t === '—') return Infinity
+  const parts = t.split(':')
+  if (parts.length === 2) return parseFloat(parts[0]) * 60 + parseFloat(parts[1])
+  return parseFloat(t)
+}
+
+function csvCell(v: string) {
+  return /[,"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v
+}
+
+const VALID_GROUPS = new Set(['초등부', '중등부', '고등부', '일반부'])
+
+async function saveCSV() {
+  const allData = await $fetch<TimeDoc[]>('/api/backend/times-all')
+
+  const groups = new Map<string, TimeDoc[]>()
+  for (const r of allData) {
+    if (!VALID_GROUPS.has(r.group)) continue
+    if (r.gender !== 'men' && r.gender !== 'women') continue
+    const tier = r.isMasters ? 'masters' : 'elite'
+    const key = `${tier}|||${r.discipline}|||${r.gender}|||${r.group}|||${r.distance}`
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(r)
+  }
+
+  const lines: string[] = ['Tier,Discipline,Gender,Group,Distance,Rank,Name,Sido,Team,Time,Date,Competition']
+
+  for (const [key, list] of [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const [tier, discipline, gender, group, distance] = key.split('|||')
+    const bestByName = new Map<string, TimeDoc>()
+    const compsByName = new Map<string, Set<string>>()
+    for (const r of list) {
+      if (!r.time || r.time === '—' || parseTime(r.time) === Infinity) continue
+      const ex = bestByName.get(r.name)
+      if (!ex || parseTime(r.time) < parseTime(ex.time)) bestByName.set(r.name, r)
+      if (!compsByName.has(r.name)) compsByName.set(r.name, new Set())
+      if (r.competitionName && r.competitionName !== '—') compsByName.get(r.name)!.add(r.competitionName)
+    }
+    const top100 = [...bestByName.values()]
+      .sort((a, b) => parseTime(a.time) - parseTime(b.time))
+      .slice(0, 100)
+    top100.forEach((r, i) => {
+      const comps = [...(compsByName.get(r.name) ?? [])].join(' / ')
+      lines.push([tier, discipline, gender, group, distance, i + 1, r.name, r.sido, r.team, r.time, r.datetime, comps].map(String).map(csvCell).join(','))
+    })
+  }
+
+  const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `times_top100_${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 </script>
 
@@ -156,12 +211,19 @@ function resetFilters() {
 }
 .be-filters select:focus, .be-search:focus { border-color: #0a1d3a; }
 .be-search { width: 220px; }
+.be-filter-actions { margin-left: auto; display: flex; gap: 8px; }
 .be-reset {
   height: 34px; padding: 0 14px; border: 1px solid #ddd; background: #fff;
   font-size: 12px; color: #666; cursor: pointer; border-radius: 3px;
   transition: background 0.15s;
 }
 .be-reset:hover { background: #f0f0f0; }
+.be-save {
+  height: 34px; padding: 0 14px; border: 1px solid #0a1d3a; background: #0a1d3a;
+  font-size: 12px; color: #fff; cursor: pointer; border-radius: 3px;
+  transition: background 0.15s;
+}
+.be-save:hover { background: #1a3560; }
 
 .be-empty { padding: 60px; text-align: center; color: #aaa; font-size: 14px; }
 
