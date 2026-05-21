@@ -3,7 +3,7 @@ import { resolve, dirname } from 'path'
 import dotenv from 'dotenv'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-dotenv.config({ path: resolve(__dirname, '../../.env') })
+dotenv.config({ path: resolve(__dirname, '../.env') })
 
 export default defineNuxtConfig({
   devtools: { enabled: false },
