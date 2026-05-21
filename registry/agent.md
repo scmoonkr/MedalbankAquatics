@@ -10,19 +10,32 @@
 ## 디렉토리 구조
 
 ```
-registry/
-  agent.md          ← 이 파일 (작업 지침)
-  MVP/
-    index.html      ← The Index (등재부 메인, 순위표)
-    ledger.html     ← The Ledger (기록대장, 신규 등재 피드)
-    errata.html     ← The Errata (정오표)
-    charter.html    ← The Charter (헌장, 정적)
+registry/                ← Nuxt 앱 루트 (포트 6632)
+  agent.md               ← 이 파일 (작업 지침)
+  nuxt.config.ts
+  package.json
+  pages/                 ← 공개 사이트 + /backend 어드민
+  layouts/
+  server/                ← Nuxt SSR API (Mongo 직접 쿼리)
+    api/
+      sheet.get.ts       ← GET /api/sheet (단일 이벤트 페이지네이션)
+    utils/
+      mongo.ts
+    plugins/
+      ensure-indexes.ts  ← 기동 시 mergedTimes 인덱스 보장
+  assets/
+  public/
+  MVP/                   ← 폐기 예정 정적 프로토타입 (화면 정리 후 삭제)
+    index.html           ← The Index (등재부 메인, 순위표)
+    ledger.html          ← The Ledger (기록대장, 신규 등재 피드)
+    errata.html          ← The Errata (정오표)
+    charter.html         ← The Charter (헌장, 정적)
     css/styles.css
     js/
-      data.js       ← window.KSR_DATA 전체 데이터 (빌드 결과물)
-      index.js      ← The Index 렌더링 로직
+      data.js            ← window.KSR_DATA 전체 데이터 (빌드 결과물)
+      index.js           ← The Index 렌더링 로직
     images/logo.png
-    AUTOMATION.md   ← 데이터 스키마 및 자동화 규칙 상세 문서
+    AUTOMATION.md        ← 데이터 스키마 및 자동화 규칙 상세 문서
 ```
 
 ---
@@ -35,7 +48,7 @@ registry/
 
 ```js
 {
-  round:           "finals",           // "finals"만 랭킹에 사용
+  round:           "finals",           // "finals"|"prelim" 등 (랭킹 산정시 미사용)
   isMasters:       false,              // false=전문체육(elite), true=마스터즈(masters)
   group:           "고등부",           // 유년부|초등부|중등부|고등부|일반부
   gender:          "men",              // "men" | "women"
@@ -56,7 +69,7 @@ registry/
 
 - `rank` 필드는 **대회 내 순위**이지 KSR 전체순위가 아니다. KSR 순위는 ETL에서 별도 계산.
 - KSR 순위 = 선수별 best time 기준 전체 정렬 후 1~100위 부여.
-- `round === "finals"`인 레코드만 랭킹에 포함.
+- `round` 값은 랭킹 산정에서 **필터하지 않는다.** prelim/heats/finals 어디서든 best time이 곧 해당 선수의 KSR 기록 (dedupe가 자동으로 최고기록 한 줄만 남김).
 
 ---
 
@@ -161,16 +174,21 @@ function sheetKey(division, group) {
 
 ## 작업 목록
 
-### 1. ETL 스크립트 — `registry/scripts/build-data.js`
+### 1. /api/sheet — 단일 이벤트 페이지네이션 (`registry/server/api/sheet.get.ts`)
 
-MongoDB → data.js 변환 파이프라인.
+쿼리: `division, group, gender, stroke, distance, course, page` (page=1당 100명)
+
+MongoDB aggregation 한 번에 처리, 5분 캐시. 과거 `/api/sheets`(복수, 전체 빌드)와 `registry/server/utils/etl.ts`(인프로세스 변환)는 폐기.
 
 ```
-쿼리: { round: "finals" }
-→ 선수별 최고기록 선별 (name + gender + group 기준 — 같은 선수의 소속 변경 무시)
-→ 이벤트별 그룹핑
-→ 시간 오름차순 정렬 → KSR 순위 1~100 부여
-→ window.KSR_DATA 형식으로 data.js 출력
+$match: gender + discipline + distance + course + (isMasters) + (group)
+       + time 포맷 검증 (DNS/DQ 등 status 있는 행 제외)
+$sort:  { time: 1 }                       ← athlete의 best가 맨 앞
+$group: { _id: { name, gender, group }, best: $first }   ← 동명이인 dedupe
+                                                          (division 키 미포함)
+$replaceRoot, $sort by time
+$facet: page 슬라이스 + total 카운트 동시
+→ shapeRanks: 동률 처리 후 응답 (rank 12×2 → 다음 rank 14)
 ```
 
 ### 2. index.js 업데이트
@@ -193,7 +211,7 @@ MongoDB → data.js 변환 파이프라인.
 
 ---
 
-## Nuxt 앱 — `registry/app/`
+## Nuxt 앱 — `registry/`
 
 Nuxt 3 (SSR + SPA 혼합) 기반 공개 사이트 + 백엔드 어드민.  
 포트: **6632** (`nuxt.config.ts` → `devServer.port` + `package.json` dev script `--port 6632`)
@@ -201,7 +219,7 @@ Nuxt 3 (SSR + SPA 혼합) 기반 공개 사이트 + 백엔드 어드민.
 ### 디렉토리 구조
 
 ```
-registry/app/
+registry/
   pages/
     index.vue          ← 홈
     ledger.vue         ← The Ledger (ledger 컬렉션)
@@ -301,7 +319,7 @@ stroke 변환: `FR→free, BK→back, BR→breast, FL→fly, IM→im`
 
 ### 2026-05-20
 
-#### registry/app Nuxt 앱 신규 구축
+#### registry Nuxt 앱 신규 구축
 
 - `package.json` dev script에 `--port 6632` 추가
 - `nuxt.config.ts` `routeRules` 추가: `/backend/**` → `ssr: false`

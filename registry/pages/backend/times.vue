@@ -9,27 +9,31 @@
 
     <!-- Filters -->
     <div class="be-filters">
+      <select v-model="f.tier">
+        <option value="">All Tiers</option>
+        <option value="masters">masters</option>
+        <option value="elite">elite</option>
+      </select>
       <select v-model="f.gender">
         <option value="">All Genders</option>
         <option value="men">men</option>
         <option value="women">women</option>
       </select>
+      <select v-model="f.group">
+        <option value="">All Groups</option>
+        <option v-for="v in GROUP_ORDER" :key="v" :value="v">{{ v }}</option>
+      </select>
       <select v-model="f.discipline">
         <option value="">All Disciplines</option>
-        <option v-for="v in opts.disciplines" :key="v" :value="v">{{ v }}</option>
-      </select>
-      <select v-model="f.distance">
-        <option value="">All Distances</option>
-        <option v-for="v in opts.distances" :key="v" :value="v">{{ v }}</option>
+        <option v-for="v in DISCIPLINE_ORDER" :key="v" :value="v">{{ v }}</option>
       </select>
       <select v-model="f.course">
         <option value="">All Courses</option>
-        <option v-for="v in opts.courses" :key="v" :value="v">{{ v }}</option>
+        <option v-for="v in COURSE_ORDER" :key="v" :value="v">{{ v }}</option>
       </select>
-      <select v-model="f.group">
-        <option value="">All Groups</option>
-        <option value="초등부">초등부</option>
-        <option v-for="v in opts.groups" :key="v" :value="v">{{ v }}</option>
+      <select v-model="f.distance">
+        <option value="">All Distances</option>
+        <option v-for="v in DISTANCE_ORDER" :key="v" :value="v">{{ v }}</option>
       </select>
       <input v-model="f.q" placeholder="Search name / meet…" class="be-search" />
       <div class="be-filter-actions">
@@ -94,7 +98,13 @@ useHead({ title: 'Times — KSR Backend' })
 
 const PER = 100
 const page = ref(1)
-const f = reactive({ gender: '', discipline: '', distance: '', course: '', group: '', q: '' })
+const f = reactive({ tier: '', gender: '', group: '', discipline: '', course: '', distance: '', q: '' })
+
+// Domain-correct filter option orders (alphabetical sort would put 1500M before 200M).
+const COURSE_ORDER     = ['LCM', 'SCM']
+const DISTANCE_ORDER   = ['25M', '50M', '100M', '200M', '400M', '800M', '1500M']
+const GROUP_ORDER      = ['유년부', '초등부', '중등부', '고등부', '성인부']
+const DISCIPLINE_ORDER = ['FR', 'BK', 'BR', 'FL', 'IM']
 
 interface TimeDoc {
   id: string; gender: string; discipline: string; distance: string; course: string
@@ -102,28 +112,29 @@ interface TimeDoc {
   name: string; sido: string; team: string; time: string; datetime: string; competitionName: string
 }
 
-const { data, pending } = await useFetch<TimeDoc[]>('/api/backend/times')
+// All structural filters go to the server (limit 2000 reflects current slice).
+const serverQuery = computed(() => ({
+  tier:       f.tier,
+  gender:     f.gender,
+  group:      f.group,
+  discipline: f.discipline,
+  course:     f.course,
+  distance:   f.distance,
+}))
+const { data, pending } = useFetch<TimeDoc[]>('/api/backend/times', {
+  query: serverQuery,
+  key: () => `times:${Date.now()}:${Math.random()}`,
+})
 const rows = computed(() => data.value ?? [])
 
-const opts = computed(() => ({
-  disciplines: [...new Set(rows.value.map(r => r.discipline))].filter(Boolean).sort(),
-  distances:   [...new Set(rows.value.map(r => r.distance))].filter(Boolean).sort(),
-  courses:     [...new Set(rows.value.map(r => r.course))].filter(Boolean).sort(),
-  groups:      [...new Set(rows.value.map(r => r.group))].filter(Boolean).sort(),
-}))
-
+// Only the search box filters client-side (keystroke-sensitive, applied on the server-returned slice).
 const filtered = computed(() => {
-  let list = rows.value
-  if (f.gender)     list = list.filter(r => r.gender === f.gender)
-  if (f.discipline) list = list.filter(r => r.discipline === f.discipline)
-  if (f.distance)   list = list.filter(r => r.distance === f.distance)
-  if (f.course)     list = list.filter(r => r.course === f.course)
-  if (f.group)      list = list.filter(r => r.group === f.group)
-  if (f.q) {
-    const q = f.q.toLowerCase()
-    list = list.filter(r => r.name.toLowerCase().includes(q) || r.competitionName.toLowerCase().includes(q))
-  }
-  return list
+  if (!f.q) return rows.value
+  const q = f.q.toLowerCase()
+  return rows.value.filter(r =>
+    r.name.toLowerCase().includes(q) ||
+    r.competitionName.toLowerCase().includes(q)
+  )
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / PER)))
@@ -131,8 +142,9 @@ const paged = computed(() => filtered.value.slice((page.value - 1) * PER, page.v
 watch(filtered, () => { page.value = 1 })
 
 function resetFilters() {
-  f.gender = ''; f.discipline = ''; f.distance = ''; f.course = ''
-  f.group = ''; f.q = ''
+  f.tier = ''; f.gender = ''; f.group = ''
+  f.discipline = ''; f.course = ''; f.distance = ''
+  f.q = ''
 }
 
 function parseTime(t: string): number {

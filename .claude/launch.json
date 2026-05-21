@@ -7,6 +7,13 @@
       "runtimeArgs": ["run", "dev"],
       "port": 6631,
       "cwd": "C:/Develop/MedalbankAquatics/nuxt"
+    },
+    {
+      "name": "registry",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 6632,
+      "cwd": "C:/Develop/MedalbankAquatics/registry"
     }
   ]
 }

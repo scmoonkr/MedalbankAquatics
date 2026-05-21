@@ -112,7 +112,7 @@
         <div class="aside-stats">
           <div class="stat-row">
             <span class="label">Events</span>
-            <span class="value">{{ currentEvent ? 1 : 0 }}</span>
+            <span class="value">{{ (sheet && sheet.total > 0) ? 1 : 0 }}</span>
           </div>
           <div class="stat-row">
             <span class="label">Ranks</span>
@@ -141,7 +141,7 @@
             <span class="ctx-meta">{{ resultsMeta }}</span>
           </div>
         </div>
-        <div v-if="pending" class="empty-state">데이터를 불러오는 중입니다…</div>
+        <div v-if="pending && !sheet" class="empty-state">데이터를 불러오는 중입니다…</div>
         <div v-else v-html="tableHtml"></div>
       </main>
     </div>
@@ -159,7 +159,7 @@ const DIVISIONS = [
 ]
 const GROUPS = [
   { v: 'all',   labels: { all: '전체',   elite: '전체',   masters: '전체'   }, sub: 'ALL',   enabled: true },
-  { v: 'adult', labels: { all: '성인',   elite: '일반부', masters: '성인부' }, sub: 'ADULT', enabled: true },
+  { v: 'adult', labels: { all: '성인',   elite: '성인부', masters: '성인부' }, sub: 'ADULT', enabled: true },
   { v: 'high',  labels: { all: '고등부', elite: '고등부', masters: '고등부' }, sub: 'HIGH',  enabled: true },
   { v: 'mid',   labels: { all: '중등부', elite: '중등부', masters: '중등부' }, sub: 'MID',   enabled: true },
   { v: 'elem',  labels: { all: '초등부', elite: '초등부', masters: '초등부' }, sub: 'ELEM',  enabled: true },
@@ -196,11 +196,8 @@ const state = reactive({
 })
 
 // ── data ───────────────────────────────────────────────────────
-type EventRank = { rank: number; name: string; city: string; team: string; date: string; time: string; meet: string; meet_full: string }
-type KsrEvent  = { id: string; label: string; gender: string; stroke: string; distance: number; course: string; ranks: EventRank[] }
-type KsrData   = Record<string, KsrEvent[]>
-
-const { data: ksrData, pending } = await useFetch<KsrData>('/api/sheets')
+type EventRank     = { rank: number; name: string; city: string; team: string; date: string; time: string; meet: string; meet_full: string }
+type SheetResponse = { page: number; pageSize: number; total: number; ranks: EventRank[] }
 
 // ── helpers ────────────────────────────────────────────────────
 function esc(s: unknown): string {
@@ -211,11 +208,6 @@ function groupLabelFor(gv: string, dv: string): string {
   const g = GROUPS.find(x => x.v === gv)
   if (!g) return gv
   return (g.labels as Record<string, string>)[dv] ?? (g.labels as Record<string, string>).all ?? gv
-}
-function sheetKey(division: string, group: string): string {
-  if (group === 'all') return division
-  if (division === 'all') return group
-  return `${division}-${group}`
 }
 
 // ── available distances ────────────────────────────────────────
@@ -231,26 +223,27 @@ watch(availableDistances, (dists) => {
   if (!dists.includes(state.distance)) state.distance = dists.includes(100) ? 100 : dists[0]
 })
 
-// ── current event ──────────────────────────────────────────────
-const currentEvent = computed((): KsrEvent | null => {
-  if (!ksrData.value) return null
-  const sheet = ksrData.value[sheetKey(state.division, state.group)] ?? []
-  return sheet.find(e =>
-    e.gender === state.gender && e.stroke === state.stroke &&
-    e.distance === state.distance && e.course === state.course
-  ) ?? null
+// ── fetch single event page ────────────────────────────────────
+const fetchQuery = computed(() => ({
+  division: state.division,
+  group:    state.group,
+  gender:   state.gender,
+  stroke:   state.stroke,
+  distance: state.distance,
+  course:   state.course,
+  page:     1,
+}))
+const { data: sheet, pending } = useFetch<SheetResponse>('/api/sheet', {
+  query: fetchQuery,
+  // Bypass useFetch's payload cache so deleted/edited records reflect immediately.
+  key: () => `sheet:${Date.now()}:${Math.random()}`,
 })
 
 // ── stats ──────────────────────────────────────────────────────
-const rankCount    = computed(() => currentEvent.value?.ranks.filter(r => r.rank <= 100).length ?? 0)
-const athleteCount = computed(() => currentEvent.value ? new Set(currentEvent.value.ranks.map(r => r.name)).size : 0)
-const currentEntryCount = computed(() => currentEvent.value ? `${currentEvent.value.ranks.length} entries` : '—')
-const heroStat = computed(() => {
-  if (!ksrData.value?.all) return '…'
-  const events = ksrData.value.all.length
-  const ranks  = (ksrData.value.all as KsrEvent[]).reduce((s, e) => s + e.ranks.length, 0)
-  return `${events} EVENTS · ${ranks.toLocaleString()} RANKS LISTED`
-})
+const rankCount    = computed(() => Math.min(sheet.value?.total ?? 0, 100))
+const athleteCount = computed(() => sheet.value?.total ?? 0)
+const currentEntryCount = computed(() => sheet.value ? `${sheet.value.total} entries` : '—')
+const heroStat = computed(() => sheet.value ? `${sheet.value.total.toLocaleString()} ATHLETES LISTED` : '…')
 
 // ── title / meta ───────────────────────────────────────────────
 const titleHtml = computed(() => {
@@ -268,24 +261,38 @@ const resultsMeta = computed(() => {
 
 // ── table builder ──────────────────────────────────────────────
 const tableHtml = computed(() => {
-  const ev = currentEvent.value
-  if (!ev) return `<div class="empty-state">선택한 조합에 해당하는 종목 데이터가 아직 수집되지 않았습니다.<br/>제보를 통해 The Index에 처음으로 이름을 올려보세요.</div>`
-  return buildTable(ev)
+  if (!sheet.value || sheet.value.total === 0) {
+    return `<div class="empty-state">선택한 조합에 해당하는 종목 데이터가 아직 수집되지 않았습니다.<br/>제보를 통해 The Index에 처음으로 이름을 올려보세요.</div>`
+  }
+  return buildTable(sheet.value.ranks)
 })
 
-function buildTable(ev: KsrEvent): string {
-  const sorted = [...ev.ranks].sort((a, b) => a.rank !== b.rank ? a.rank - b.rank : (a.date ?? '').localeCompare(b.date ?? ''))
+function buildTable(ranks: EventRank[]): string {
+  const sorted = [...ranks].sort((a, b) => a.rank !== b.rank ? a.rank - b.rank : (a.date ?? '').localeCompare(b.date ?? ''))
   let body = ''
-  for (let i = 1; i <= 10; i++) {
+  // Top 10. Ties consume slots: rank 12 ×2 → next rank is 14, not 13.
+  let i = 1
+  while (i <= 10) {
     const m = sorted.filter(r => r.rank === i)
-    if (m.length) m.forEach(r => { body += rowHtml(r, i === 1) })
-    else body += emptyRowHtml(i, i === 1)
+    if (m.length) {
+      m.forEach(r => { body += rowHtml(r, i === 1) })
+      i += m.length
+    } else {
+      body += emptyRowHtml(i, i === 1)
+      i++
+    }
   }
   body += `<tr class="tier-divider"><td colspan="6">RANKS 11 – 100 · 등재 대기중</td></tr>`
-  for (let i = 11; i <= 100; i++) {
+  // Continue from wherever i landed (carries tie skips from the top block).
+  while (i <= 100) {
     const m = sorted.filter(r => r.rank === i)
-    if (m.length) m.forEach(r => { body += rowHtml(r, false) })
-    else body += emptyRowHtml(i, false)
+    if (m.length) {
+      m.forEach(r => { body += rowHtml(r, false) })
+      i += m.length
+    } else {
+      body += emptyRowHtml(i, false)
+      i++
+    }
   }
   return `<table class="index-table"><thead><tr>
     <th class="c-rank">Rank · 순위</th><th class="c-name">Name · 성명</th>
@@ -326,5 +333,29 @@ onMounted(() => {
   }, { threshold: 0 })
   io.observe(resultsTitleEl.value)
   onUnmounted(() => io.disconnect())
+})
+
+// ── auto-scroll past hero on first load (matches MVP behavior) ─
+onMounted(() => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  let cancelled = false
+  const cancel = () => { cancelled = true }
+  const opts = { once: true, passive: true } as const
+  ;(['wheel', 'touchstart', 'keydown', 'mousedown'] as const).forEach(e =>
+    window.addEventListener(e, cancel, opts)
+  )
+  setTimeout(() => {
+    if (cancelled || window.scrollY > 5) return
+    const isMobile = window.innerWidth <= 1024
+    const target = isMobile
+      ? document.querySelector('main.results')
+      : document.querySelector('.shell')
+    if (!target) return
+    const topbarH = parseInt(
+      getComputedStyle(document.documentElement).getPropertyValue('--topbar-h')
+    ) || 68
+    const y = (target as HTMLElement).getBoundingClientRect().top + window.scrollY - topbarH
+    window.scrollTo({ top: y, behavior: 'smooth' })
+  }, 350)
 })
 </script>

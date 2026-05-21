@@ -39,11 +39,4 @@ export default defineNuxtConfig({
   routeRules: {
     '/backend/**': { ssr: false },
   },
-
-  nitro: {
-    publicAssets: [
-      // serve registry/MVP/images at /images (logo etc.)
-      { dir: fileURLToPath(new URL('../MVP/images', import.meta.url)), baseURL: '/images', maxAge: 0 },
-    ],
-  },
 })

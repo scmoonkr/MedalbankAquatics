@@ -8,8 +8,9 @@
           <span class="be-title">Backend</span>
         </div>
         <nav class="be-nav">
-          <NuxtLink to="/backend/records" :class="{ active: route.path === '/backend/records' }">Records</NuxtLink>
-          <NuxtLink to="/backend/times"   :class="{ active: route.path === '/backend/times'   }">Times</NuxtLink>
+          <NuxtLink to="/backend/records"     :class="{ active: route.path === '/backend/records'     }">Records</NuxtLink>
+          <NuxtLink to="/backend/times"       :class="{ active: route.path === '/backend/times'       }">Times</NuxtLink>
+          <NuxtLink to="/backend/leaderboard" :class="{ active: route.path === '/backend/leaderboard' }">Leaderboard</NuxtLink>
           <a href="/" class="be-home">← Site</a>
         </nav>
       </div>

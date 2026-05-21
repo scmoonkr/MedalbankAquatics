@@ -1,12 +1,26 @@
-// GET /api/backend/times — mergedTimes collection, newest first, limit 2000
-export default defineEventHandler(async () => {
-  const db   = await getDb()
+// GET /api/backend/times — mergedTimes collection, newest first, limit 2000.
+// Accepts filter query params (tier/gender/group/discipline/course/distance)
+// so the 2000-row window reflects the currently selected slice.
+export default defineEventHandler(async (event) => {
+  const q = getQuery(event)
+
+  const match: Record<string, unknown> = {}
+  if (q.tier === 'masters') match.isMasters = true
+  else if (q.tier === 'elite') match.isMasters = false
+  if (q.gender)     match.gender     = String(q.gender)
+  if (q.group)      match.group      = String(q.group)
+  if (q.discipline) match.discipline = String(q.discipline)
+  if (q.course)     match.course     = String(q.course)
+  if (q.distance)   match.distance   = String(q.distance)
+
+  const db = await getDb()
   const docs = await db
     .collection('mergedTimes')
-    .find({})
+    .find(match)
     .sort({ _id: -1 })
     .limit(2000)
     .toArray()
+
   return docs.map(d => ({
     id:              String(d._id),
     gender:          d.gender          || '—',
