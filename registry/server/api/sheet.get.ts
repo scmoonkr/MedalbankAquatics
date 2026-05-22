@@ -111,13 +111,13 @@ export default defineEventHandler(async (event) => {
     { $match: match },
     // Sort ASC by time so $first per athlete = best time
     { $sort: { time: 1 } },
-    // Dedupe by (name, gender, group). Division intentionally NOT in key — see agent.md.
+    // Dedupe by (name, gender). Group/division intentionally NOT in key — the same athlete
+    // across age groups (e.g., 고등부 → 일반부) collapses to their single best time.
     // Normalize null/missing/whitespace so docs with absent vs empty fields collapse together.
     { $group: {
         _id: {
           name:   { $trim: { input: { $ifNull: ['$name', ''] } } },
           gender: { $ifNull: ['$gender', ''] },
-          group:  { $ifNull: ['$group', ''] },
         },
         best: { $first: '$$ROOT' },
     }},

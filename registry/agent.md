@@ -184,8 +184,9 @@ MongoDB aggregation 한 번에 처리, 5분 캐시. 과거 `/api/sheets`(복수,
 $match: gender + discipline + distance + course + (isMasters) + (group)
        + time 포맷 검증 (DNS/DQ 등 status 있는 행 제외)
 $sort:  { time: 1 }                       ← athlete의 best가 맨 앞
-$group: { _id: { name, gender, group }, best: $first }   ← 동명이인 dedupe
-                                                          (division 키 미포함)
+$group: { _id: { name, gender }, best: $first }          ← 동명이인 dedupe
+                                                          (group/division 키 미포함:
+                                                          같은 선수의 연령군·소속 변경 무시)
 $replaceRoot, $sort by time
 $facet: page 슬라이스 + total 카운트 동시
 → shapeRanks: 동률 처리 후 응답 (rank 12×2 → 다음 rank 14)
