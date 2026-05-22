@@ -14,6 +14,9 @@ export default defineNuxtConfig({
     mongoUser: process.env.MONGO_USERNAME  || 'mscadmin',
     mongoPwd:  process.env.MONGO_PWD       || '~Mscadmin',
     mongoDb:   process.env.MONGO_DBNAME_BR || 'Breaststroke',
+    public: {
+      naverFormInsert: process.env.NAVER_FORM_INSERT || '',
+    },
   },
 
   css: ['~/assets/css/registry.css'],

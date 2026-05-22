@@ -127,7 +127,7 @@
         <!-- Submit CTA -->
         <div class="aside-submit">
           <div class="small">Contribute</div>
-          <a class="cta" href="https://naver.me/xeFYWn8m" target="_blank" rel="noopener">
+          <a class="cta" :href="naverFormInsert" target="_blank" rel="noopener">
             제보하기 <span class="arrow">→</span>
           </a>
           <div class="note">발굴 기록·정정 제보 시 실명 등재</div>
@@ -150,6 +150,8 @@
 
 <script setup lang="ts">
 useHead({ title: 'The Index — KSR · Korean Swimming Registry' })
+
+const naverFormInsert = useRuntimeConfig().public.naverFormInsert as string
 
 // ── taxonomies ─────────────────────────────────────────────────
 const DIVISIONS = [

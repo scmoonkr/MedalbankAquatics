@@ -28,7 +28,7 @@
           <NuxtLink to="/charter" :class="{ current: route.path === '/charter' }">
             <span class="nav-en">The Charter</span><span class="nav-ko">헌장</span>
           </NuxtLink>
-          <a class="nav-cta" href="https://naver.me/xeFYWn8m" target="_blank" rel="noopener">
+          <a class="nav-cta" :href="naverFormInsert" target="_blank" rel="noopener">
             <span>제보하기</span>
             <span class="arrow">→</span>
           </a>
@@ -43,7 +43,7 @@
         <div class="col">
           <h4>Contribute</h4>
           <p>흩어진 기록, 누락된 순위, 정정이 필요한 한 줄을 알고 계신다면 제보해 주세요. 모든 제보자는 실명으로 명예 등재됩니다. (익명 희망시 가능.)</p>
-          <a href="https://naver.me/xeFYWn8m" target="_blank" rel="noopener">제보하기 →</a>
+          <a :href="naverFormInsert" target="_blank" rel="noopener">제보하기 →</a>
         </div>
         <div class="col">
           <h4>In Print</h4>
@@ -68,6 +68,7 @@
 <script setup lang="ts">
 const route = useRoute()
 const menuOpen = ref(false)
+const naverFormInsert = useRuntimeConfig().public.naverFormInsert as string
 
 // Index page uses scroll snap; all other pages opt out
 useHead({

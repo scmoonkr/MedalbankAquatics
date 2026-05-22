@@ -11,6 +11,7 @@
           <NuxtLink to="/backend/records"     :class="{ active: route.path === '/backend/records'     }">Records</NuxtLink>
           <NuxtLink to="/backend/times"       :class="{ active: route.path === '/backend/times'       }">Times</NuxtLink>
           <NuxtLink to="/backend/leaderboard" :class="{ active: route.path === '/backend/leaderboard' }">Leaderboard</NuxtLink>
+          <NuxtLink to="/backend/errata"      :class="{ active: route.path === '/backend/errata'      }">Errata</NuxtLink>
           <a href="/" class="be-home">← Site</a>
         </nav>
       </div>
