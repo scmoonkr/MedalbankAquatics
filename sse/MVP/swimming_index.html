@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medalbank SSE — 수영 지수</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue:#0D4F8B; --blue-mid:#1A6BB5; --blue-light:#E8F2FC; --blue-pale:#F4F8FD;
+    --teal:#0A7A6A; --teal-light:#E4F5F2;
+    --red:#C0392B; --red-light:#FDF0EE;
+    --amber:#B06A00; --amber-light:#FDF4E3;
+    --purple:#5B21B6; --purple-light:#F0EEFF;
+    --pink:#9B2C6C; --pink-light:#FDE8F3;
+    --ink:#0F1923; --ink-soft:#5A6B7B; --ink-muted:#8A99A8;
+    --border:#D8E4EE; --border-light:#EAF1F8;
+    --surface:#FFFFFF; --surface-soft:#F7FAFD; --surface-alt:#EEF5FB;
+    --serif:'DM Serif Display',serif; --mono:'DM Mono',monospace; --sans:'Pretendard',-apple-system,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--surface-soft);color:var(--ink);display:flex;min-height:100vh;}
+
+  /* SIDEBAR */
+  .sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;}
+  .sb-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;}
+  .sb-logo-mark{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .sb-logo-mark svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;}
+  .sb-logo-title{font-size:12px;font-weight:600;color:var(--ink);line-height:1.2;}
+  .sb-logo-sub{font-size:10px;color:var(--ink-muted);}
+  .sb-profile{padding:14px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;}
+  .sb-avatar{width:36px;height:36px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0;}
+  .sb-user-name{font-size:13px;font-weight:500;color:var(--ink);}
+  .sb-user-grade{font-size:10px;color:var(--ink-muted);margin-top:1px;}
+  .sb-coin-val{font-size:12px;font-weight:500;color:var(--amber);font-family:var(--mono);}
+  .sb-coin-label{font-size:9px;color:var(--ink-muted);}
+  .sb-nav{flex:1;padding:12px 0;overflow-y:auto;}
+  .sb-section-label{font-size:9px;font-weight:600;color:var(--ink-muted);letter-spacing:0.08em;text-transform:uppercase;padding:8px 20px 4px;}
+  .sb-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13px;color:var(--ink-soft);cursor:pointer;border-left:2px solid transparent;transition:all 0.12s;text-decoration:none;}
+  .sb-item:hover{background:var(--surface-soft);color:var(--ink);}
+  .sb-item.active{background:var(--blue-pale);color:var(--blue);border-left-color:var(--blue);font-weight:500;}
+  .sb-badge{margin-left:auto;font-size:10px;background:var(--red-light);color:var(--red);border-radius:10px;padding:1px 7px;font-family:var(--mono);}
+  .sb-footer{padding:14px 16px;border-top:1px solid var(--border-light);}
+  .sb-logout{font-size:12px;color:var(--ink-muted);cursor:pointer;}
+
+  /* MAIN */
+  .main{margin-left:220px;flex:1;display:flex;flex-direction:column;}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;}
+  .topbar-title{font-size:15px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:8px;}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .topbar-notif{position:relative;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;}
+  .notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--surface);}
+  .topbar-avatar{width:30px;height:30px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;}
+  .content{padding:24px 28px;flex:1;}
+
+  /* TABS */
+  .tab-bar{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0;}
+  .tab-btn{font-size:13px;padding:8px 16px;color:var(--ink-muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:var(--sans);margin-bottom:-1px;transition:all 0.15s;}
+  .tab-btn:hover{color:var(--ink-soft);}
+  .tab-btn.act{color:var(--blue);border-bottom-color:var(--blue);font-weight:500;}
+
+  /* METRICS */
+  .metrics-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px;}
+  .metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+  .metric-label{font-size:11px;color:var(--ink-muted);margin-bottom:5px;}
+  .metric-val{font-size:22px;font-weight:500;color:var(--ink);font-family:var(--mono);margin-bottom:3px;}
+  .metric-sub{font-size:11px;}
+  .up{color:var(--teal);} .down{color:var(--red);} .blue{color:var(--blue);} .amber{color:var(--amber);} .purple{color:var(--purple);}
+
+  /* INDEX OVERVIEW CARD */
+  .index-overview{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px;}
+  .io-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+  .io-score-wrap{display:flex;align-items:baseline;gap:10px;}
+  .io-score{font-family:var(--mono);font-size:48px;font-weight:500;color:var(--blue);}
+  .io-score-max{font-size:16px;color:var(--ink-muted);}
+  .io-score-change{font-size:13px;color:var(--teal);background:var(--teal-light);border-radius:6px;padding:3px 10px;font-family:var(--mono);}
+  .io-rank-badges{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+  .io-badge{font-size:11px;padding:4px 12px;border-radius:6px;font-family:var(--mono);}
+  .io-badge-blue{background:var(--blue-light);color:var(--blue);}
+  .io-badge-amber{background:var(--amber-light);color:var(--amber);}
+
+  .io-bars{display:flex;flex-direction:column;gap:12px;}
+  .io-bar-row{display:grid;grid-template-columns:120px 1fr 48px 52px;gap:12px;align-items:center;}
+  .io-bar-label{font-size:12px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;}
+  .io-bar-weight{font-size:10px;color:var(--ink-muted);font-family:var(--mono);}
+  .io-track{background:var(--surface-alt);border-radius:6px;height:8px;overflow:hidden;}
+  .io-fill{height:100%;border-radius:6px;transition:width 0.8s ease;}
+  .io-score-val{font-size:13px;font-weight:500;font-family:var(--mono);text-align:right;}
+  .io-contrib{font-size:11px;color:var(--ink-muted);font-family:var(--mono);text-align:right;}
+
+  /* TWO COL */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+  .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;}
+
+  /* PANEL */
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .panel-head{padding:14px 18px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;}
+  .panel-title{font-size:13px;font-weight:500;color:var(--ink);}
+  .panel-sub{font-size:11px;color:var(--ink-muted);}
+  .panel-body{padding:14px 18px;}
+
+  /* CHART */
+  .chart-wrap{height:120px;position:relative;margin-bottom:12px;}
+  .chart-wrap svg{width:100%;height:100%;}
+  .chart-labels{display:flex;justify-content:space-between;}
+  .chart-label{font-size:10px;color:var(--ink-muted);font-family:var(--mono);}
+
+  /* RECORD TABLE */
+  .rec-table{width:100%;border-collapse:collapse;}
+  .rec-table th{font-size:10px;color:var(--ink-muted);font-weight:500;text-align:left;padding:5px 8px;border-bottom:1px solid var(--border-light);letter-spacing:0.04em;}
+  .rec-table td{font-size:12px;padding:8px 8px;border-bottom:1px solid var(--border-light);color:var(--ink);}
+  .rec-table tr:last-child td{border-bottom:none;}
+  .rec-table td.mono{font-family:var(--mono);}
+  .rec-table td.up{color:var(--teal);font-family:var(--mono);}
+  .rec-table td.down{color:var(--red);font-family:var(--mono);}
+
+  /* RADAR */
+  .radar-wrap{display:flex;align-items:center;justify-content:center;padding:8px 0;}
+
+  /* EVENT LIST */
+  .ev-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light);align-items:flex-start;}
+  .ev-item:last-child{border-bottom:none;}
+  .ev-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+  .ev-body{flex:1;}
+  .ev-title{font-size:12px;color:var(--ink);margin-bottom:2px;}
+  .ev-time{font-size:10px;color:var(--ink-muted);font-family:var(--mono);}
+  .ev-val{font-size:12px;font-family:var(--mono);font-weight:500;white-space:nowrap;}
+
+  /* DETAIL ROWS */
+  .detail-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);}
+  .detail-row:last-child{border-bottom:none;}
+  .dr-label{font-size:12px;color:var(--ink-soft);}
+  .dr-val{font-size:13px;font-weight:500;color:var(--ink);font-family:var(--mono);}
+  .dr-bar-wrap{display:flex;align-items:center;gap:8px;}
+  .dr-bar{width:80px;height:5px;background:var(--surface-alt);border-radius:3px;overflow:hidden;}
+  .dr-fill{height:100%;border-radius:3px;}
+
+  /* RISK TAG */
+  .risk-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:4px;}
+  .rt-ok{background:var(--teal-light);color:var(--teal);}
+  .rt-warn{background:var(--amber-light);color:var(--amber);}
+  .rt-danger{background:var(--red-light);color:var(--red);}
+
+  /* COMPARISON */
+  .compare-bar{display:flex;flex-direction:column;gap:10px;}
+  .cb-row{display:grid;grid-template-columns:90px 1fr 50px;gap:8px;align-items:center;}
+  .cb-label{font-size:11px;color:var(--ink-soft);}
+  .cb-track{position:relative;height:16px;background:var(--surface-alt);border-radius:4px;overflow:hidden;}
+  .cb-fill-me{height:100%;border-radius:4px;background:var(--blue);opacity:0.85;}
+  .cb-fill-avg{position:absolute;top:0;height:100%;width:2px;background:var(--ink-muted);}
+  .cb-val{font-size:11px;font-family:var(--mono);color:var(--ink);text-align:right;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-mark">
+      <svg viewBox="0 0 20 20"><path d="M3 10 Q7 5 10 10 Q13 15 17 10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="4" r="2"/></svg>
+    </div>
+    <div>
+      <div class="sb-logo-title">Medalbank SSE</div>
+      <div class="sb-logo-sub">수영 주식 거래소</div>
+    </div>
+  </div>
+  <div class="sb-profile">
+    <div class="sb-avatar">김</div>
+    <div>
+      <div class="sb-user-name">김○○</div>
+      <div class="sb-user-grade">중형주 · 38주차</div>
+    </div>
+    <div style="margin-left:auto;text-align:right;">
+      <div class="sb-coin-val">3,240</div>
+      <div class="sb-coin-label">보유 코인</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section-label">메인</div>
+    <a class="sb-item" href="#">🏠 홈</a>
+    <a class="sb-item active" href="#">📈 수영 지수</a>
+    <a class="sb-item" href="#">👥 선수 목록</a>
+    <a class="sb-item" href="#">🏆 대회 현황</a>
+    <div class="sb-section-label">내 현황</div>
+    <a class="sb-item" href="#">👤 내 주가</a>
+    <a class="sb-item" href="#">💼 내 포트폴리오</a>
+    <a class="sb-item" href="#">📓 훈련 일지</a>
+    <a class="sb-item" href="#">🔔 공시 알림 <span class="sb-badge">5</span></a>
+    <div class="sb-section-label">관리</div>
+    <a class="sb-item" href="#">📊 시즌 랭킹</a>
+    <a class="sb-item" href="#">⚙️ 설정</a>
+  </nav>
+  <div class="sb-footer"><div class="sb-logout">↩ 로그아웃</div></div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">📈 수영 지수 <span style="font-size:12px;color:var(--ink-muted);font-weight:400;">— 김○○ 선수 종합 지수 현황</span></div>
+    <div class="topbar-right">
+      <div style="font-size:11px;color:var(--ink-muted);">최근 업데이트: 2026.05.22</div>
+      <div class="topbar-notif">🔔<div class="notif-dot"></div></div>
+      <div class="topbar-avatar">김</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- TABS -->
+    <div class="tab-bar">
+      <button class="tab-btn act" onclick="switchTab(this,'all')">전체 지수</button>
+      <button class="tab-btn" onclick="switchTab(this,'perf')">현재 실적</button>
+      <button class="tab-btn" onclick="switchTab(this,'growth')">성장성</button>
+      <button class="tab-btn" onclick="switchTab(this,'train')">훈련 투자</button>
+      <button class="tab-btn" onclick="switchTab(this,'market')">시장 지위</button>
+      <button class="tab-btn" onclick="switchTab(this,'risk')">리스크</button>
+    </div>
+
+    <!-- METRICS -->
+    <div class="metrics-4">
+      <div class="metric">
+        <div class="metric-label">종합 지수</div>
+        <div class="metric-val" style="color:var(--blue);">70.3</div>
+        <div class="metric-sub up">▲ +2.1 이번 주</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">현재 기록</div>
+        <div class="metric-val">45.8<span style="font-size:14px;color:var(--ink-muted);">초</span></div>
+        <div class="metric-sub up">▲ PB −0.7초</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">출석률</div>
+        <div class="metric-val">92<span style="font-size:14px;color:var(--ink-muted);">%</span></div>
+        <div class="metric-sub blue">🔥 11주 연속</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">현재 주가</div>
+        <div class="metric-val" style="color:var(--blue);">1,440</div>
+        <div class="metric-sub up">▲ +20% 주간</div>
+      </div>
+    </div>
+
+    <!-- INDEX OVERVIEW -->
+    <div class="index-overview">
+      <div class="io-head">
+        <div>
+          <div style="font-size:11px;color:var(--ink-muted);margin-bottom:6px;letter-spacing:0.04em;">종합 지수 TOTAL INDEX</div>
+          <div class="io-score-wrap">
+            <div class="io-score" id="total-score">70.3</div>
+            <div class="io-score-max">/ 100점</div>
+            <div class="io-score-change">▲ +2.1 이번 주</div>
+          </div>
+        </div>
+        <div class="io-rank-badges">
+          <div class="io-badge io-badge-blue">시즌 랭킹 5위 / 24명</div>
+          <div class="io-badge io-badge-amber">중형주 · 나이 보정 적용</div>
+        </div>
+      </div>
+      <div class="io-bars">
+        <div class="io-bar-row">
+          <div class="io-bar-label"><span style="width:8px;height:8px;border-radius:50%;background:var(--blue);display:inline-block;flex-shrink:0;"></span>현재 실적<span class="io-bar-weight">×30%</span></div>
+          <div class="io-track"><div class="io-fill" style="width:75%;background:var(--blue);"></div></div>
+          <div class="io-score-val blue">75점</div>
+          <div class="io-contrib">+22.5</div>
+        </div>
+        <div class="io-bar-row">
+          <div class="io-bar-label"><span style="width:8px;height:8px;border-radius:50%;background:var(--teal);display:inline-block;flex-shrink:0;"></span>성장성<span class="io-bar-weight">×25%</span></div>
+          <div class="io-track"><div class="io-fill" style="width:60%;background:var(--teal);"></div></div>
+          <div class="io-score-val" style="color:var(--teal);">60점</div>
+          <div class="io-contrib">+15.0</div>
+        </div>
+        <div class="io-bar-row">
+          <div class="io-bar-label"><span style="width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block;flex-shrink:0;"></span>훈련 투자<span class="io-bar-weight">×20%</span></div>
+          <div class="io-track"><div class="io-fill" style="width:90%;background:var(--amber);"></div></div>
+          <div class="io-score-val" style="color:var(--amber);">90점</div>
+          <div class="io-contrib">+18.0</div>
+        </div>
+        <div class="io-bar-row">
+          <div class="io-bar-label"><span style="width:8px;height:8px;border-radius:50%;background:var(--purple);display:inline-block;flex-shrink:0;"></span>시장 지위<span class="io-bar-weight">×15%</span></div>
+          <div class="io-track"><div class="io-fill" style="width:70%;background:var(--purple);"></div></div>
+          <div class="io-score-val" style="color:var(--purple);">70점</div>
+          <div class="io-contrib">+10.5</div>
+        </div>
+        <div class="io-bar-row">
+          <div class="io-bar-label"><span style="width:8px;height:8px;border-radius:50%;background:var(--pink);display:inline-block;flex-shrink:0;"></span>특별 이벤트<span class="io-bar-weight">×10%</span></div>
+          <div class="io-track"><div class="io-fill" style="width:30%;background:var(--pink);"></div></div>
+          <div class="io-score-val" style="color:var(--pink);">30점</div>
+          <div class="io-contrib">+3.0</div>
+        </div>
+        <div class="io-bar-row">
+          <div class="io-bar-label"><span style="width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;flex-shrink:0;"></span>리스크 감점<span class="io-bar-weight"></span></div>
+          <div class="io-track"><div class="io-fill" style="width:10%;background:var(--red);"></div></div>
+          <div class="io-score-val" style="color:var(--red);">−2점</div>
+          <div class="io-contrib down">−2.0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN 2 COL -->
+    <div class="two-col">
+
+      <!-- CHART PANEL -->
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">주가 추이</div>
+            <div class="panel-sub">최근 12주 · PB 마킹 포함</div>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <button class="tab-btn act" style="font-size:11px;padding:4px 10px;border-bottom:none;border:1px solid var(--border);border-radius:6px;">12주</button>
+            <button class="tab-btn" style="font-size:11px;padding:4px 10px;border-bottom:none;border:1px solid var(--border);border-radius:6px;">시즌</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="chart-wrap">
+            <svg viewBox="0 0 480 120" preserveAspectRatio="none" fill="none">
+              <defs>
+                <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#0D4F8B" stop-opacity="0.12"/>
+                  <stop offset="100%" stop-color="#0D4F8B" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <!-- grid lines -->
+              <line x1="0" y1="24" x2="480" y2="24" stroke="#EAF1F8" stroke-width="1"/>
+              <line x1="0" y1="60" x2="480" y2="60" stroke="#EAF1F8" stroke-width="1"/>
+              <line x1="0" y1="96" x2="480" y2="96" stroke="#EAF1F8" stroke-width="1"/>
+              <text x="484" y="27" font-size="9" fill="#8A99A8" font-family="monospace">1,600</text>
+              <text x="484" y="63" font-size="9" fill="#8A99A8" font-family="monospace">1,200</text>
+              <text x="484" y="99" font-size="9" fill="#8A99A8" font-family="monospace">800</text>
+              <!-- area + line -->
+              <path d="M0,100 L40,96 L80,90 L120,85 L160,88 L200,76 L240,68 L280,72 L320,58 L360,44 L400,36 L440,26 L480,18 L480,120 L0,120Z" fill="url(#cg)"/>
+              <path d="M0,100 L40,96 L80,90 L120,85 L160,88 L200,76 L240,68 L280,72 L320,58 L360,44 L400,36 L440,26 L480,18" stroke="#0D4F8B" stroke-width="1.8" stroke-linecap="round"/>
+              <!-- PB marker -->
+              <circle cx="320" cy="58" r="5" fill="#0A7A6A"/>
+              <line x1="320" y1="20" x2="320" y2="52" stroke="#0A7A6A" stroke-width="1" stroke-dasharray="3,2"/>
+              <rect x="300" y="10" width="38" height="14" rx="4" fill="#0A7A6A"/>
+              <text x="303" y="21" font-size="9" fill="#fff" font-family="monospace" font-weight="500">PB 달성</text>
+              <!-- current dot -->
+              <circle cx="480" cy="18" r="4" fill="#0D4F8B"/>
+              <circle cx="480" cy="18" r="8" fill="#0D4F8B" fill-opacity="0.2"/>
+            </svg>
+          </div>
+          <div class="chart-labels">
+            <span class="chart-label">3월 1주</span>
+            <span class="chart-label">4월</span>
+            <span class="chart-label">5월</span>
+            <span class="chart-label">현재</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RADAR + EVENTS -->
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">지수 레이더</div>
+            <div class="panel-sub">6개 카테고리 시각화</div>
+          </div>
+          <div class="panel-body">
+            <div class="radar-wrap">
+              <svg viewBox="0 0 200 200" width="180" height="180" fill="none">
+                <!-- Pentagon grid -->
+                <polygon points="100,15 171,58 171,142 100,185 29,142 29,58" fill="none" stroke="#EAF1F8" stroke-width="1"/>
+                <polygon points="100,35 155,68 155,132 100,165 45,132 45,68" fill="none" stroke="#EAF1F8" stroke-width="1"/>
+                <polygon points="100,55 139,78 139,122 100,145 61,122 61,78" fill="none" stroke="#EAF1F8" stroke-width="1"/>
+                <polygon points="100,75 123,88 123,112 100,125 77,112 77,88" fill="none" stroke="#EAF1F8" stroke-width="1"/>
+                <!-- axis lines -->
+                <line x1="100" y1="15" x2="100" y2="185" stroke="#EAF1F8" stroke-width="1"/>
+                <line x1="100" y1="100" x2="171" y2="58" stroke="#EAF1F8" stroke-width="1"/>
+                <line x1="100" y1="100" x2="171" y2="142" stroke="#EAF1F8" stroke-width="1"/>
+                <line x1="100" y1="100" x2="100" y2="185" stroke="#EAF1F8" stroke-width="1"/>
+                <line x1="100" y1="100" x2="29" y2="142" stroke="#EAF1F8" stroke-width="1"/>
+                <line x1="100" y1="100" x2="29" y2="58" stroke="#EAF1F8" stroke-width="1"/>
+                <!-- Data shape: 현실적 75/60/90/70/30 점 분포 -->
+                <polygon points="100,27 157,69 163,137 100,158 44,129 52,64" fill="#0D4F8B" fill-opacity="0.15" stroke="#0D4F8B" stroke-width="1.5"/>
+                <!-- labels -->
+                <text x="100" y="10" text-anchor="middle" font-size="9" fill="#5A6B7B" font-family="Pretendard,sans-serif">현재 실적</text>
+                <text x="178" y="56" text-anchor="start" font-size="9" fill="#5A6B7B" font-family="Pretendard,sans-serif">성장성</text>
+                <text x="178" y="148" text-anchor="start" font-size="9" fill="#5A6B7B" font-family="Pretendard,sans-serif">훈련 투자</text>
+                <text x="100" y="196" text-anchor="middle" font-size="9" fill="#5A6B7B" font-family="Pretendard,sans-serif">시장 지위</text>
+                <text x="22" y="148" text-anchor="end" font-size="9" fill="#5A6B7B" font-family="Pretendard,sans-serif">이벤트</text>
+                <text x="22" y="56" text-anchor="end" font-size="9" fill="#5A6B7B" font-family="Pretendard,sans-serif">리스크</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 DETAIL PANELS -->
+    <div class="three-col">
+
+      <!-- 현재 실적 -->
+      <div class="panel">
+        <div class="panel-head" style="border-left:3px solid var(--blue);">
+          <div>
+            <div class="panel-title">현재 실적</div>
+            <div class="panel-sub">75점 × 30% = +22.5</div>
+          </div>
+          <div style="font-size:20px;font-weight:500;color:var(--blue);font-family:var(--mono);">75</div>
+        </div>
+        <div class="panel-body">
+          <div class="detail-row">
+            <div class="dr-label">현재 기록 (50m 평영)</div>
+            <div class="dr-bar-wrap">
+              <div class="dr-bar"><div class="dr-fill" style="width:75%;background:var(--blue);"></div></div>
+              <div class="dr-val">45.8초</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="dr-label">PB 달성률</div>
+            <div class="dr-bar-wrap">
+              <div class="dr-bar"><div class="dr-fill" style="width:80%;background:var(--blue);"></div></div>
+              <div class="dr-val up">80%</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="dr-label">기록 향상률</div>
+            <div class="dr-bar-wrap">
+              <div class="dr-bar"><div class="dr-fill" style="width:65%;background:var(--blue);"></div></div>
+              <div class="dr-val up">+1.5%</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="dr-label">기록 안정성 (변동계수)</div>
+            <div class="dr-bar-wrap">
+              <div class="dr-bar"><div class="dr-fill" style="width:80%;background:var(--blue);"></div></div>
+              <div class="dr-val up">1.8%</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border-light);">
+            <div style="font-size:10px;color:var(--ink-muted);margin-bottom:6px;">동일 연령대 비교</div>
+            <div class="compare-bar">
+              <div class="cb-row">
+                <div class="cb-label">나의 기록</div>
+                <div class="cb-track"><div class="cb-fill-me" style="width:75%;"></div><div class="cb-fill-avg" style="left:55%;"></div></div>
+                <div class="cb-val">45.8초</div>
+              </div>
+            </div>
+            <div style="font-size:10px;color:var(--ink-muted);margin-top:4px;">│ 동일 연령 평균: 48.2초</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 성장성 -->
+      <div class="panel">
+        <div class="panel-head" style="border-left:3px solid var(--teal);">
+          <div>
+            <div class="panel-title">성장성</div>
+            <div class="panel-sub">60점 × 25% = +15.0</div>
+          </div>
+          <div style="font-size:20px;font-weight:500;color:var(--teal);font-family:var(--mono);">60</div>
+        </div>
+        <div class="panel-body">
+          <div class="detail-row">
+            <div class="dr-label">나이 보정 지수 <span style="font-size:9px;color:var(--ink-muted);">(25세)</span></div>
+            <div class="dr-bar-wrap">
+              <div class="dr-bar"><div class="dr-fill" style="width:55%;background:var(--teal);"></div></div>
+              <div class="dr-val" style="color:var(--teal);">55점</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="dr-label">세계 기록 대비 여력</div>
+            <div class="dr-bar-wrap">
+              <div class="dr-bar"><div class="dr-fill" style="width:60%;background:var(--teal);"></div></div>
+              <div class="dr-val">+19.1초</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="dr-label">주당 훈련 시간</div>
+            <div class="dr-bar-wrap">
+              <div class="dr-bar"><div class="dr-fill" style="width:70%;background:var(--teal);"></div></div>
+              <div class="dr-val">7h/주</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="dr-label">시즌 출전 계획</div>
+            <div class="dr-bar-wrap">
+              <div class="dr-bar"><div class="dr-fill" style="width:60%;background:var(--teal);"></div></div>
+              <div class="dr-val">3대회</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="dr-label">영법 다양성</div>
+            <div class="dr-bar-wrap">
+              <div class="dr-bar"><div class="dr-fill" style="width:50%;background:var(--teal);"></div></div>
+              <div class="dr-val">2영법</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;padding:8px;background:var(--teal-light);border-radius:6px;font-size:11px;color:var(--teal);">
+            💡 15세 선수 대비 낮은 나이 보정 — 기록 향상이 더 중요한 시기
+          </div>
+        </div>
+      </div>
+
+      <!-- 훈련 투자 -->
+      <div class="panel">
+        <div class="panel-head" style="border-left:3px solid var(--amber);">
+          <div>
+            <div class="panel-title">훈련 투자</div>
+            <div class="panel-sub">90점 × 20% = +18.0</div>
+          </div>
+          <div style="font-size:20px;font-weight:500;color:var(--amber);font-family:var(--mono);">90</div>
+        </div>
+        <div class="panel-body">
+          <div class="detail-row">
+            <div class="dr-label">아카데미 출석률</div>
+            <div class="dr-bar-wrap">
+              <div class="dr-bar"><div class="dr-fill" style="width:92%;background:var(--amber);"></div></div>
+              <div class="dr-val amber">92%</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="dr-label">연속 출석</div>
+            <div class="dr-bar-wrap">
+              <div class="dr-bar"><div class="dr-fill" style="width:85%;background:var(--amber);"></div></div>
+              <div class="dr-val amber">11주</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="dr-label">훈련 일지 성실도</div>
+            <div class="dr-bar-wrap">
+              <div class="dr-bar"><div class="dr-fill" style="width:90%;background:var(--amber);"></div></div>
+              <div class="dr-val amber">18일/월</div>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="dr-label">전지훈련 참가</div>
+            <div class="dr-bar-wrap">
+              <div class="dr-bar"><div class="dr-fill" style="width:0%;background:var(--amber);"></div></div>
+              <div class="dr-val" style="color:var(--ink-muted);">0회</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;padding:8px;background:var(--amber-light);border-radius:6px;font-size:11px;color:var(--amber);">
+            🔥 전지훈련 참가 시 +20점 추가 가능 — 시즌 내 기회 있음
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM 2 COL -->
+    <div class="two-col">
+
+      <!-- 시장 지위 + 이벤트 -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">시장 지위 · 특별 이벤트</div>
+          <div class="panel-sub">시장 지위 70점 · 이벤트 30점</div>
+        </div>
+        <div class="panel-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+            <div>
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:8px;letter-spacing:0.04em;">시장 지위</div>
+              <div class="detail-row" style="padding:5px 0;">
+                <div class="dr-label" style="font-size:11px;">연령대 랭킹</div>
+                <div class="dr-val purple">3위</div>
+              </div>
+              <div class="detail-row" style="padding:5px 0;">
+                <div class="dr-label" style="font-size:11px;">투자자 수</div>
+                <div class="dr-val purple">8명</div>
+              </div>
+              <div class="detail-row" style="padding:5px 0;">
+                <div class="dr-label" style="font-size:11px;">국제 대회</div>
+                <div class="dr-val" style="color:var(--ink-muted);">미출전</div>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:8px;letter-spacing:0.04em;">이벤트 이력</div>
+              <div class="ev-item" style="padding:4px 0;">
+                <div class="ev-icon" style="background:var(--teal-light);width:22px;height:22px;font-size:11px;">🏅</div>
+                <div class="ev-body"><div class="ev-title" style="font-size:11px;">대회 PB 달성</div><div class="ev-time">5월 10일</div></div>
+                <div class="ev-val up" style="font-size:11px;">+30%</div>
+              </div>
+              <div class="ev-item" style="padding:4px 0;">
+                <div class="ev-icon" style="background:var(--blue-light);width:22px;height:22px;font-size:11px;">🏊</div>
+                <div class="ev-body"><div class="ev-title" style="font-size:11px;">대회 출전 완주</div><div class="ev-time">4월 20일</div></div>
+                <div class="ev-val up" style="font-size:11px;">+10%</div>
+              </div>
+            </div>
+          </div>
+          <div style="padding:10px;background:var(--purple-light);border-radius:8px;font-size:11px;color:var(--purple);">
+            ⭐ 국제 대회 출전 시 +30점 · 국가대표 선발 시 +50점 추가 가능
+          </div>
+        </div>
+      </div>
+
+      <!-- 리스크 + 주간 변동 -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">리스크 · 주간 기록 변동</div>
+          <div class="panel-sub">리스크 −2점 · 이번 주 기준</div>
+        </div>
+        <div class="panel-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+            <div>
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:8px;letter-spacing:0.04em;">리스크 항목</div>
+              <div class="detail-row" style="padding:5px 0;">
+                <div class="dr-label" style="font-size:11px;">부상 이력</div>
+                <span class="risk-tag rt-warn">1회</span>
+              </div>
+              <div class="detail-row" style="padding:5px 0;">
+                <div class="dr-label" style="font-size:11px;">멘탈 안정성</div>
+                <span class="risk-tag rt-ok">안정</span>
+              </div>
+              <div class="detail-row" style="padding:5px 0;">
+                <div class="dr-label" style="font-size:11px;">훈련 공백</div>
+                <span class="risk-tag rt-ok">0주</span>
+              </div>
+              <div class="detail-row" style="padding:5px 0;">
+                <div class="dr-label" style="font-size:11px;">도핑</div>
+                <span class="risk-tag rt-ok">클린</span>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:8px;letter-spacing:0.04em;">이번 주 기록 변동</div>
+              <table class="rec-table" style="font-size:11px;">
+                <tr><td>기록</td><td class="mono">45.8초</td><td class="up">−0.7</td></tr>
+                <tr><td>출석</td><td class="mono">출석</td><td class="up">+5%</td></tr>
+                <tr><td>안정성</td><td class="mono">1.8%</td><td class="up">안정</td></tr>
+                <tr><td>주가</td><td class="mono">1,440</td><td class="up">+20%</td></tr>
+              </table>
+            </div>
+          </div>
+          <div style="padding:10px;background:var(--red-light);border-radius:8px;font-size:11px;color:var(--red);">
+            ⚠️ 부상 이력 1회 감점 중 · 6개월 경과 후 자동 해제 예정
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function switchTab(el, id) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('act'));
+  el.classList.add('act');
+}
+document.querySelectorAll('.sb-item').forEach(item => {
+  item.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

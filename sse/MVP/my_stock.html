@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medalbank SSE — 내 주가</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue:#0D4F8B;--blue-mid:#1A6BB5;--blue-light:#E8F2FC;--blue-pale:#F4F8FD;
+    --teal:#0A7A6A;--teal-light:#E4F5F2;
+    --red:#C0392B;--red-light:#FDF0EE;
+    --amber:#B06A00;--amber-light:#FDF4E3;
+    --purple:#5B21B6;--purple-light:#F0EEFF;
+    --ink:#0F1923;--ink-soft:#5A6B7B;--ink-muted:#8A99A8;
+    --border:#D8E4EE;--border-light:#EAF1F8;
+    --surface:#FFFFFF;--surface-soft:#F7FAFD;--surface-alt:#EEF5FB;
+    --mono:'DM Mono',monospace;--sans:'Pretendard',-apple-system,sans-serif;
+    --serif:'DM Serif Display',serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--surface-soft);color:var(--ink);display:flex;min-height:100vh;}
+
+  /* SIDEBAR */
+  .sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;}
+  .sb-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;}
+  .sb-logo-mark{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+  .sb-logo-mark svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;}
+  .sb-logo-title{font-size:12px;font-weight:600;color:var(--ink);line-height:1.2;}
+  .sb-logo-sub{font-size:10px;color:var(--ink-muted);}
+  .sb-profile{padding:14px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;}
+  .sb-avatar{width:36px;height:36px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0;}
+  .sb-user-name{font-size:13px;font-weight:500;color:var(--ink);}
+  .sb-user-grade{font-size:10px;color:var(--ink-muted);margin-top:1px;}
+  .sb-nav{flex:1;padding:12px 0;overflow-y:auto;}
+  .sb-section-label{font-size:9px;font-weight:600;color:var(--ink-muted);letter-spacing:0.08em;text-transform:uppercase;padding:8px 20px 4px;}
+  .sb-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13px;color:var(--ink-soft);cursor:pointer;border-left:2px solid transparent;text-decoration:none;transition:all 0.12s;}
+  .sb-item:hover{background:var(--surface-soft);color:var(--ink);}
+  .sb-item.active{background:var(--blue-pale);color:var(--blue);border-left-color:var(--blue);font-weight:500;}
+  .sb-badge{margin-left:auto;font-size:10px;background:var(--red-light);color:var(--red);border-radius:10px;padding:1px 7px;font-family:var(--mono);}
+  .sb-footer{padding:14px 16px;border-top:1px solid var(--border-light);}
+
+  /* MAIN */
+  .main{margin-left:220px;flex:1;display:flex;flex-direction:column;}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;}
+  .topbar-title{font-size:15px;font-weight:500;color:var(--ink);}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .topbar-notif{position:relative;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;}
+  .notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--surface);}
+  .topbar-avatar{width:30px;height:30px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;}
+  .content{padding:24px 28px;flex:1;}
+  .up{color:var(--teal);} .down{color:var(--red);} .blue{color:var(--blue);}
+
+  /* PROFILE HERO */
+  .profile-hero{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 24px;margin-bottom:20px;display:flex;align-items:center;gap:20px;}
+  .ph-avatar{width:60px;height:60px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;flex-shrink:0;border:2px solid var(--blue-light);}
+  .ph-info{flex:1;}
+  .ph-name{font-size:20px;font-weight:500;color:var(--ink);margin-bottom:3px;}
+  .ph-sub{font-size:12px;color:var(--ink-muted);margin-bottom:10px;}
+  .ph-badges{display:flex;gap:6px;flex-wrap:wrap;}
+  .ph-badge{font-size:10px;padding:3px 10px;border-radius:5px;font-weight:500;}
+  .pb-blue{background:var(--blue-light);color:var(--blue);}
+  .pb-green{background:var(--teal-light);color:var(--teal);}
+  .pb-amber{background:var(--amber-light);color:var(--amber);}
+  .pb-purple{background:var(--purple-light);color:var(--purple);}
+  .ph-price{text-align:right;}
+  .ph-price-label{font-size:10px;color:var(--ink-muted);margin-bottom:4px;}
+  .ph-price-val{font-family:var(--mono);font-size:32px;font-weight:500;color:var(--blue);}
+  .ph-price-unit{font-size:14px;color:var(--ink-muted);}
+  .ph-price-change{font-size:13px;color:var(--teal);font-family:var(--mono);margin-top:3px;}
+
+  /* CHART CARD */
+  .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px;}
+  .chart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .chart-title{font-size:14px;font-weight:500;color:var(--ink);}
+  .period-btns{display:flex;gap:4px;}
+  .pb{font-size:11px;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--ink-muted);cursor:pointer;transition:all 0.12s;}
+  .pb.act{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .chart-area{position:relative;height:160px;margin-bottom:8px;}
+  .chart-area svg{width:100%;height:100%;}
+  .chart-x{display:flex;justify-content:space-between;margin-top:6px;}
+  .cx-label{font-size:10px;color:var(--ink-muted);font-family:var(--mono);}
+  .chart-event-legend{display:flex;gap:14px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light);}
+  .cel-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-muted);}
+  .cel-dot{width:8px;height:8px;border-radius:50%;}
+
+  /* INDEX CARD */
+  .index-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px;}
+  .ic-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;}
+  .ic-score-big{font-family:var(--mono);font-size:44px;font-weight:500;color:var(--blue);}
+  .ic-score-max{font-size:16px;color:var(--ink-muted);}
+  .ic-change{font-size:12px;color:var(--teal);background:var(--teal-light);border-radius:5px;padding:3px 10px;font-family:var(--mono);margin-top:4px;display:inline-block;}
+  .ic-bars{display:flex;flex-direction:column;gap:11px;}
+  .ic-row{display:grid;grid-template-columns:130px 1fr 48px 52px;gap:10px;align-items:center;}
+  .ic-label{font-size:12px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;}
+  .ic-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .ic-weight{font-size:10px;color:var(--ink-muted);font-family:var(--mono);}
+  .ic-track{background:var(--surface-alt);border-radius:5px;height:7px;overflow:hidden;}
+  .ic-fill{height:100%;border-radius:5px;transition:width 1s ease;}
+  .ic-val{font-size:13px;font-weight:500;font-family:var(--mono);text-align:right;}
+  .ic-contrib{font-size:11px;color:var(--ink-muted);font-family:var(--mono);text-align:right;}
+
+  /* TWO COL */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+
+  /* PANEL */
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .panel-head{padding:14px 18px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;}
+  .panel-title{font-size:13px;font-weight:500;color:var(--ink);}
+  .panel-body{padding:14px 18px;}
+
+  /* RECORD ROW */
+  .rec-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border-light);}
+  .rec-row:last-child{border-bottom:none;}
+  .rec-label{font-size:12px;color:var(--ink-soft);}
+  .rec-right{display:flex;align-items:center;gap:10px;}
+  .rec-bar{width:80px;height:5px;background:var(--surface-alt);border-radius:3px;overflow:hidden;}
+  .rec-fill{height:100%;border-radius:3px;}
+  .rec-val{font-size:13px;font-weight:500;color:var(--ink);font-family:var(--mono);min-width:60px;text-align:right;}
+  .rec-sub{font-size:10px;font-family:var(--mono);}
+
+  /* EVENT TIMELINE */
+  .timeline{display:flex;flex-direction:column;gap:0;}
+  .tl-item{display:flex;gap:12px;padding:10px 0;position:relative;}
+  .tl-item::before{content:'';position:absolute;left:14px;top:32px;bottom:-10px;width:1px;background:var(--border-light);}
+  .tl-item:last-child::before{display:none;}
+  .tl-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;position:relative;z-index:1;}
+  .tl-body{flex:1;}
+  .tl-title{font-size:12px;font-weight:500;color:var(--ink);margin-bottom:2px;}
+  .tl-time{font-size:10px;color:var(--ink-muted);font-family:var(--mono);}
+  .tl-val{font-size:12px;font-weight:500;font-family:var(--mono);}
+
+  /* SHARE INFO */
+  .share-card{background:var(--blue);border-radius:12px;padding:18px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;}
+  .sc-left{}
+  .sc-label{font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:4px;letter-spacing:0.04em;}
+  .sc-investors{display:flex;margin-bottom:8px;}
+  .sc-av{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;margin-left:-6px;}
+  .sc-av:first-child{margin-left:0;}
+  .sc-cnt{font-size:13px;color:rgba(255,255,255,0.8);margin-left:8px;align-self:center;}
+  .sc-right{display:flex;gap:20px;}
+  .sc-stat{text-align:center;}
+  .sc-stat-val{font-size:20px;font-weight:500;color:#fff;font-family:var(--mono);}
+  .sc-stat-label{font-size:10px;color:rgba(255,255,255,0.6);margin-top:2px;}
+
+  /* WEEKLY CHANGE */
+  .week-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px;}
+  .week-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+  .wi-label{font-size:11px;color:var(--ink-muted);margin-bottom:4px;}
+  .wi-val{font-size:16px;font-weight:500;font-family:var(--mono);margin-bottom:2px;}
+  .wi-chg{font-size:11px;font-family:var(--mono);}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-mark">
+      <svg viewBox="0 0 20 20"><path d="M3 10 Q7 5 10 10 Q13 15 17 10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="4" r="2"/></svg>
+    </div>
+    <div>
+      <div class="sb-logo-title">Medalbank SSE</div>
+      <div class="sb-logo-sub">수영 주식 거래소</div>
+    </div>
+  </div>
+  <div class="sb-profile">
+    <div class="sb-avatar">김</div>
+    <div>
+      <div class="sb-user-name">김○○</div>
+      <div class="sb-user-grade">중형주 · 38주차</div>
+    </div>
+    <div style="margin-left:auto;text-align:right;">
+      <div style="font-size:12px;font-weight:500;color:var(--amber);font-family:var(--mono);">3,240</div>
+      <div style="font-size:9px;color:var(--ink-muted);">보유 코인</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section-label">메인</div>
+    <a class="sb-item" href="#">🏠 홈</a>
+    <a class="sb-item" href="#">📈 수영 지수</a>
+    <a class="sb-item" href="#">👥 선수 목록</a>
+    <a class="sb-item" href="#">🏆 대회 현황</a>
+    <div class="sb-section-label">내 현황</div>
+    <a class="sb-item active" href="#">👤 내 주가</a>
+    <a class="sb-item" href="#">💼 내 포트폴리오</a>
+    <a class="sb-item" href="#">📓 훈련 일지</a>
+    <a class="sb-item" href="#">🔔 공시 알림<span class="sb-badge">5</span></a>
+    <div class="sb-section-label">관리</div>
+    <a class="sb-item" href="#">📊 시즌 랭킹</a>
+    <a class="sb-item" href="#">⚙️ 설정</a>
+  </nav>
+  <div class="sb-footer"><div style="font-size:12px;color:var(--ink-muted);cursor:pointer;">↩ 로그아웃</div></div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">👤 내 주가 <span style="font-size:12px;color:var(--ink-muted);font-weight:400;">— 김○○ 선수 상장 현황</span></div>
+    <div class="topbar-right">
+      <div style="font-size:11px;color:var(--ink-muted);">최근 업데이트: 2026.05.22</div>
+      <div class="topbar-notif">🔔<div class="notif-dot"></div></div>
+      <div class="topbar-avatar">김</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- PROFILE HERO -->
+    <div class="profile-hero">
+      <div class="ph-avatar">김</div>
+      <div class="ph-info">
+        <div class="ph-name">김○○</div>
+        <div class="ph-sub">25세 · 중형주 · 상장 38주차 · 50m 평영</div>
+        <div class="ph-badges">
+          <span class="ph-badge pb-blue">🔥 개근 11주</span>
+          <span class="ph-badge pb-green">✓ PB 달성</span>
+          <span class="ph-badge pb-amber">📓 일지 30일</span>
+          <span class="ph-badge pb-purple">👥 투자자 8명</span>
+          <span class="ph-badge" style="background:var(--surface-alt);color:var(--ink-muted);">시즌 5위</span>
+        </div>
+      </div>
+      <div class="ph-price">
+        <div class="ph-price-label">현재 주가</div>
+        <div><span class="ph-price-val">1,440</span> <span class="ph-price-unit">코인</span></div>
+        <div class="ph-price-change">▲ +240 · +20.0% 이번 주</div>
+        <div style="font-size:10px;color:var(--ink-muted);margin-top:4px;">IPO 공모가 1,000 → 현재 +44%</div>
+      </div>
+    </div>
+
+    <!-- INVESTOR INFO -->
+    <div class="share-card">
+      <div class="sc-left">
+        <div class="sc-label">나를 응원하는 투자자</div>
+        <div style="display:flex;align-items:center;margin-bottom:8px;">
+          <div class="sc-investors">
+            <div class="sc-av" style="background:rgba(255,255,255,0.2);">박</div>
+            <div class="sc-av" style="background:rgba(255,255,255,0.18);">이</div>
+            <div class="sc-av" style="background:rgba(255,255,255,0.16);">정</div>
+            <div class="sc-av" style="background:rgba(255,255,255,0.14);">최</div>
+            <div class="sc-av" style="background:rgba(255,255,255,0.12);">+4</div>
+          </div>
+          <div class="sc-cnt">총 8명 투자 중</div>
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.7);">박○○ — 메인 스폰서 · 지분 18%</div>
+      </div>
+      <div class="sc-right">
+        <div class="sc-stat">
+          <div class="sc-stat-val">18%</div>
+          <div class="sc-stat-label">최대 보유 지분</div>
+        </div>
+        <div class="sc-stat">
+          <div class="sc-stat-val">2,800</div>
+          <div class="sc-stat-label">총 투자 코인</div>
+        </div>
+        <div class="sc-stat">
+          <div class="sc-stat-val" style="color:#4ADE80;">+34%</div>
+          <div class="sc-stat-label">투자자 평균 수익률</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRICE CHART -->
+    <div class="chart-card">
+      <div class="chart-head">
+        <div class="chart-title">주가 추이</div>
+        <div class="period-btns">
+          <button class="pb" onclick="switchPeriod(this,'1m')">1개월</button>
+          <button class="pb act" onclick="switchPeriod(this,'3m')">3개월</button>
+          <button class="pb" onclick="switchPeriod(this,'season')">시즌 전체</button>
+        </div>
+      </div>
+      <div class="chart-area">
+        <svg viewBox="0 0 680 160" preserveAspectRatio="none" fill="none">
+          <defs>
+            <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0D4F8B" stop-opacity="0.15"/>
+              <stop offset="100%" stop-color="#0D4F8B" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- grid -->
+          <line x1="0" y1="32" x2="680" y2="32" stroke="#EAF1F8" stroke-width="1"/>
+          <line x1="0" y1="80" x2="680" y2="80" stroke="#EAF1F8" stroke-width="1"/>
+          <line x1="0" y1="128" x2="680" y2="128" stroke="#EAF1F8" stroke-width="1"/>
+          <text x="684" y="35" font-size="9" fill="#8A99A8" font-family="monospace">1,600</text>
+          <text x="684" y="83" font-size="9" fill="#8A99A8" font-family="monospace">1,200</text>
+          <text x="684" y="131" font-size="9" fill="#8A99A8" font-family="monospace">800</text>
+          <!-- area -->
+          <path d="M0,130 L56,124 L112,118 L168,122 L224,108 L280,96 L336,102 L392,88 L448,72 L504,58 L560,46 L616,34 L680,22 L680,160 L0,160Z" fill="url(#cg)"/>
+          <!-- line -->
+          <path d="M0,130 L56,124 L112,118 L168,122 L224,108 L280,96 L336,102 L392,88 L448,72 L504,58 L560,46 L616,34 L680,22" stroke="#0D4F8B" stroke-width="2" stroke-linecap="round"/>
+          <!-- IPO line -->
+          <line x1="0" y1="140" x2="680" y2="140" stroke="#D8E4EE" stroke-width="1" stroke-dasharray="4,3"/>
+          <text x="4" y="152" font-size="9" fill="#8A99A8" font-family="monospace">IPO 1,000</text>
+          <!-- PB event marker -->
+          <circle cx="392" cy="88" r="5" fill="#0A7A6A"/>
+          <line x1="392" y1="30" x2="392" y2="82" stroke="#0A7A6A" stroke-width="1" stroke-dasharray="3,2"/>
+          <rect x="366" y="18" width="52" height="16" rx="4" fill="#0A7A6A"/>
+          <text x="370" y="30" font-size="9" fill="#fff" font-family="monospace" font-weight="500">PB 달성</text>
+          <!-- contest event -->
+          <circle cx="280" cy="96" r="4" fill="#B06A00"/>
+          <text x="260" y="14" font-size="9" fill="#B06A00" font-family="monospace">대회</text>
+          <line x1="280" y1="16" x2="280" y2="90" stroke="#B06A00" stroke-width="1" stroke-dasharray="3,2"/>
+          <!-- current -->
+          <circle cx="680" cy="22" r="5" fill="#0D4F8B"/>
+          <circle cx="680" cy="22" r="10" fill="#0D4F8B" fill-opacity="0.15"/>
+        </svg>
+      </div>
+      <div class="chart-x">
+        <span class="cx-label">3월 1주</span>
+        <span class="cx-label">3월 3주</span>
+        <span class="cx-label">4월 1주</span>
+        <span class="cx-label">4월 3주</span>
+        <span class="cx-label">5월 1주</span>
+        <span class="cx-label">현재</span>
+      </div>
+      <div class="chart-event-legend">
+        <div class="cel-item"><div class="cel-dot" style="background:var(--teal);"></div> PB 달성</div>
+        <div class="cel-item"><div class="cel-dot" style="background:var(--amber);"></div> 대회 출전</div>
+        <div class="cel-item"><div class="cel-dot" style="background:var(--border);"></div> IPO 공모가 기준선</div>
+      </div>
+    </div>
+
+    <!-- INDEX CARD -->
+    <div class="index-card">
+      <div class="ic-head">
+        <div>
+          <div style="font-size:11px;color:var(--ink-muted);margin-bottom:5px;letter-spacing:0.04em;">종합 지수 TOTAL INDEX</div>
+          <div style="display:flex;align-items:baseline;gap:8px;">
+            <span class="ic-score-big">70.3</span>
+            <span class="ic-score-max">/ 100점</span>
+          </div>
+          <span class="ic-change">▲ +2.1 이번 주</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          <div style="font-size:11px;padding:4px 12px;border-radius:5px;background:var(--blue-light);color:var(--blue);font-family:var(--mono);">시즌 5위 / 24명</div>
+          <div style="font-size:11px;padding:4px 12px;border-radius:5px;background:var(--amber-light);color:var(--amber);">중형주 · 나이 보정 적용</div>
+        </div>
+      </div>
+      <div class="ic-bars">
+        <div class="ic-row">
+          <div class="ic-label"><span class="ic-dot" style="background:var(--blue);"></span>현재 실적<span class="ic-weight">×30%</span></div>
+          <div class="ic-track"><div class="ic-fill" style="width:75%;background:var(--blue);"></div></div>
+          <div class="ic-val blue">75점</div>
+          <div class="ic-contrib">+22.5</div>
+        </div>
+        <div class="ic-row">
+          <div class="ic-label"><span class="ic-dot" style="background:var(--teal);"></span>성장성<span class="ic-weight">×25%</span></div>
+          <div class="ic-track"><div class="ic-fill" style="width:60%;background:var(--teal);"></div></div>
+          <div class="ic-val" style="color:var(--teal);">60점</div>
+          <div class="ic-contrib">+15.0</div>
+        </div>
+        <div class="ic-row">
+          <div class="ic-label"><span class="ic-dot" style="background:var(--amber);"></span>훈련 투자<span class="ic-weight">×20%</span></div>
+          <div class="ic-track"><div class="ic-fill" style="width:90%;background:var(--amber);"></div></div>
+          <div class="ic-val" style="color:var(--amber);">90점</div>
+          <div class="ic-contrib">+18.0</div>
+        </div>
+        <div class="ic-row">
+          <div class="ic-label"><span class="ic-dot" style="background:var(--purple);"></span>시장 지위<span class="ic-weight">×15%</span></div>
+          <div class="ic-track"><div class="ic-fill" style="width:70%;background:var(--purple);"></div></div>
+          <div class="ic-val" style="color:var(--purple);">70점</div>
+          <div class="ic-contrib">+10.5</div>
+        </div>
+        <div class="ic-row">
+          <div class="ic-label"><span class="ic-dot" style="background:#9B2C6C;"></span>특별 이벤트<span class="ic-weight">×10%</span></div>
+          <div class="ic-track"><div class="ic-fill" style="width:30%;background:#9B2C6C;"></div></div>
+          <div class="ic-val" style="color:#9B2C6C;">30점</div>
+          <div class="ic-contrib">+3.0</div>
+        </div>
+        <div class="ic-row">
+          <div class="ic-label"><span class="ic-dot" style="background:var(--red);"></span>리스크 감점</div>
+          <div class="ic-track"><div class="ic-fill" style="width:10%;background:var(--red);"></div></div>
+          <div class="ic-val down">−2점</div>
+          <div class="ic-contrib down">−2.0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WEEKLY CHANGE -->
+    <div class="week-grid">
+      <div class="week-item">
+        <div class="wi-label">이번 주 기록</div>
+        <div class="wi-val">45.8초</div>
+        <div class="wi-chg up">▲ PB −0.7초</div>
+      </div>
+      <div class="week-item">
+        <div class="wi-label">출석 상태</div>
+        <div class="wi-val">출석</div>
+        <div class="wi-chg up">+5% 반영</div>
+      </div>
+      <div class="week-item">
+        <div class="wi-label">기록 안정성</div>
+        <div class="wi-val">1.8%</div>
+        <div class="wi-chg up">변동계수 · 안정</div>
+      </div>
+      <div class="week-item">
+        <div class="wi-label">주간 변동률</div>
+        <div class="wi-val up">+20%</div>
+        <div class="wi-chg up">1,200 → 1,440</div>
+      </div>
+    </div>
+
+    <!-- 2 COL BOTTOM -->
+    <div class="two-col">
+
+      <!-- RECORD DETAIL -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">🏊 기록 현황</div>
+          <div style="font-size:11px;color:var(--ink-muted);">50m 평영 기준</div>
+        </div>
+        <div class="panel-body">
+          <div class="rec-row">
+            <div class="rec-label">현재 기록</div>
+            <div class="rec-right">
+              <div class="rec-bar"><div class="rec-fill" style="width:75%;background:var(--blue);"></div></div>
+              <div><div class="rec-val">45.8초</div><div class="rec-sub up">PB</div></div>
+            </div>
+          </div>
+          <div class="rec-row">
+            <div class="rec-label">기록 향상률 (주간)</div>
+            <div class="rec-right">
+              <div class="rec-bar"><div class="rec-fill" style="width:65%;background:var(--teal);"></div></div>
+              <div><div class="rec-val">+1.5%</div><div class="rec-sub up">▲ 향상</div></div>
+            </div>
+          </div>
+          <div class="rec-row">
+            <div class="rec-label">변동계수 (4주 기준)</div>
+            <div class="rec-right">
+              <div class="rec-bar"><div class="rec-fill" style="width:80%;background:var(--amber);"></div></div>
+              <div><div class="rec-val">1.8%</div><div class="rec-sub up">안정적</div></div>
+            </div>
+          </div>
+          <div class="rec-row">
+            <div class="rec-label">세계 기록 대비</div>
+            <div class="rec-right">
+              <div class="rec-bar"><div class="rec-fill" style="width:40%;background:var(--purple);"></div></div>
+              <div><div class="rec-val">+19.1초</div><div class="rec-sub" style="color:var(--ink-muted);">성장 여력</div></div>
+            </div>
+          </div>
+          <div class="rec-row">
+            <div class="rec-label">연령대 랭킹</div>
+            <div class="rec-right">
+              <div class="rec-bar"><div class="rec-fill" style="width:70%;background:var(--purple);"></div></div>
+              <div><div class="rec-val">3위</div><div class="rec-sub blue">/ 25세</div></div>
+            </div>
+          </div>
+          <div class="rec-row">
+            <div class="rec-label">시즌 PB 달성 횟수</div>
+            <div class="rec-right">
+              <div class="rec-bar"><div class="rec-fill" style="width:50%;background:var(--teal);"></div></div>
+              <div><div class="rec-val">4회</div><div class="rec-sub up">이번 시즌</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EVENT TIMELINE -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">📢 주가 이벤트 이력</div>
+          <div style="font-size:11px;color:var(--blue);cursor:pointer;">전체 보기</div>
+        </div>
+        <div class="panel-body">
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-icon" style="background:var(--teal-light);">🏅</div>
+              <div class="tl-body">
+                <div class="tl-title">PB 달성 — 45.8초</div>
+                <div class="tl-time">2026.05.10 · 인천 오픈 대회</div>
+              </div>
+              <div class="tl-val up">+30%</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-icon" style="background:var(--blue-light);">🏊</div>
+              <div class="tl-body">
+                <div class="tl-title">대회 출전 완주</div>
+                <div class="tl-time">2026.04.20 · 춘계 대항전</div>
+              </div>
+              <div class="tl-val up">+10%</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-icon" style="background:var(--amber-light);">🔥</div>
+              <div class="tl-body">
+                <div class="tl-title">개근 10주 돌파 보너스</div>
+                <div class="tl-time">2026.04.14</div>
+              </div>
+              <div class="tl-val" style="color:var(--amber);">+3%</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-icon" style="background:var(--teal-light);">🏅</div>
+              <div class="tl-body">
+                <div class="tl-title">PB 달성 — 46.5초</div>
+                <div class="tl-time">2026.03.28 · 훈련 측정</div>
+              </div>
+              <div class="tl-val up">+15%</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-icon" style="background:var(--red-light);">📉</div>
+              <div class="tl-body">
+                <div class="tl-title">무단 결석</div>
+                <div class="tl-time">2026.03.07</div>
+              </div>
+              <div class="tl-val down">−10%</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-icon" style="background:var(--purple-light);">🚀</div>
+              <div class="tl-body">
+                <div class="tl-title">IPO 상장</div>
+                <div class="tl-time">2025.11.30 · 공모가 1,000코인</div>
+              </div>
+              <div class="tl-val blue">시작</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function switchPeriod(el, period) {
+  document.querySelectorAll('.pb').forEach(b => b.classList.remove('act'));
+  el.classList.add('act');
+}
+document.querySelectorAll('.sb-item').forEach(item => {
+  item.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

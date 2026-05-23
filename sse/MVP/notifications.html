@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medalbank SSE — 공시 알림</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue:#0D4F8B;--blue-mid:#1A6BB5;--blue-light:#E8F2FC;--blue-pale:#F4F8FD;
+    --teal:#0A7A6A;--teal-light:#E4F5F2;
+    --red:#C0392B;--red-light:#FDF0EE;
+    --amber:#B06A00;--amber-light:#FDF4E3;
+    --purple:#5B21B6;--purple-light:#F0EEFF;
+    --ink:#0F1923;--ink-soft:#5A6B7B;--ink-muted:#8A99A8;
+    --border:#D8E4EE;--border-light:#EAF1F8;
+    --surface:#FFFFFF;--surface-soft:#F7FAFD;--surface-alt:#EEF5FB;
+    --mono:'DM Mono',monospace;--sans:'Pretendard',-apple-system,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--surface-soft);color:var(--ink);display:flex;min-height:100vh;}
+
+  /* SIDEBAR */
+  .sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;}
+  .sb-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;}
+  .sb-logo-mark{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+  .sb-logo-mark svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;}
+  .sb-logo-title{font-size:12px;font-weight:600;color:var(--ink);line-height:1.2;}
+  .sb-logo-sub{font-size:10px;color:var(--ink-muted);}
+  .sb-profile{padding:14px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;}
+  .sb-avatar{width:36px;height:36px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0;}
+  .sb-user-name{font-size:13px;font-weight:500;color:var(--ink);}
+  .sb-user-grade{font-size:10px;color:var(--ink-muted);margin-top:1px;}
+  .sb-nav{flex:1;padding:12px 0;overflow-y:auto;}
+  .sb-section-label{font-size:9px;font-weight:600;color:var(--ink-muted);letter-spacing:0.08em;text-transform:uppercase;padding:8px 20px 4px;}
+  .sb-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13px;color:var(--ink-soft);cursor:pointer;border-left:2px solid transparent;text-decoration:none;transition:all 0.12s;}
+  .sb-item:hover{background:var(--surface-soft);color:var(--ink);}
+  .sb-item.active{background:var(--blue-pale);color:var(--blue);border-left-color:var(--blue);font-weight:500;}
+  .sb-badge{margin-left:auto;font-size:10px;background:var(--red-light);color:var(--red);border-radius:10px;padding:1px 7px;font-family:var(--mono);}
+  .sb-footer{padding:14px 16px;border-top:1px solid var(--border-light);}
+
+  /* MAIN */
+  .main{margin-left:220px;flex:1;display:flex;flex-direction:column;}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;}
+  .topbar-left{display:flex;align-items:center;gap:12px;}
+  .topbar-title{font-size:15px;font-weight:500;color:var(--ink);}
+  .unread-badge{font-size:11px;background:var(--red);color:#fff;border-radius:10px;padding:2px 8px;font-family:var(--mono);}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .read-all-btn{font-size:12px;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:5px 14px;background:none;cursor:pointer;font-family:var(--sans);}
+  .topbar-avatar{width:30px;height:30px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;}
+  .content{padding:24px 28px;flex:1;}
+
+  /* METRICS */
+  .metrics-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px;}
+  .metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;}
+  .metric-label{font-size:11px;color:var(--ink-muted);margin-bottom:4px;}
+  .metric-val{font-size:20px;font-weight:500;font-family:var(--mono);margin-bottom:2px;}
+  .metric-sub{font-size:11px;}
+  .up{color:var(--teal);} .down{color:var(--red);} .blue{color:var(--blue);} .amber{color:var(--amber);}
+
+  /* FILTER ROW */
+  .filter-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .tab-pill{font-size:12px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);color:var(--ink-soft);cursor:pointer;background:var(--surface);transition:all 0.12s;display:flex;align-items:center;gap:5px;}
+  .tab-pill:hover{background:var(--surface-soft);}
+  .tab-pill.act{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .tp-cnt{font-size:10px;font-family:var(--mono);opacity:0.8;}
+  .filter-spacer{flex:1;}
+  .sort-select{font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink-soft);font-family:var(--sans);outline:none;}
+
+  /* NOTIFICATION LIST */
+  .notif-list{display:flex;flex-direction:column;gap:0;}
+  .group-label{font-size:11px;font-weight:600;color:var(--ink-muted);letter-spacing:0.05em;text-transform:uppercase;padding:14px 0 8px;display:flex;align-items:center;gap:8px;}
+  .group-label::after{content:'';flex:1;height:1px;background:var(--border-light);}
+
+  /* NOTIFICATION ITEM */
+  .notif-item{background:var(--surface);border:1px solid var(--border-light);border-radius:10px;padding:14px 16px;margin-bottom:6px;display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:all 0.12s;position:relative;}
+  .notif-item:hover{border-color:var(--border);background:var(--surface-soft);}
+  .notif-item.unread{border-left:3px solid var(--blue);}
+  .notif-item.unread-teal{border-left:3px solid var(--teal);}
+  .notif-item.unread-amber{border-left:3px solid var(--amber);}
+  .notif-item.unread-red{border-left:3px solid var(--red);}
+  .notif-item.unread-purple{border-left:3px solid var(--purple);}
+  .notif-item.read{opacity:0.72;}
+  .notif-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .ni-teal{background:var(--teal-light);}
+  .ni-blue{background:var(--blue-light);}
+  .ni-amber{background:var(--amber-light);}
+  .ni-red{background:var(--red-light);}
+  .ni-purple{background:var(--purple-light);}
+  .ni-gray{background:var(--surface-alt);}
+  .notif-body{flex:1;min-width:0;}
+  .notif-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;}
+  .notif-title{font-size:13px;font-weight:500;color:var(--ink);}
+  .notif-time{font-size:11px;color:var(--ink-muted);font-family:var(--mono);white-space:nowrap;flex-shrink:0;}
+  .notif-desc{font-size:12px;color:var(--ink-soft);line-height:1.5;margin-bottom:6px;}
+  .notif-tags{display:flex;gap:5px;flex-wrap:wrap;}
+  .n-tag{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500;}
+  .nt-teal{background:var(--teal-light);color:var(--teal);}
+  .nt-blue{background:var(--blue-light);color:var(--blue);}
+  .nt-amber{background:var(--amber-light);color:var(--amber);}
+  .nt-red{background:var(--red-light);color:var(--red);}
+  .nt-purple{background:var(--purple-light);color:var(--purple);}
+  .nt-gray{background:var(--surface-alt);color:var(--ink-muted);}
+  .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:4px;}
+  .read-dot{width:8px;height:8px;flex-shrink:0;}
+  .notif-action{font-size:11px;color:var(--blue);font-weight:500;margin-top:4px;display:inline-block;}
+
+  /* SETTINGS PANEL */
+  .settings-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:24px;}
+  .sc-head{padding:14px 18px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:8px;}
+  .sc-title{font-size:13px;font-weight:500;color:var(--ink);}
+  .setting-row{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border-light);}
+  .setting-row:last-child{border-bottom:none;}
+  .setting-left{}
+  .setting-label{font-size:13px;color:var(--ink);}
+  .setting-sub{font-size:11px;color:var(--ink-muted);margin-top:2px;}
+  .toggle{width:40px;height:22px;border-radius:11px;position:relative;cursor:pointer;flex-shrink:0;transition:background 0.2s;}
+  .toggle.on{background:var(--blue);}
+  .toggle.off{background:var(--border);}
+  .toggle::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:2px;transition:left 0.2s;}
+  .toggle.on::after{left:20px;}
+  .toggle.off::after{left:2px;}
+  .setting-right{display:flex;align-items:center;gap:8px;}
+  .time-select{font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface-soft);color:var(--ink);font-family:var(--sans);outline:none;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-mark">
+      <svg viewBox="0 0 20 20"><path d="M3 10 Q7 5 10 10 Q13 15 17 10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="4" r="2"/></svg>
+    </div>
+    <div>
+      <div class="sb-logo-title">Medalbank SSE</div>
+      <div class="sb-logo-sub">수영 주식 거래소</div>
+    </div>
+  </div>
+  <div class="sb-profile">
+    <div class="sb-avatar">김</div>
+    <div>
+      <div class="sb-user-name">김○○</div>
+      <div class="sb-user-grade">중형주 · 38주차</div>
+    </div>
+    <div style="margin-left:auto;text-align:right;">
+      <div style="font-size:12px;font-weight:500;color:var(--amber);font-family:var(--mono);">3,240</div>
+      <div style="font-size:9px;color:var(--ink-muted);">보유 코인</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section-label">메인</div>
+    <a class="sb-item" href="#">🏠 홈</a>
+    <a class="sb-item" href="#">📈 수영 지수</a>
+    <a class="sb-item" href="#">👥 선수 목록</a>
+    <a class="sb-item" href="#">🏆 대회 현황</a>
+    <div class="sb-section-label">내 현황</div>
+    <a class="sb-item" href="#">👤 내 주가</a>
+    <a class="sb-item" href="#">💼 내 포트폴리오</a>
+    <a class="sb-item" href="#">📓 훈련 일지</a>
+    <a class="sb-item active" href="#">🔔 공시 알림<span class="sb-badge">5</span></a>
+    <div class="sb-section-label">관리</div>
+    <a class="sb-item" href="#">📊 시즌 랭킹</a>
+    <a class="sb-item" href="#">⚙️ 설정</a>
+  </nav>
+  <div class="sb-footer"><div style="font-size:12px;color:var(--ink-muted);cursor:pointer;">↩ 로그아웃</div></div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">🔔 공시 알림</div>
+      <div class="unread-badge">읽지 않음 5</div>
+    </div>
+    <div class="topbar-right">
+      <button class="read-all-btn" onclick="readAll()">전체 읽음 처리</button>
+      <div class="topbar-avatar">김</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- METRICS -->
+    <div class="metrics-4">
+      <div class="metric">
+        <div class="metric-label">오늘 공시</div>
+        <div class="metric-val" style="color:var(--ink);">3건</div>
+        <div class="metric-sub blue">투자 선수 포함</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">주가 상승 알림</div>
+        <div class="metric-val up">2건</div>
+        <div class="metric-sub up">배당 +240 코인</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">대회 관련</div>
+        <div class="metric-val amber">1건</div>
+        <div class="metric-sub amber">명단 공시 확정</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">이번 주 총 공시</div>
+        <div class="metric-val" style="color:var(--ink);">12건</div>
+        <div class="metric-sub" style="color:var(--ink-muted);">전체 선수 기준</div>
+      </div>
+    </div>
+
+    <!-- FILTER ROW -->
+    <div class="filter-row">
+      <div class="tab-pill act" onclick="filterTab(this,'all')">전체<span class="tp-cnt">12</span></div>
+      <div class="tab-pill" onclick="filterTab(this,'price')">📈 내 주가<span class="tp-cnt">3</span></div>
+      <div class="tab-pill" onclick="filterTab(this,'invest')">💼 투자 선수<span class="tp-cnt">4</span></div>
+      <div class="tab-pill" onclick="filterTab(this,'contest')">🏆 대회<span class="tp-cnt">2</span></div>
+      <div class="tab-pill" onclick="filterTab(this,'coin')">🪙 코인<span class="tp-cnt">2</span></div>
+      <div class="tab-pill" onclick="filterTab(this,'ipo')">🚀 IPO<span class="tp-cnt">1</span></div>
+      <div class="filter-spacer"></div>
+      <select class="sort-select">
+        <option>최신순</option>
+        <option>읽지 않은순</option>
+        <option>유형별</option>
+      </select>
+    </div>
+
+    <!-- TODAY -->
+    <div class="group-label">오늘</div>
+
+    <div class="notif-item unread-teal" onclick="markRead(this)">
+      <div class="notif-icon ni-teal">📈</div>
+      <div class="notif-body">
+        <div class="notif-top">
+          <div class="notif-title">최○○ 선수 PB 달성 — 주가 +30% 급등</div>
+          <div class="notif-time">1시간 전</div>
+        </div>
+        <div class="notif-desc">스폰서로 투자한 최○○ 선수가 인천 오픈에서 32.1초 PB를 기록했습니다. 스폰서 보정 1.5× 적용으로 배당 +180 코인이 자동 적립됩니다.</div>
+        <div class="notif-tags">
+          <span class="n-tag nt-teal">PB 달성</span>
+          <span class="n-tag nt-teal">배당 +180코인</span>
+          <span class="n-tag nt-blue">스폰서 선수</span>
+        </div>
+        <div class="notif-action">→ 내 포트폴리오 확인</div>
+      </div>
+      <div class="unread-dot"></div>
+    </div>
+
+    <div class="notif-item unread" onclick="markRead(this)">
+      <div class="notif-icon ni-blue">📢</div>
+      <div class="notif-body">
+        <div class="notif-top">
+          <div class="notif-title">전국마스터즈 수영대회 출전 명단 확정</div>
+          <div class="notif-time">3시간 전</div>
+        </div>
+        <div class="notif-desc">5월 29일 전국마스터즈 대회 출전 선수 8명 명단이 확정 공시되었습니다. 투자 가능 시간 48시간이 시작되었습니다. 최○○, 김○○, 이○○ 등이 포함되어 있습니다.</div>
+        <div class="notif-tags">
+          <span class="n-tag nt-blue">대회 공시</span>
+          <span class="n-tag nt-amber">투자 가능 D-2</span>
+        </div>
+        <div class="notif-action">→ 대회 현황 · 투자하기</div>
+      </div>
+      <div class="unread-dot"></div>
+    </div>
+
+    <div class="notif-item unread-amber" onclick="markRead(this)">
+      <div class="notif-icon ni-amber">🪙</div>
+      <div class="notif-body">
+        <div class="notif-top">
+          <div class="notif-title">주간 참가비 코인 적립 완료</div>
+          <div class="notif-time">5시간 전</div>
+        </div>
+        <div class="notif-desc">이번 주 훈련 출석 및 기록 측정 참여, 훈련 일지 입력으로 총 180 코인이 적립되었습니다. 현재 보유 코인 3,240.</div>
+        <div class="notif-tags">
+          <span class="n-tag nt-amber">코인 +180</span>
+          <span class="n-tag nt-teal">개근 11주</span>
+        </div>
+      </div>
+      <div class="unread-dot"></div>
+    </div>
+
+    <!-- YESTERDAY -->
+    <div class="group-label">어제</div>
+
+    <div class="notif-item unread-purple" onclick="markRead(this)">
+      <div class="notif-icon ni-purple">🚀</div>
+      <div class="notif-body">
+        <div class="notif-top">
+          <div class="notif-title">이○○ 선수 신규 IPO 상장</div>
+          <div class="notif-time">어제 14:22</div>
+        </div>
+        <div class="notif-desc">15세 이○○ 선수가 공모가 1,000 코인으로 신규 상장했습니다. 성장성 지수 95점의 고PER 성장주입니다. 현재 내가 서포터로 투자 중인 선수입니다.</div>
+        <div class="notif-tags">
+          <span class="n-tag nt-purple">신규 IPO</span>
+          <span class="n-tag nt-teal">성장성 95점</span>
+          <span class="n-tag nt-blue">투자 중</span>
+        </div>
+        <div class="notif-action">→ 선수 상세 보기</div>
+      </div>
+      <div class="unread-dot"></div>
+    </div>
+
+    <div class="notif-item unread-red" onclick="markRead(this)">
+      <div class="notif-icon ni-red">📉</div>
+      <div class="notif-body">
+        <div class="notif-top">
+          <div class="notif-title">강○○ 선수 무단 결석 — 주가 −10% 하락</div>
+          <div class="notif-time">어제 09:15</div>
+        </div>
+        <div class="notif-desc">내가 투자한 강○○ 선수가 이번 주 훈련에 무단 결석했습니다. 주가가 870 → 783으로 −10% 하락했습니다. 포트폴리오에 −30 코인 손실 반영.</div>
+        <div class="notif-tags">
+          <span class="n-tag nt-red">주가 하락</span>
+          <span class="n-tag nt-red">무단 결석</span>
+          <span class="n-tag nt-gray">손실 −30코인</span>
+        </div>
+        <div class="notif-action">→ 포트폴리오 확인</div>
+      </div>
+      <div class="unread-dot"></div>
+    </div>
+
+    <!-- THIS WEEK -->
+    <div class="group-label">이번 주</div>
+
+    <div class="notif-item read" onclick="markRead(this)">
+      <div class="notif-icon ni-teal" style="opacity:0.6;">🏆</div>
+      <div class="notif-body">
+        <div class="notif-top">
+          <div class="notif-title">인천 오픈 대회 결과 공시</div>
+          <div class="notif-time">3일 전</div>
+        </div>
+        <div class="notif-desc">인천 오픈 수영대회 결과가 반영되었습니다. 출전 선수 6명 평균 주가 +18% 상승. 최○○ 1위, 이○○ 2위 입상으로 PB 달성.</div>
+        <div class="notif-tags">
+          <span class="n-tag nt-gray">결과 완료</span>
+          <span class="n-tag nt-gray">평균 +18%</span>
+        </div>
+      </div>
+      <div class="read-dot"></div>
+    </div>
+
+    <div class="notif-item read" onclick="markRead(this)">
+      <div class="notif-icon ni-gray" style="opacity:0.6;">📊</div>
+      <div class="notif-body">
+        <div class="notif-top">
+          <div class="notif-title">주간 주가 업데이트 완료 — 내 주가 +20%</div>
+          <div class="notif-time">4일 전</div>
+        </div>
+        <div class="notif-desc">이번 주 전체 선수 주가가 갱신되었습니다. 나의 주가 1,200 → 1,440 (+20%) 상승. PB 달성 +30% 기여. 시즌 랭킹 7위 → 5위 상승.</div>
+        <div class="notif-tags">
+          <span class="n-tag nt-gray">주간 업데이트</span>
+          <span class="n-tag nt-gray">내 주가 +20%</span>
+          <span class="n-tag nt-gray">랭킹 5위</span>
+        </div>
+      </div>
+      <div class="read-dot"></div>
+    </div>
+
+    <div class="notif-item read" onclick="markRead(this)">
+      <div class="notif-icon ni-gray" style="opacity:0.6;">🎯</div>
+      <div class="notif-body">
+        <div class="notif-top">
+          <div class="notif-title">연령대 랭킹 3위 진입 — 시장 지위 점수 상승</div>
+          <div class="notif-time">5일 전</div>
+        </div>
+        <div class="notif-desc">시장 지위 지수 업데이트로 동일 연령대(25세) 기준 3위에 진입했습니다. 주가 +5점 추가 반영되었습니다.</div>
+        <div class="notif-tags">
+          <span class="n-tag nt-gray">랭킹 변동</span>
+          <span class="n-tag nt-gray">3위 진입</span>
+        </div>
+      </div>
+      <div class="read-dot"></div>
+    </div>
+
+    <div class="notif-item read" onclick="markRead(this)">
+      <div class="notif-icon ni-teal" style="opacity:0.6;">💰</div>
+      <div class="notif-body">
+        <div class="notif-top">
+          <div class="notif-title">이○○ 선수 배당 수익 +60 코인</div>
+          <div class="notif-time">6일 전</div>
+        </div>
+        <div class="notif-desc">서포터로 투자한 이○○ 선수의 주가가 +15% 상승하여 60 코인 배당 수익이 발생했습니다. 서포터 보정 1.2× 적용.</div>
+        <div class="notif-tags">
+          <span class="n-tag nt-gray">배당 수익</span>
+          <span class="n-tag nt-gray">+60코인</span>
+        </div>
+      </div>
+      <div class="read-dot"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="settings-card">
+      <div class="sc-head">
+        <div class="sc-title">⚙️ 알림 설정</div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-label">내 주가 변동 알림</div>
+          <div class="setting-sub">주간 주가 업데이트 시 알림</div>
+        </div>
+        <div class="setting-right">
+          <div class="toggle on" onclick="toggleSwitch(this)"></div>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-label">투자 선수 공시</div>
+          <div class="setting-sub">PB 달성 · 결석 · 부상 · 대회 결과</div>
+        </div>
+        <div class="setting-right">
+          <div class="toggle on" onclick="toggleSwitch(this)"></div>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-label">대회 명단 공시</div>
+          <div class="setting-sub">출전 선수 명단 확정 시</div>
+        </div>
+        <div class="setting-right">
+          <div class="toggle on" onclick="toggleSwitch(this)"></div>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-label">코인 적립 알림</div>
+          <div class="setting-sub">참가비 · 배당 · 보너스 코인</div>
+        </div>
+        <div class="setting-right">
+          <div class="toggle on" onclick="toggleSwitch(this)"></div>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-label">훈련 일지 리마인더</div>
+          <div class="setting-sub">미입력 시 저녁 알림</div>
+        </div>
+        <div class="setting-right">
+          <select class="time-select">
+            <option>오후 9시</option>
+            <option>오후 10시</option>
+            <option>끄기</option>
+          </select>
+          <div class="toggle on" onclick="toggleSwitch(this)"></div>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-left">
+          <div class="setting-label">신규 IPO 알림</div>
+          <div class="setting-sub">새 선수 상장 시</div>
+        </div>
+        <div class="setting-right">
+          <div class="toggle off" onclick="toggleSwitch(this)"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function filterTab(el, type) {
+  document.querySelectorAll('.tab-pill').forEach(t => t.classList.remove('act'));
+  el.classList.add('act');
+}
+function markRead(item) {
+  item.classList.remove('unread','unread-teal','unread-amber','unread-red','unread-purple');
+  item.classList.add('read');
+  const dot = item.querySelector('.unread-dot');
+  if (dot) { dot.classList.remove('unread-dot'); dot.classList.add('read-dot'); }
+  updateBadge();
+}
+function readAll() {
+  document.querySelectorAll('.notif-item').forEach(item => {
+    item.classList.remove('unread','unread-teal','unread-amber','unread-red','unread-purple');
+    item.classList.add('read');
+    const dot = item.querySelector('.unread-dot');
+    if (dot) { dot.classList.remove('unread-dot'); dot.classList.add('read-dot'); }
+  });
+  updateBadge();
+}
+function updateBadge() {
+  const cnt = document.querySelectorAll('.unread-dot').length;
+  const badge = document.querySelector('.unread-badge');
+  const sb = document.querySelector('.sb-badge');
+  if (cnt === 0) {
+    badge.style.display = 'none';
+    if (sb) sb.style.display = 'none';
+  } else {
+    badge.textContent = '읽지 않음 ' + cnt;
+    if (sb) sb.textContent = cnt;
+  }
+}
+function toggleSwitch(el) {
+  el.classList.toggle('on');
+  el.classList.toggle('off');
+}
+document.querySelectorAll('.sb-item').forEach(item => {
+  item.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

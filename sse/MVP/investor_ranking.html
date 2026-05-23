@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medalbank SSE — 투자자 랭킹</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue:#0D4F8B;--blue-mid:#1A6BB5;--blue-light:#E8F2FC;--blue-pale:#F4F8FD;
+    --teal:#0A7A6A;--teal-light:#E4F5F2;
+    --red:#C0392B;--red-light:#FDF0EE;
+    --amber:#B06A00;--amber-light:#FDF4E3;
+    --purple:#5B21B6;--purple-light:#F0EEFF;--purple-mid:#7C3AED;
+    --gold:#B06A00;--silver:#5A6B7B;--bronze:#7B5E3A;
+    --ink:#0F1923;--ink-soft:#5A6B7B;--ink-muted:#8A99A8;
+    --border:#D8E4EE;--border-light:#EAF1F8;
+    --surface:#FFFFFF;--surface-soft:#F7FAFD;--surface-alt:#EEF5FB;
+    --mono:'DM Mono',monospace;--sans:'Pretendard',-apple-system,sans-serif;
+    --serif:'DM Serif Display',serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--surface-soft);color:var(--ink);display:flex;min-height:100vh;}
+
+  /* SIDEBAR */
+  .sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;}
+  .sb-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;}
+  .sb-logo-mark{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+  .sb-logo-mark svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;}
+  .sb-logo-title{font-size:12px;font-weight:600;color:var(--ink);line-height:1.2;}
+  .sb-logo-sub{font-size:10px;color:var(--ink-muted);}
+  .sb-profile{padding:14px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;}
+  .sb-avatar{width:36px;height:36px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0;}
+  .sb-user-name{font-size:13px;font-weight:500;color:var(--ink);}
+  .sb-user-grade{font-size:10px;color:var(--ink-muted);margin-top:1px;}
+  .sb-nav{flex:1;padding:12px 0;overflow-y:auto;}
+  .sb-section-label{font-size:9px;font-weight:600;color:var(--ink-muted);letter-spacing:0.08em;text-transform:uppercase;padding:8px 20px 4px;}
+  .sb-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13px;color:var(--ink-soft);cursor:pointer;border-left:2px solid transparent;text-decoration:none;transition:all 0.12s;}
+  .sb-item:hover{background:var(--surface-soft);color:var(--ink);}
+  .sb-item.active{background:var(--blue-pale);color:var(--blue);border-left-color:var(--blue);font-weight:500;}
+  .sb-badge{margin-left:auto;font-size:10px;background:var(--red-light);color:var(--red);border-radius:10px;padding:1px 7px;font-family:var(--mono);}
+  .sb-footer{padding:14px 16px;border-top:1px solid var(--border-light);}
+
+  /* MAIN */
+  .main{margin-left:220px;flex:1;display:flex;flex-direction:column;}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;}
+  .topbar-title{font-size:15px;font-weight:500;color:var(--ink);}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .topbar-notif{position:relative;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;}
+  .notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--surface);}
+  .topbar-avatar{width:30px;height:30px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;}
+  .content{padding:24px 28px;flex:1;}
+  .up{color:var(--teal);} .down{color:var(--red);} .blue{color:var(--blue);} .purple{color:var(--purple);}
+
+  /* MAIN TAB BAR */
+  .main-tab-bar{display:flex;margin-bottom:20px;border-bottom:1px solid var(--border);}
+  .mtab{font-size:14px;padding:10px 24px;color:var(--ink-muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:var(--sans);margin-bottom:-1px;transition:all 0.15s;}
+  .mtab:hover{color:var(--ink-soft);}
+  .mtab.act-blue{color:var(--blue);border-bottom-color:var(--blue);font-weight:500;}
+  .mtab.act-purple{color:var(--purple);border-bottom-color:var(--purple);font-weight:500;}
+
+  /* METRICS */
+  .metrics-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px;}
+  .metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;}
+  .metric-label{font-size:11px;color:var(--ink-muted);margin-bottom:4px;}
+  .metric-val{font-size:20px;font-weight:500;font-family:var(--mono);margin-bottom:2px;}
+  .metric-sub{font-size:11px;}
+
+  /* PODIUM */
+  .podium-wrap{display:flex;align-items:flex-end;justify-content:center;gap:14px;margin-bottom:24px;height:170px;}
+  .pod{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .pod-av{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;border:2px solid rgba(255,255,255,0.5);}
+  .pod-name{font-size:12px;font-weight:500;color:var(--ink);}
+  .pod-val{font-size:11px;color:var(--ink-muted);font-family:var(--mono);}
+  .pod-block{border-radius:8px 8px 0 0;width:96px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;}
+  .pod-rank{font-size:20px;font-weight:500;color:#fff;}
+  .pod-medal{font-size:18px;}
+  .p1{background:linear-gradient(180deg,#D4A017,#B06A00);height:96px;}
+  .p2{background:linear-gradient(180deg,#9AAAB4,#5A6B7B);height:72px;}
+  .p3{background:linear-gradient(180deg,#C9986A,#7B5E3A);height:54px;}
+
+  /* MY RANK CARD */
+  .my-rank-card{border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;}
+  .mrc-blue{background:var(--surface);border:1.5px solid var(--blue);}
+  .mrc-purple{background:var(--surface);border:1.5px solid var(--purple);}
+  .mr-rank{font-size:24px;font-weight:500;font-family:var(--mono);min-width:36px;}
+  .mr-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;flex-shrink:0;}
+  .mr-info{flex:1;}
+  .mr-name{font-size:14px;font-weight:500;color:var(--ink);}
+  .mr-sub{font-size:11px;color:var(--ink-muted);margin-top:2px;}
+  .mr-badge{font-size:10px;border-radius:5px;padding:2px 8px;margin-left:6px;}
+  .mr-stats{display:flex;gap:20px;}
+  .mr-stat{text-align:right;}
+  .mr-stat-val{font-size:15px;font-weight:500;font-family:var(--mono);}
+  .mr-stat-label{font-size:10px;color:var(--ink-muted);}
+  .rank-delta{font-size:11px;border-radius:5px;padding:3px 10px;margin-right:8px;}
+
+  /* RANK TABLE */
+  .rt-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
+  .rt-head{display:grid;gap:0;background:var(--surface-alt);border-bottom:1px solid var(--border);padding:9px 18px;}
+  .th{font-size:10px;color:var(--ink-muted);font-weight:600;letter-spacing:0.04em;}
+  .rt-row{display:grid;gap:0;padding:11px 18px;border-bottom:1px solid var(--border-light);align-items:center;cursor:pointer;transition:background 0.1s;}
+  .rt-row:last-child{border-bottom:none;}
+  .rt-row:hover{background:var(--surface-soft);}
+  .rt-row.me-blue{background:#F4F8FD;}
+  .rt-row.me-purple{background:#F8F6FF;}
+  .rn{font-size:13px;font-weight:500;font-family:var(--mono);text-align:center;}
+  .rn.g{color:var(--gold);} .rn.s{color:var(--silver);} .rn.b{color:var(--bronze);}
+  .rn.me-c-blue{color:var(--blue);} .rn.me-c-purple{color:var(--purple);}
+  .td-pl{display:flex;align-items:center;gap:10px;}
+  .pl-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;}
+  .pl-name{font-size:13px;font-weight:500;color:var(--ink);}
+  .pl-sub{font-size:10px;color:var(--ink-muted);}
+  .pl-me{font-size:9px;margin-left:4px;}
+  .td{font-size:12px;color:var(--ink);}
+  .td.mono{font-family:var(--mono);}
+  .grade-tag{font-size:10px;padding:2px 8px;border-radius:4px;}
+  .gt-legend{background:#FEF3C7;color:#92400E;}
+  .gt-expert{background:var(--purple-light);color:var(--purple);}
+  .gt-mid{background:var(--blue-light);color:var(--blue);}
+  .gt-basic{background:var(--surface-alt);color:var(--ink-muted);}
+  .profit-bar-wrap{display:flex;align-items:center;gap:6px;}
+  .pb{width:50px;height:5px;background:var(--surface-alt);border-radius:3px;overflow:hidden;}
+  .pb-fill{height:100%;border-radius:3px;}
+  .arr-up{color:var(--teal);font-size:11px;font-family:var(--mono);}
+  .arr-down{color:var(--red);font-size:11px;font-family:var(--mono);}
+  .arr-same{color:var(--ink-muted);font-size:11px;font-family:var(--mono);}
+
+  /* SCOUT EXPLAIN */
+  .scout-explain{background:var(--purple-light);border-radius:10px;padding:14px 18px;margin-bottom:16px;}
+  .se-title{font-size:13px;font-weight:500;color:var(--purple);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+  .se-formula{background:rgba(255,255,255,0.6);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--purple);line-height:1.7;font-family:var(--mono);}
+
+  /* PORTFOLIO PREVIEW */
+  .portfolio-preview{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:20px;}
+  .pp-title{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+  .pp-list{display:flex;flex-direction:column;gap:7px;}
+  .pp-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface-soft);border-radius:8px;}
+  .pp-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;}
+  .pp-name{font-size:12px;color:var(--ink);flex:1;}
+  .pp-when{font-size:10px;color:var(--ink-muted);}
+  .pp-ipo{font-size:11px;color:var(--ink-muted);font-family:var(--mono);}
+  .pp-arrow{font-size:11px;color:var(--ink-muted);}
+  .pp-now{font-size:12px;font-weight:500;font-family:var(--mono);}
+  .pp-profit{font-size:12px;font-weight:500;font-family:var(--mono);}
+
+  /* SCOUT PICK DETAIL */
+  .scout-picks{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:20px;}
+  .sp-title{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:12px;}
+  .pick-item{background:var(--surface-soft);border-radius:10px;padding:12px 14px;margin-bottom:10px;}
+  .pick-item:last-child{margin-bottom:0;}
+  .pick-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .pick-player{display:flex;align-items:center;gap:8px;}
+  .pick-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;}
+  .pick-name{font-size:13px;font-weight:500;color:var(--ink);}
+  .pick-meta{font-size:10px;color:var(--ink-muted);}
+  .pick-score{font-size:15px;font-weight:500;color:var(--purple);font-family:var(--mono);}
+  .pick-bars{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;}
+  .pick-bar-item{font-size:10px;color:var(--ink-muted);}
+  .pick-bar-label{margin-bottom:3px;}
+  .pick-bar-track{height:5px;background:var(--surface-alt);border-radius:3px;overflow:hidden;}
+  .pick-bar-fill{height:100%;border-radius:3px;}
+  .pick-bar-val{font-size:10px;color:var(--ink-muted);margin-top:2px;font-family:var(--mono);}
+  .pick-result{display:flex;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--border-light);}
+  .pr-label{font-size:11px;color:var(--ink-soft);flex:1;}
+  .pr-arrow{font-size:11px;color:var(--ink-muted);}
+  .pr-now{font-size:11px;font-weight:500;font-family:var(--mono);color:var(--ink);}
+  .pr-chg{font-size:12px;font-weight:500;font-family:var(--mono);}
+
+  /* AWARDS */
+  .awards-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+  .award-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+  .aw-head{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .aw-icon{font-size:18px;}
+  .aw-title{font-size:13px;font-weight:500;color:var(--ink);}
+  .aw-list{display:flex;flex-direction:column;gap:6px;}
+  .aw-item{display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--surface-soft);border-radius:7px;}
+  .aw-rank{font-size:14px;width:22px;text-align:center;}
+  .aw-av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;}
+  .aw-name{font-size:12px;color:var(--ink);flex:1;}
+  .aw-val{font-size:12px;font-weight:500;font-family:var(--mono);}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-mark">
+      <svg viewBox="0 0 20 20"><path d="M3 10 Q7 5 10 10 Q13 15 17 10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="4" r="2"/></svg>
+    </div>
+    <div>
+      <div class="sb-logo-title">Medalbank SSE</div>
+      <div class="sb-logo-sub">수영 주식 거래소</div>
+    </div>
+  </div>
+  <div class="sb-profile">
+    <div class="sb-avatar">김</div>
+    <div>
+      <div class="sb-user-name">김○○</div>
+      <div class="sb-user-grade">중형주 · 38주차</div>
+    </div>
+    <div style="margin-left:auto;text-align:right;">
+      <div style="font-size:12px;font-weight:500;color:var(--amber);font-family:var(--mono);">3,240</div>
+      <div style="font-size:9px;color:var(--ink-muted);">보유 코인</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section-label">메인</div>
+    <a class="sb-item" href="#">🏠 홈</a>
+    <a class="sb-item" href="#">📈 수영 지수</a>
+    <a class="sb-item" href="#">👥 선수 목록</a>
+    <a class="sb-item" href="#">🏆 대회 현황</a>
+    <div class="sb-section-label">내 현황</div>
+    <a class="sb-item" href="#">👤 내 주가</a>
+    <a class="sb-item" href="#">💼 내 포트폴리오</a>
+    <a class="sb-item" href="#">📓 훈련 일지</a>
+    <a class="sb-item" href="#">🔔 공시 알림<span class="sb-badge">5</span></a>
+    <div class="sb-section-label">관리</div>
+    <a class="sb-item active" href="#">📊 시즌 랭킹</a>
+    <a class="sb-item" href="#">⚙️ 설정</a>
+  </nav>
+  <div class="sb-footer"><div style="font-size:12px;color:var(--ink-muted);cursor:pointer;">↩ 로그아웃</div></div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">⭐ 투자자 랭킹 <span style="font-size:12px;color:var(--ink-muted);font-weight:400;">— 2026 시즌 1 · 유망주를 먼저 알아본 사람은 누구?</span></div>
+    <div class="topbar-right">
+      <div class="topbar-notif">🔔<div class="notif-dot"></div></div>
+      <div class="topbar-avatar">김</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- MAIN TABS -->
+    <div class="main-tab-bar">
+      <button class="mtab act-blue" id="tabProfit" onclick="switchTab('profit')">💰 수익률 랭킹</button>
+      <button class="mtab" id="tabScout" onclick="switchTab('scout')">🔭 유망주 발굴 랭킹</button>
+    </div>
+
+    <!-- ═══ PROFIT TAB ═══ -->
+    <div id="profitSection">
+      <div class="metrics-4">
+        <div class="metric">
+          <div class="metric-label">내 총 수익</div>
+          <div class="metric-val up">+680</div>
+          <div class="metric-sub up">코인 시즌 누적</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">내 수익률</div>
+          <div class="metric-val up">+13%</div>
+          <div class="metric-sub" style="color:var(--ink-muted);">투자 선수 5명</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">최고 수익 선수</div>
+          <div class="metric-val blue" style="font-size:16px;">최○○</div>
+          <div class="metric-sub up">+180코인 · 스폰서</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">투자자 순위</div>
+          <div class="metric-val blue">3위</div>
+          <div class="metric-sub up">▲ 지난주 +1위</div>
+        </div>
+      </div>
+
+      <!-- PODIUM -->
+      <div class="podium-wrap">
+        <div class="pod">
+          <div class="pod-av" style="background:#D3D1C7;color:#2C2C2A;">이</div>
+          <div class="pod-name">이○○</div>
+          <div class="pod-val">+42%</div>
+          <div class="pod-block p2"><div class="pod-medal">🥈</div><div class="pod-rank">2</div></div>
+        </div>
+        <div class="pod">
+          <div class="pod-av" style="background:#FDF4E3;color:#B06A00;">박</div>
+          <div class="pod-name">박○○</div>
+          <div class="pod-val">+58%</div>
+          <div class="pod-block p1"><div class="pod-medal">🥇</div><div class="pod-rank">1</div></div>
+        </div>
+        <div class="pod">
+          <div class="pod-av" style="background:#E8F2FC;color:#0D4F8B;">김</div>
+          <div class="pod-name">김○○</div>
+          <div class="pod-val">+13%</div>
+          <div class="pod-block p3"><div class="pod-medal">🥉</div><div class="pod-rank">3</div></div>
+        </div>
+      </div>
+
+      <!-- MY RANK -->
+      <div class="my-rank-card mrc-blue">
+        <div class="mr-rank blue">3위</div>
+        <div class="mr-av" style="background:var(--blue-light);color:var(--blue);">김</div>
+        <div class="mr-info">
+          <div class="mr-name">김○○ <span class="mr-badge" style="background:var(--blue-light);color:var(--blue);">나</span></div>
+          <div class="mr-sub">투자 5명 · 펀드매니저 등급</div>
+        </div>
+        <div class="rank-delta" style="background:var(--teal-light);color:var(--teal);">▲ 지난주 대비 +1위</div>
+        <div class="mr-stats">
+          <div class="mr-stat"><div class="mr-stat-val up">+680</div><div class="mr-stat-label">시즌 수익</div></div>
+          <div class="mr-stat"><div class="mr-stat-val up">+13%</div><div class="mr-stat-label">수익률</div></div>
+        </div>
+      </div>
+
+      <!-- RANK TABLE -->
+      <div class="rt-wrap">
+        <div class="rt-head" style="grid-template-columns:40px 1fr 80px 80px 72px 80px 72px;">
+          <div class="th" style="text-align:center;">#</div>
+          <div class="th">투자자</div>
+          <div class="th">총 수익</div>
+          <div class="th">수익률</div>
+          <div class="th">투자 선수</div>
+          <div class="th">등급</div>
+          <div class="th">순위 변동</div>
+        </div>
+        <div class="rt-row" style="grid-template-columns:40px 1fr 80px 80px 72px 80px 72px;">
+          <div class="rn g">1</div>
+          <div class="td-pl"><div class="pl-av" style="background:#FDF4E3;color:#B06A00;">박</div><div><div class="pl-name">박○○</div><div class="pl-sub">펀드매니저</div></div></div>
+          <div class="td mono up" style="font-weight:500;">+1,240</div>
+          <div class="td up mono" style="font-weight:500;">+58%</div>
+          <div class="td"><span style="font-size:11px;background:var(--blue-light);color:var(--blue);padding:2px 7px;border-radius:4px;">8명</span></div>
+          <div class="td"><span class="grade-tag gt-legend">전설</span></div>
+          <div class="arr-same">— 유지</div>
+        </div>
+        <div class="rt-row" style="grid-template-columns:40px 1fr 80px 80px 72px 80px 72px;">
+          <div class="rn s">2</div>
+          <div class="td-pl"><div class="pl-av" style="background:#D3D1C7;color:#2C2C2A;">이</div><div><div class="pl-name">이○○</div><div class="pl-sub">서포터</div></div></div>
+          <div class="td mono up" style="font-weight:500;">+920</div>
+          <div class="td up mono" style="font-weight:500;">+42%</div>
+          <div class="td"><span style="font-size:11px;background:var(--blue-light);color:var(--blue);padding:2px 7px;border-radius:4px;">6명</span></div>
+          <div class="td"><span class="grade-tag gt-expert">고수</span></div>
+          <div class="arr-up">▲ +1위</div>
+        </div>
+        <div class="rt-row me-blue" style="grid-template-columns:40px 1fr 80px 80px 72px 80px 72px;">
+          <div class="rn me-c-blue">3</div>
+          <div class="td-pl"><div class="pl-av" style="background:#E8F2FC;color:#0D4F8B;">김</div><div><div class="pl-name">김○○<span class="pl-me" style="color:var(--blue);">나</span></div><div class="pl-sub">펀드매니저</div></div></div>
+          <div class="td mono up" style="font-weight:500;color:var(--blue);">+680</div>
+          <div class="td up mono" style="font-weight:500;">+13%</div>
+          <div class="td"><span style="font-size:11px;background:var(--blue-light);color:var(--blue);padding:2px 7px;border-radius:4px;">5명</span></div>
+          <div class="td"><span class="grade-tag gt-expert">고수</span></div>
+          <div class="arr-up">▲ +1위</div>
+        </div>
+        <div class="rt-row" style="grid-template-columns:40px 1fr 80px 80px 72px 80px 72px;">
+          <div class="rn">4</div>
+          <div class="td-pl"><div class="pl-av" style="background:#E4F5F2;color:#0A7A6A;">최</div><div><div class="pl-name">최○○</div><div class="pl-sub">서포터</div></div></div>
+          <div class="td mono up" style="font-weight:500;">+420</div>
+          <div class="td up mono" style="font-weight:500;">+22%</div>
+          <div class="td"><span style="font-size:11px;background:var(--blue-light);color:var(--blue);padding:2px 7px;border-radius:4px;">3명</span></div>
+          <div class="td"><span class="grade-tag gt-mid">중급</span></div>
+          <div class="arr-down">▼ -2위</div>
+        </div>
+        <div class="rt-row" style="grid-template-columns:40px 1fr 80px 80px 72px 80px 72px;">
+          <div class="rn">5</div>
+          <div class="td-pl"><div class="pl-av" style="background:#FBEAF0;color:#9B2C6C;">정</div><div><div class="pl-name">정○○</div><div class="pl-sub">개인투자자</div></div></div>
+          <div class="td mono up" style="font-weight:500;">+180</div>
+          <div class="td up mono" style="font-weight:500;">+9%</div>
+          <div class="td"><span style="font-size:11px;background:var(--blue-light);color:var(--blue);padding:2px 7px;border-radius:4px;">2명</span></div>
+          <div class="td"><span class="grade-tag gt-basic">입문</span></div>
+          <div class="arr-same">— 유지</div>
+        </div>
+        <div class="rt-row" style="grid-template-columns:40px 1fr 80px 80px 72px 80px 72px;">
+          <div class="rn">6</div>
+          <div class="td-pl"><div class="pl-av" style="background:#FDF0EE;color:#C0392B;">강</div><div><div class="pl-name">강○○</div><div class="pl-sub">개인투자자</div></div></div>
+          <div class="td mono down" style="font-weight:500;">−120</div>
+          <div class="td down mono" style="font-weight:500;">-8%</div>
+          <div class="td"><span style="font-size:11px;background:var(--blue-light);color:var(--blue);padding:2px 7px;border-radius:4px;">3명</span></div>
+          <div class="td"><span class="grade-tag gt-basic">입문</span></div>
+          <div class="arr-down">▼ -1위</div>
+        </div>
+      </div>
+
+      <!-- PORTFOLIO PROFIT BREAKDOWN -->
+      <div class="portfolio-preview">
+        <div class="pp-title">💼 내 투자 포트폴리오 수익 내역</div>
+        <div class="pp-list">
+          <div class="pp-item">
+            <div class="pp-av" style="background:#FDF4E3;color:#B06A00;">최</div>
+            <div class="pp-name">최○○ <span style="font-size:10px;color:var(--blue);">스폰서 12%</span></div>
+            <div class="pp-when">600 투자</div>
+            <div class="pp-arrow">→</div>
+            <div class="pp-now">780코인</div>
+            <div class="pp-profit up">+180</div>
+          </div>
+          <div class="pp-item">
+            <div class="pp-av" style="background:#E4F5F2;color:#0A7A6A;">이</div>
+            <div class="pp-name">이○○ <span style="font-size:10px;color:var(--teal);">서포터 7%</span></div>
+            <div class="pp-when">400 투자</div>
+            <div class="pp-arrow">→</div>
+            <div class="pp-now">460코인</div>
+            <div class="pp-profit up">+60</div>
+          </div>
+          <div class="pp-item">
+            <div class="pp-av" style="background:#F1EFE8;color:#5F5E5A;">박</div>
+            <div class="pp-name">박○○ <span style="font-size:10px;color:var(--teal);">서포터 6%</span></div>
+            <div class="pp-when">350 투자</div>
+            <div class="pp-arrow">→</div>
+            <div class="pp-now">385코인</div>
+            <div class="pp-profit up">+35</div>
+          </div>
+          <div class="pp-item">
+            <div class="pp-av" style="background:#E1F5EE;color:#085041;">강</div>
+            <div class="pp-name">강○○ <span style="font-size:10px;color:var(--amber);">개인 4%</span></div>
+            <div class="pp-when">300 투자</div>
+            <div class="pp-arrow">→</div>
+            <div class="pp-now">270코인</div>
+            <div class="pp-profit down">−30</div>
+          </div>
+          <div class="pp-item">
+            <div class="pp-av" style="background:#F0EEFF;color:#5B21B6;">윤</div>
+            <div class="pp-name">윤○○ <span style="font-size:10px;color:var(--amber);">개인 3%</span></div>
+            <div class="pp-when">200 투자</div>
+            <div class="pp-arrow">→</div>
+            <div class="pp-now">210코인</div>
+            <div class="pp-profit up">+10</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="awards-2">
+        <div class="award-card">
+          <div class="aw-head"><div class="aw-icon">💰</div><div class="aw-title">수익률 TOP 3</div></div>
+          <div class="aw-list">
+            <div class="aw-item"><div class="aw-rank">🥇</div><div class="aw-av" style="background:#FDF4E3;color:#B06A00;">박</div><div class="aw-name">박○○</div><div class="aw-val up">+58%</div></div>
+            <div class="aw-item"><div class="aw-rank">🥈</div><div class="aw-av" style="background:#D3D1C7;color:#2C2C2A;">이</div><div class="aw-name">이○○</div><div class="aw-val up">+42%</div></div>
+            <div class="aw-item"><div class="aw-rank">🥉</div><div class="aw-av" style="background:#E8F2FC;color:#0D4F8B;">김</div><div class="aw-name">김○○ <span style="font-size:9px;color:var(--blue);">나</span></div><div class="aw-val up">+13%</div></div>
+          </div>
+        </div>
+        <div class="award-card">
+          <div class="aw-head"><div class="aw-icon">📊</div><div class="aw-title">총 수익 TOP 3</div></div>
+          <div class="aw-list">
+            <div class="aw-item"><div class="aw-rank">🥇</div><div class="aw-av" style="background:#FDF4E3;color:#B06A00;">박</div><div class="aw-name">박○○</div><div class="aw-val up">+1,240</div></div>
+            <div class="aw-item"><div class="aw-rank">🥈</div><div class="aw-av" style="background:#D3D1C7;color:#2C2C2A;">이</div><div class="aw-name">이○○</div><div class="aw-val up">+920</div></div>
+            <div class="aw-item"><div class="aw-rank">🥉</div><div class="aw-av" style="background:#E8F2FC;color:#0D4F8B;">김</div><div class="aw-name">김○○ <span style="font-size:9px;color:var(--blue);">나</span></div><div class="aw-val up">+680</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SCOUT TAB ═══ -->
+    <div id="scoutSection" style="display:none;">
+
+      <div class="scout-explain">
+        <div class="se-title">🔭 유망주 발굴 지수란?</div>
+        <div class="se-formula">
+발굴 지수 = 투자 시점 주가 대비 현재 상승률
+         × 조기성 보정 (IPO 당일 = 최고점)
+         × 보유 지분 비율
+
+→ 단순 수익률이 아닌 "얼마나 먼저 알아봤는가"를 평가</div>
+      </div>
+
+      <div class="metrics-4">
+        <div class="metric">
+          <div class="metric-label">내 발굴 지수</div>
+          <div class="metric-val purple">72점</div>
+          <div class="metric-sub purple">고수 등급</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">발굴 순위</div>
+          <div class="metric-val purple">2위</div>
+          <div class="metric-sub up">▲ 지난 시즌 대비 +15점</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">조기 투자 선수</div>
+          <div class="metric-val" style="color:var(--ink);">2명</div>
+          <div class="metric-sub up">IPO 당일 투자</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">놓친 유망주</div>
+          <div class="metric-val down">1명</div>
+          <div class="metric-sub down">윤○○ 뒤늦게 투자</div>
+        </div>
+      </div>
+
+      <!-- PODIUM SCOUT -->
+      <div class="podium-wrap">
+        <div class="pod">
+          <div class="pod-av" style="background:#E8F2FC;color:#0D4F8B;">김</div>
+          <div class="pod-name">김○○</div>
+          <div class="pod-val">72점</div>
+          <div class="pod-block p2"><div class="pod-medal">🥈</div><div class="pod-rank">2</div></div>
+        </div>
+        <div class="pod">
+          <div class="pod-av" style="background:#FDF4E3;color:#B06A00;">박</div>
+          <div class="pod-name">박○○</div>
+          <div class="pod-val">89점</div>
+          <div class="pod-block p1"><div class="pod-medal">🥇</div><div class="pod-rank">1</div></div>
+        </div>
+        <div class="pod">
+          <div class="pod-av" style="background:#D3D1C7;color:#2C2C2A;">이</div>
+          <div class="pod-name">이○○</div>
+          <div class="pod-val">61점</div>
+          <div class="pod-block p3"><div class="pod-medal">🥉</div><div class="pod-rank">3</div></div>
+        </div>
+      </div>
+
+      <!-- MY RANK SCOUT -->
+      <div class="my-rank-card mrc-purple">
+        <div class="mr-rank purple">2위</div>
+        <div class="mr-av" style="background:var(--purple-light);color:var(--purple);">김</div>
+        <div class="mr-info">
+          <div class="mr-name">김○○ <span class="mr-badge" style="background:var(--purple-light);color:var(--purple);">나</span></div>
+          <div class="mr-sub">발굴 지수 72점 · 고수 등급 · 조기 투자 2명</div>
+        </div>
+        <div class="rank-delta" style="background:var(--teal-light);color:var(--teal);">▲ 지난 시즌 대비 +15점</div>
+        <div class="mr-stats">
+          <div class="mr-stat"><div class="mr-stat-val purple">72점</div><div class="mr-stat-label">발굴 지수</div></div>
+          <div class="mr-stat"><div class="mr-stat-val up">+40%</div><div class="mr-stat-label">조기 성장률</div></div>
+        </div>
+      </div>
+
+      <!-- SCOUT RANK TABLE -->
+      <div class="rt-wrap">
+        <div class="rt-head" style="grid-template-columns:40px 1fr 80px 72px 80px 72px 72px;">
+          <div class="th" style="text-align:center;">#</div>
+          <div class="th">투자자</div>
+          <div class="th">발굴 지수</div>
+          <div class="th">조기 투자</div>
+          <div class="th">평균 성장률</div>
+          <div class="th">등급</div>
+          <div class="th">순위 변동</div>
+        </div>
+        <div class="rt-row" style="grid-template-columns:40px 1fr 80px 72px 80px 72px 72px;">
+          <div class="rn g">1</div>
+          <div class="td-pl"><div class="pl-av" style="background:#FDF4E3;color:#B06A00;">박</div><div><div class="pl-name">박○○</div><div class="pl-sub">슈퍼 스카우터</div></div></div>
+          <div class="td mono purple" style="font-weight:500;">89점</div>
+          <div class="td"><span style="font-size:11px;background:var(--teal-light);color:var(--teal);padding:2px 7px;border-radius:4px;">5명</span></div>
+          <div class="td up mono" style="font-weight:500;">+52%</div>
+          <div class="td"><span class="grade-tag gt-legend">전설</span></div>
+          <div class="arr-same">— 유지</div>
+        </div>
+        <div class="rt-row me-purple" style="grid-template-columns:40px 1fr 80px 72px 80px 72px 72px;">
+          <div class="rn me-c-purple">2</div>
+          <div class="td-pl"><div class="pl-av" style="background:#E8F2FC;color:#0D4F8B;">김</div><div><div class="pl-name">김○○<span class="pl-me" style="color:var(--purple);">나</span></div><div class="pl-sub">스카우터</div></div></div>
+          <div class="td mono purple" style="font-weight:500;">72점</div>
+          <div class="td"><span style="font-size:11px;background:var(--teal-light);color:var(--teal);padding:2px 7px;border-radius:4px;">2명</span></div>
+          <div class="td up mono" style="font-weight:500;">+40%</div>
+          <div class="td"><span class="grade-tag gt-expert">고수</span></div>
+          <div class="arr-up">▲ +1위</div>
+        </div>
+        <div class="rt-row" style="grid-template-columns:40px 1fr 80px 72px 80px 72px 72px;">
+          <div class="rn b">3</div>
+          <div class="td-pl"><div class="pl-av" style="background:#D3D1C7;color:#2C2C2A;">이</div><div><div class="pl-name">이○○</div><div class="pl-sub">스카우터</div></div></div>
+          <div class="td mono purple" style="font-weight:500;">61점</div>
+          <div class="td"><span style="font-size:11px;background:var(--teal-light);color:var(--teal);padding:2px 7px;border-radius:4px;">3명</span></div>
+          <div class="td up mono" style="font-weight:500;">+28%</div>
+          <div class="td"><span class="grade-tag gt-expert">고수</span></div>
+          <div class="arr-same">— 유지</div>
+        </div>
+        <div class="rt-row" style="grid-template-columns:40px 1fr 80px 72px 80px 72px 72px;">
+          <div class="rn">4</div>
+          <div class="td-pl"><div class="pl-av" style="background:#E4F5F2;color:#0A7A6A;">최</div><div><div class="pl-name">최○○</div><div class="pl-sub">초보 스카우터</div></div></div>
+          <div class="td mono purple" style="font-weight:500;">44점</div>
+          <div class="td"><span style="font-size:11px;background:var(--amber-light);color:var(--amber);padding:2px 7px;border-radius:4px;">1명</span></div>
+          <div class="td up mono" style="font-weight:500;">+18%</div>
+          <div class="td"><span class="grade-tag gt-mid">중급</span></div>
+          <div class="arr-down">▼ -1위</div>
+        </div>
+        <div class="rt-row" style="grid-template-columns:40px 1fr 80px 72px 80px 72px 72px;">
+          <div class="rn">5</div>
+          <div class="td-pl"><div class="pl-av" style="background:#FBEAF0;color:#9B2C6C;">정</div><div><div class="pl-name">정○○</div><div class="pl-sub">입문</div></div></div>
+          <div class="td mono purple" style="font-weight:500;">30점</div>
+          <div class="td"><span style="font-size:11px;background:var(--surface-alt);color:var(--ink-muted);padding:2px 7px;border-radius:4px;">0명</span></div>
+          <div class="td up mono" style="font-weight:500;">+9%</div>
+          <div class="td"><span class="grade-tag gt-basic">입문</span></div>
+          <div class="arr-same">— 유지</div>
+        </div>
+      </div>
+
+      <!-- MY SCOUT PICKS DETAIL -->
+      <div class="scout-picks">
+        <div class="sp-title">🎯 내 조기 발굴 선수 — 투자 시점 분석</div>
+
+        <div class="pick-item">
+          <div class="pick-top">
+            <div class="pick-player">
+              <div class="pick-av" style="background:#E4F5F2;color:#0A7A6A;">이</div>
+              <div>
+                <div class="pick-name">이○○</div>
+                <div class="pick-meta">IPO 당일 투자 · 15세 성장주</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:10px;color:var(--ink-muted);">발굴 점수</div>
+              <div class="pick-score">38점</div>
+            </div>
+          </div>
+          <div class="pick-bars">
+            <div class="pick-bar-item">
+              <div class="pick-bar-label">조기성</div>
+              <div class="pick-bar-track"><div class="pick-bar-fill" style="width:100%;background:var(--purple);"></div></div>
+              <div class="pick-bar-val">IPO 당일</div>
+            </div>
+            <div class="pick-bar-item">
+              <div class="pick-bar-label">성장률</div>
+              <div class="pick-bar-track"><div class="pick-bar-fill" style="width:80%;background:var(--teal);"></div></div>
+              <div class="pick-bar-val">+40%</div>
+            </div>
+            <div class="pick-bar-item">
+              <div class="pick-bar-label">투자 규모</div>
+              <div class="pick-bar-track"><div class="pick-bar-fill" style="width:70%;background:var(--blue);"></div></div>
+              <div class="pick-bar-val">7% 지분</div>
+            </div>
+          </div>
+          <div class="pick-result">
+            <div class="pr-label">투자 시점 1,000코인</div>
+            <div class="pr-arrow">→</div>
+            <div class="pr-now">현재 1,405코인</div>
+            <div class="pr-chg up">+40%</div>
+          </div>
+        </div>
+
+        <div class="pick-item">
+          <div class="pick-top">
+            <div class="pick-player">
+              <div class="pick-av" style="background:#F0EEFF;color:#5B21B6;">윤</div>
+              <div>
+                <div class="pick-name">윤○○</div>
+                <div class="pick-meta">IPO+3주 투자 · 12세 스타트업</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:10px;color:var(--ink-muted);">발굴 점수</div>
+              <div class="pick-score" style="color:var(--amber);">22점</div>
+            </div>
+          </div>
+          <div class="pick-bars">
+            <div class="pick-bar-item">
+              <div class="pick-bar-label">조기성</div>
+              <div class="pick-bar-track"><div class="pick-bar-fill" style="width:55%;background:var(--purple);"></div></div>
+              <div class="pick-bar-val">IPO+3주</div>
+            </div>
+            <div class="pick-bar-item">
+              <div class="pick-bar-label">성장률</div>
+              <div class="pick-bar-track"><div class="pick-bar-fill" style="width:25%;background:var(--teal);"></div></div>
+              <div class="pick-bar-val">+5%</div>
+            </div>
+            <div class="pick-bar-item">
+              <div class="pick-bar-label">투자 규모</div>
+              <div class="pick-bar-track"><div class="pick-bar-fill" style="width:30%;background:var(--blue);"></div></div>
+              <div class="pick-bar-val">3% 지분</div>
+            </div>
+          </div>
+          <div class="pick-result">
+            <div class="pr-label">투자 시점 700코인</div>
+            <div class="pr-arrow">→</div>
+            <div class="pr-now">현재 700코인</div>
+            <div class="pr-chg up">+5%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="awards-2">
+        <div class="award-card">
+          <div class="aw-head"><div class="aw-icon">🔭</div><div class="aw-title">발굴 지수 TOP 3</div></div>
+          <div class="aw-list">
+            <div class="aw-item"><div class="aw-rank">🥇</div><div class="aw-av" style="background:#FDF4E3;color:#B06A00;">박</div><div class="aw-name">박○○</div><div class="aw-val purple">89점 전설</div></div>
+            <div class="aw-item"><div class="aw-rank">🥈</div><div class="aw-av" style="background:#E8F2FC;color:#0D4F8B;">김</div><div class="aw-name">김○○ <span style="font-size:9px;color:var(--blue);">나</span></div><div class="aw-val purple">72점 고수</div></div>
+            <div class="aw-item"><div class="aw-rank">🥉</div><div class="aw-av" style="background:#D3D1C7;color:#2C2C2A;">이</div><div class="aw-name">이○○</div><div class="aw-val purple">61점 고수</div></div>
+          </div>
+        </div>
+        <div class="award-card">
+          <div class="aw-head"><div class="aw-icon">⚡</div><div class="aw-title">최다 조기 투자</div></div>
+          <div class="aw-list">
+            <div class="aw-item"><div class="aw-rank">🥇</div><div class="aw-av" style="background:#FDF4E3;color:#B06A00;">박</div><div class="aw-name">박○○</div><div class="aw-val" style="color:var(--teal);">5명</div></div>
+            <div class="aw-item"><div class="aw-rank">🥈</div><div class="aw-av" style="background:#D3D1C7;color:#2C2C2A;">이</div><div class="aw-name">이○○</div><div class="aw-val" style="color:var(--teal);">3명</div></div>
+            <div class="aw-item"><div class="aw-rank">🥉</div><div class="aw-av" style="background:#E8F2FC;color:#0D4F8B;">김</div><div class="aw-name">김○○ <span style="font-size:9px;color:var(--blue);">나</span></div><div class="aw-val" style="color:var(--teal);">2명</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /scoutSection -->
+
+  </div>
+</div>
+
+<script>
+function switchTab(tab) {
+  const isProfit = tab === 'profit';
+  document.getElementById('tabProfit').className = 'mtab' + (isProfit ? ' act-blue' : '');
+  document.getElementById('tabScout').className = 'mtab' + (!isProfit ? ' act-purple' : '');
+  document.getElementById('profitSection').style.display = isProfit ? '' : 'none';
+  document.getElementById('scoutSection').style.display = isProfit ? 'none' : '';
+}
+document.querySelectorAll('.sb-item').forEach(item => {
+  item.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

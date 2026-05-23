@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medalbank SSE — 훈련 일지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue:#0D4F8B;--blue-mid:#1A6BB5;--blue-light:#E8F2FC;--blue-pale:#F4F8FD;
+    --teal:#0A7A6A;--teal-light:#E4F5F2;
+    --red:#C0392B;--red-light:#FDF0EE;
+    --amber:#B06A00;--amber-light:#FDF4E3;
+    --purple:#5B21B6;--purple-light:#F0EEFF;
+    --ink:#0F1923;--ink-soft:#5A6B7B;--ink-muted:#8A99A8;
+    --border:#D8E4EE;--border-light:#EAF1F8;
+    --surface:#FFFFFF;--surface-soft:#F7FAFD;--surface-alt:#EEF5FB;
+    --mono:'DM Mono',monospace;--sans:'Pretendard',-apple-system,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--surface-soft);color:var(--ink);display:flex;min-height:100vh;}
+
+  /* SIDEBAR */
+  .sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;}
+  .sb-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;}
+  .sb-logo-mark{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+  .sb-logo-mark svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;}
+  .sb-logo-title{font-size:12px;font-weight:600;color:var(--ink);line-height:1.2;}
+  .sb-logo-sub{font-size:10px;color:var(--ink-muted);}
+  .sb-profile{padding:14px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;}
+  .sb-avatar{width:36px;height:36px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0;}
+  .sb-user-name{font-size:13px;font-weight:500;color:var(--ink);}
+  .sb-user-grade{font-size:10px;color:var(--ink-muted);margin-top:1px;}
+  .sb-nav{flex:1;padding:12px 0;overflow-y:auto;}
+  .sb-section-label{font-size:9px;font-weight:600;color:var(--ink-muted);letter-spacing:0.08em;text-transform:uppercase;padding:8px 20px 4px;}
+  .sb-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13px;color:var(--ink-soft);cursor:pointer;border-left:2px solid transparent;text-decoration:none;transition:all 0.12s;}
+  .sb-item:hover{background:var(--surface-soft);color:var(--ink);}
+  .sb-item.active{background:var(--blue-pale);color:var(--blue);border-left-color:var(--blue);font-weight:500;}
+  .sb-badge{margin-left:auto;font-size:10px;background:var(--red-light);color:var(--red);border-radius:10px;padding:1px 7px;font-family:var(--mono);}
+  .sb-footer{padding:14px 16px;border-top:1px solid var(--border-light);}
+
+  /* MAIN */
+  .main{margin-left:220px;flex:1;display:flex;flex-direction:column;}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;}
+  .topbar-title{font-size:15px;font-weight:500;color:var(--ink);}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .topbar-notif{position:relative;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;}
+  .notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--surface);}
+  .topbar-avatar{width:30px;height:30px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;}
+  .content{padding:24px 28px;flex:1;}
+  .up{color:var(--teal);} .down{color:var(--red);} .blue{color:var(--blue);} .amber{color:var(--amber);}
+
+  /* METRICS */
+  .metrics-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px;}
+  .metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;}
+  .metric-label{font-size:11px;color:var(--ink-muted);margin-bottom:4px;}
+  .metric-val{font-size:20px;font-weight:500;font-family:var(--mono);margin-bottom:2px;}
+  .metric-sub{font-size:11px;}
+
+  /* WRITE FORM */
+  .write-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:20px;}
+  .wc-head{padding:16px 20px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;}
+  .wc-title{font-size:14px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:8px;}
+  .wc-date{font-size:12px;color:var(--ink-muted);font-family:var(--mono);}
+  .wc-coin-hint{font-size:11px;color:var(--amber);display:flex;align-items:center;gap:4px;background:var(--amber-light);border-radius:6px;padding:4px 10px;}
+  .wc-body{padding:18px 20px;}
+  .form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px;}
+  .form-item{display:flex;flex-direction:column;gap:5px;}
+  .form-label{font-size:11px;color:var(--ink-soft);font-weight:500;}
+  .form-select{font-size:13px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-soft);color:var(--ink);font-family:var(--sans);outline:none;cursor:pointer;}
+  .form-select:focus{border-color:var(--blue);}
+  .form-input{font-size:13px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-soft);color:var(--ink);font-family:var(--mono);outline:none;}
+  .form-input:focus{border-color:var(--blue);}
+  .condition-wrap{display:flex;gap:4px;margin-top:2px;}
+  .star{font-size:20px;cursor:pointer;color:var(--border);transition:color 0.1s;}
+  .star.on{color:#F59E0B;}
+  .memo-wrap{margin-bottom:14px;}
+  .memo-label{font-size:11px;color:var(--ink-soft);font-weight:500;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+  .memo-pub-tag{font-size:10px;color:var(--blue);background:var(--blue-light);border-radius:4px;padding:2px 7px;}
+  .memo-textarea{width:100%;padding:10px 14px;font-size:13px;border:1px solid var(--border);border-radius:8px;background:var(--surface-soft);color:var(--ink);font-family:var(--sans);resize:none;height:72px;outline:none;line-height:1.6;}
+  .memo-textarea:focus{border-color:var(--blue);}
+  .wc-footer{display:flex;justify-content:flex-end;}
+  .save-btn{font-size:13px;font-weight:500;color:#fff;background:var(--blue);border:none;border-radius:8px;padding:10px 24px;cursor:pointer;font-family:var(--sans);}
+  .save-btn:hover{background:var(--blue-mid);}
+
+  /* CALENDAR */
+  .calendar-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:20px;}
+  .cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .cal-title{font-size:14px;font-weight:500;color:var(--ink);}
+  .cal-nav{display:flex;align-items:center;gap:10px;}
+  .cal-nav-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);}
+  .cal-month{font-size:13px;font-weight:500;color:var(--ink);font-family:var(--mono);}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-dow{font-size:10px;color:var(--ink-muted);text-align:center;padding:4px 0 8px;font-weight:600;}
+  .cal-day{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;transition:all 0.1s;position:relative;}
+  .cal-day:hover{background:var(--surface-alt);}
+  .cd-empty{color:transparent;pointer-events:none;}
+  .cd-done{background:var(--blue);color:#fff;font-weight:500;}
+  .cd-done:hover{background:var(--blue-mid);}
+  .cd-pb{background:var(--teal);color:#fff;font-weight:500;}
+  .cd-today{border:2px solid var(--blue);color:var(--blue);font-weight:500;}
+  .cd-absent{background:var(--surface-alt);color:var(--ink-muted);}
+  .cd-future{color:var(--ink-muted);}
+  .cal-legend{display:flex;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border-light);}
+  .cl-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-muted);}
+  .cl-dot{width:10px;height:10px;border-radius:50%;}
+  .cl-today-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--blue);}
+
+  /* TWO COL */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+
+  /* PANEL */
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .panel-head{padding:14px 18px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;}
+  .panel-title{font-size:13px;font-weight:500;color:var(--ink);}
+  .panel-body{padding:14px 18px;}
+
+  /* JOURNAL ENTRY */
+  .entry-item{padding:10px;background:var(--surface-soft);border-radius:8px;margin-bottom:8px;cursor:pointer;transition:background 0.1s;}
+  .entry-item:last-child{margin-bottom:0;}
+  .entry-item:hover{background:var(--surface-alt);}
+  .ei-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .ei-date{font-size:11px;color:var(--ink-muted);font-family:var(--mono);}
+  .ei-badge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500;}
+  .eb-pb{background:var(--teal-light);color:var(--teal);}
+  .eb-hard{background:var(--amber-light);color:var(--amber);}
+  .eb-normal{background:var(--blue-light);color:var(--blue);}
+  .eb-light{background:var(--surface-alt);color:var(--ink-muted);border:1px solid var(--border);}
+  .ei-stats{display:flex;gap:12px;margin-bottom:6px;}
+  .ei-stat{font-size:11px;color:var(--ink-muted);}
+  .ei-stat strong{color:var(--ink);font-family:var(--mono);}
+  .ei-memo{font-size:11px;color:var(--ink-soft);font-style:italic;line-height:1.4;}
+  .ei-stars{font-size:12px;color:#F59E0B;}
+
+  /* STREAK */
+  .streak-header{display:flex;align-items:baseline;gap:8px;margin-bottom:12px;}
+  .streak-num{font-size:32px;font-weight:500;color:var(--blue);font-family:var(--mono);}
+  .streak-label{font-size:13px;color:var(--ink-soft);}
+  .streak-grid{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:12px;}
+  .sc{width:14px;height:14px;border-radius:3px;}
+  .s0{background:var(--surface-alt);}
+  .s1{background:#B5D4F4;}
+  .s2{background:#378ADD;}
+  .s3{background:#0D4F8B;}
+  .streak-scale{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--ink-muted);margin-bottom:14px;}
+  .bonus-section{border-top:1px solid var(--border-light);padding-top:12px;}
+  .bonus-title{font-size:11px;color:var(--ink-muted);margin-bottom:8px;font-weight:600;letter-spacing:0.04em;}
+  .bonus-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border-light);}
+  .bonus-row:last-child{border-bottom:none;}
+  .bonus-label{font-size:12px;color:var(--ink-soft);}
+  .bonus-val{font-size:12px;font-family:var(--mono);font-weight:500;}
+  .bonus-progress{font-size:10px;color:var(--ink-muted);margin-top:1px;}
+  .bv-done{color:var(--teal);}
+  .bv-next{color:var(--amber);}
+  .bv-far{color:var(--ink-muted);}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-mark">
+      <svg viewBox="0 0 20 20"><path d="M3 10 Q7 5 10 10 Q13 15 17 10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="4" r="2"/></svg>
+    </div>
+    <div>
+      <div class="sb-logo-title">Medalbank SSE</div>
+      <div class="sb-logo-sub">수영 주식 거래소</div>
+    </div>
+  </div>
+  <div class="sb-profile">
+    <div class="sb-avatar">김</div>
+    <div>
+      <div class="sb-user-name">김○○</div>
+      <div class="sb-user-grade">중형주 · 38주차</div>
+    </div>
+    <div style="margin-left:auto;text-align:right;">
+      <div style="font-size:12px;font-weight:500;color:var(--amber);font-family:var(--mono);">3,240</div>
+      <div style="font-size:9px;color:var(--ink-muted);">보유 코인</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section-label">메인</div>
+    <a class="sb-item" href="#">🏠 홈</a>
+    <a class="sb-item" href="#">📈 수영 지수</a>
+    <a class="sb-item" href="#">👥 선수 목록</a>
+    <a class="sb-item" href="#">🏆 대회 현황</a>
+    <div class="sb-section-label">내 현황</div>
+    <a class="sb-item" href="#">👤 내 주가</a>
+    <a class="sb-item" href="#">💼 내 포트폴리오</a>
+    <a class="sb-item active" href="#">📓 훈련 일지</a>
+    <a class="sb-item" href="#">🔔 공시 알림<span class="sb-badge">5</span></a>
+    <div class="sb-section-label">관리</div>
+    <a class="sb-item" href="#">📊 시즌 랭킹</a>
+    <a class="sb-item" href="#">⚙️ 설정</a>
+  </nav>
+  <div class="sb-footer"><div style="font-size:12px;color:var(--ink-muted);cursor:pointer;">↩ 로그아웃</div></div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">📓 훈련 일지 <span style="font-size:12px;color:var(--ink-muted);font-weight:400;">— 주가 미반영 · 투자자 공개</span></div>
+    <div class="topbar-right">
+      <div style="font-size:11px;color:var(--ink-muted);">2026년 5월 22일 (목)</div>
+      <div class="topbar-notif">🔔<div class="notif-dot"></div></div>
+      <div class="topbar-avatar">김</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- METRICS -->
+    <div class="metrics-4">
+      <div class="metric">
+        <div class="metric-label">이번 달 입력</div>
+        <div class="metric-val blue">18일</div>
+        <div class="metric-sub up">🔥 연속 7일 중</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">누적 거리</div>
+        <div class="metric-val" style="color:var(--ink);">42.5<span style="font-size:13px;color:var(--ink-muted);">km</span></div>
+        <div class="metric-sub" style="color:var(--ink-muted);">이번 달</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">평균 훈련 강도</div>
+        <div class="metric-val" style="color:var(--ink);font-size:16px;">보통</div>
+        <div class="metric-sub" style="color:var(--ink-muted);">최근 2주 기준</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">일지 코인 적립</div>
+        <div class="metric-val amber">+180</div>
+        <div class="metric-sub amber">이번 달 누적</div>
+      </div>
+    </div>
+
+    <!-- WRITE FORM -->
+    <div class="write-card">
+      <div class="wc-head">
+        <div class="wc-title">✏️ 오늘 훈련 기록 <span class="wc-date">2026.05.22 (목)</span></div>
+        <div class="wc-coin-hint">🪙 저장 시 +10 코인 적립</div>
+      </div>
+      <div class="wc-body">
+        <div class="form-grid">
+          <div class="form-item">
+            <label class="form-label">장소</label>
+            <select class="form-select">
+              <option>실내 수영장</option>
+              <option>실외 수영장</option>
+              <option>개인 훈련</option>
+            </select>
+          </div>
+          <div class="form-item">
+            <label class="form-label">거리 (m)</label>
+            <input class="form-input" type="number" placeholder="예: 2000" id="distInput">
+          </div>
+          <div class="form-item">
+            <label class="form-label">시간 (분)</label>
+            <input class="form-input" type="number" placeholder="예: 60" id="durInput">
+          </div>
+          <div class="form-item">
+            <label class="form-label">훈련 내용</label>
+            <select class="form-select">
+              <option>드릴 위주</option>
+              <option>체력 훈련</option>
+              <option>스피드</option>
+              <option>혼합</option>
+            </select>
+          </div>
+          <div class="form-item">
+            <label class="form-label">강도</label>
+            <select class="form-select" id="intensitySelect">
+              <option>가볍게</option>
+              <option selected>보통</option>
+              <option>힘들게</option>
+            </select>
+          </div>
+          <div class="form-item">
+            <label class="form-label">컨디션</label>
+            <div class="condition-wrap">
+              <span class="star" onclick="setStar(1)">★</span>
+              <span class="star" onclick="setStar(2)">★</span>
+              <span class="star on" onclick="setStar(3)">★</span>
+              <span class="star on" onclick="setStar(4)">★</span>
+              <span class="star on" onclick="setStar(5)">★</span>
+            </div>
+          </div>
+        </div>
+        <div class="memo-wrap">
+          <div class="memo-label">
+            훈련 메모
+            <span class="memo-pub-tag">👁 투자자에게 공개됩니다</span>
+          </div>
+          <textarea class="memo-textarea" placeholder="오늘 훈련 내용, 컨디션, 특이사항을 자유롭게 적어보세요. 투자자들이 볼 수 있습니다."></textarea>
+        </div>
+        <div class="wc-footer">
+          <button class="save-btn" onclick="saveJournal()">저장하기 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALENDAR + RECENT -->
+    <div class="two-col">
+
+      <!-- CALENDAR -->
+      <div class="calendar-card">
+        <div class="cal-head">
+          <div class="cal-title">5월 훈련 달력</div>
+          <div class="cal-nav">
+            <button class="cal-nav-btn">‹</button>
+            <span class="cal-month">2026년 5월</span>
+            <button class="cal-nav-btn">›</button>
+          </div>
+        </div>
+        <div class="cal-grid">
+          <div class="cal-dow">일</div><div class="cal-dow">월</div><div class="cal-dow">화</div>
+          <div class="cal-dow">수</div><div class="cal-dow">목</div><div class="cal-dow">금</div>
+          <div class="cal-dow">토</div>
+
+          <div class="cal-day cd-empty">0</div>
+          <div class="cal-day cd-empty">0</div>
+          <div class="cal-day cd-empty">0</div>
+          <div class="cal-day cd-empty">0</div>
+          <div class="cal-day cd-absent">1</div>
+          <div class="cal-day cd-done">2</div>
+          <div class="cal-day cd-done">3</div>
+
+          <div class="cal-day cd-absent">4</div>
+          <div class="cal-day cd-done">5</div>
+          <div class="cal-day cd-done">6</div>
+          <div class="cal-day cd-pb" title="PB 달성">7</div>
+          <div class="cal-day cd-done">8</div>
+          <div class="cal-day cd-done">9</div>
+          <div class="cal-day cd-absent">10</div>
+
+          <div class="cal-day cd-absent">11</div>
+          <div class="cal-day cd-done">12</div>
+          <div class="cal-day cd-done">13</div>
+          <div class="cal-day cd-done">14</div>
+          <div class="cal-day cd-done">15</div>
+          <div class="cal-day cd-done">16</div>
+          <div class="cal-day cd-absent">17</div>
+
+          <div class="cal-day cd-absent">18</div>
+          <div class="cal-day cd-done">19</div>
+          <div class="cal-day cd-done">20</div>
+          <div class="cal-day cd-done">21</div>
+          <div class="cal-day cd-today">22</div>
+          <div class="cal-day cd-future">23</div>
+          <div class="cal-day cd-future">24</div>
+
+          <div class="cal-day cd-future">25</div>
+          <div class="cal-day cd-future">26</div>
+          <div class="cal-day cd-future">27</div>
+          <div class="cal-day cd-future">28</div>
+          <div class="cal-day cd-future">29</div>
+          <div class="cal-day cd-future">30</div>
+          <div class="cal-day cd-future">31</div>
+        </div>
+        <div class="cal-legend">
+          <div class="cl-item"><div class="cl-dot" style="background:var(--blue);"></div> 훈련 기록</div>
+          <div class="cl-item"><div class="cl-dot" style="background:var(--teal);"></div> PB 달성</div>
+          <div class="cl-item"><div class="cl-dot" style="background:var(--surface-alt);border:1px solid var(--border);"></div> 미기록</div>
+          <div class="cl-item"><div class="cl-today-dot"></div> 오늘</div>
+        </div>
+      </div>
+
+      <!-- RECENT ENTRIES -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">📋 최근 훈련 기록</div>
+          <div style="font-size:11px;color:var(--blue);cursor:pointer;">전체 보기</div>
+        </div>
+        <div class="panel-body">
+          <div class="entry-item">
+            <div class="ei-top">
+              <div class="ei-date">5월 21일 (수)</div>
+              <span class="ei-badge eb-hard">💪 힘들게</span>
+            </div>
+            <div class="ei-stats">
+              <div class="ei-stat">거리 <strong>3,000m</strong></div>
+              <div class="ei-stat">시간 <strong>75분</strong></div>
+              <div class="ei-stat">컨디션 <span class="ei-stars">★★★★</span></div>
+            </div>
+            <div class="ei-memo">"대회 준비 막바지. 스피드 훈련 집중. 마지막 50m 랩 타임 체크."</div>
+          </div>
+
+          <div class="entry-item">
+            <div class="ei-top">
+              <div class="ei-date">5월 20일 (화)</div>
+              <span class="ei-badge eb-normal">🏊 보통</span>
+            </div>
+            <div class="ei-stats">
+              <div class="ei-stat">거리 <strong>2,000m</strong></div>
+              <div class="ei-stat">시간 <strong>60분</strong></div>
+              <div class="ei-stat">컨디션 <span class="ei-stars">★★★</span></div>
+            </div>
+            <div class="ei-memo">"드릴 위주로 기술 다듬기. 평영 킥 타이밍 교정 중."</div>
+          </div>
+
+          <div class="entry-item">
+            <div class="ei-top">
+              <div class="ei-date">5월 19일 (월)</div>
+              <span class="ei-badge eb-light">🌊 가볍게</span>
+            </div>
+            <div class="ei-stats">
+              <div class="ei-stat">거리 <strong>1,500m</strong></div>
+              <div class="ei-stat">시간 <strong>45분</strong></div>
+              <div class="ei-stat">컨디션 <span class="ei-stars">★★★★★</span></div>
+            </div>
+            <div class="ei-memo">"회복 훈련. 가볍게 몸 풀기. 컨디션 최상."</div>
+          </div>
+
+          <div class="entry-item" style="border:1px solid var(--teal-light);background:var(--teal-light);">
+            <div class="ei-top">
+              <div class="ei-date" style="color:var(--teal);">5월 7일 (목)</div>
+              <span class="ei-badge eb-pb">🏅 PB 달성</span>
+            </div>
+            <div class="ei-stats">
+              <div class="ei-stat">거리 <strong>2,500m</strong></div>
+              <div class="ei-stat">시간 <strong>65분</strong></div>
+              <div class="ei-stat">컨디션 <span class="ei-stars">★★★★★</span></div>
+            </div>
+            <div class="ei-memo">"45.8초 PB! 드디어 46초 벽 돌파. 최고의 날 🎉"</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STREAK + BONUS -->
+    <div class="two-col">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">🔥 연속 기록 현황</div>
+          <div style="font-size:11px;color:var(--ink-muted);">최근 8주 훈련 밀도</div>
+        </div>
+        <div class="panel-body">
+          <div class="streak-header">
+            <span class="streak-num">7일</span>
+            <span class="streak-label">현재 연속 입력 중</span>
+          </div>
+          <div class="streak-grid">
+            <!-- 8주 × 7일 = 56개 셀 -->
+            <div class="sc s1"></div><div class="sc s2"></div><div class="sc s1"></div><div class="sc s0"></div><div class="sc s2"></div><div class="sc s3"></div><div class="sc s2"></div>
+            <div class="sc s0"></div><div class="sc s1"></div><div class="sc s2"></div><div class="sc s2"></div><div class="sc s1"></div><div class="sc s0"></div><div class="sc s2"></div>
+            <div class="sc s2"></div><div class="sc s3"></div><div class="sc s2"></div><div class="sc s1"></div><div class="sc s3"></div><div class="sc s2"></div><div class="sc s0"></div>
+            <div class="sc s0"></div><div class="sc s2"></div><div class="sc s3"></div><div class="sc s3"></div><div class="sc s2"></div><div class="sc s3"></div><div class="sc s3"></div>
+            <div class="sc s1"></div><div class="sc s2"></div><div class="sc s3"></div><div class="sc s2"></div><div class="sc s3"></div><div class="sc s3"></div><div class="sc s0"></div>
+            <div class="sc s0"></div><div class="sc s3"></div><div class="sc s3"></div><div class="sc s2"></div><div class="sc s3"></div><div class="sc s3"></div><div class="sc s3"></div>
+            <div class="sc s0"></div><div class="sc s3"></div><div class="sc s3"></div><div class="sc s3"></div><div class="sc s3"></div><div class="sc s3"></div><div class="sc s3"></div>
+            <div class="sc s0"></div><div class="sc s3"></div><div class="sc s3"></div><div class="sc s3"></div><div class="sc s3"></div><div class="sc s3"></div><div class="sc s0"></div>
+          </div>
+          <div class="streak-scale">
+            <span>적음</span>
+            <div class="sc s0" style="margin:0;"></div>
+            <div class="sc s1" style="margin:0;"></div>
+            <div class="sc s2" style="margin:0;"></div>
+            <div class="sc s3" style="margin:0;"></div>
+            <span>많음</span>
+          </div>
+          <div class="bonus-section">
+            <div class="bonus-title">보너스 현황</div>
+            <div class="bonus-row">
+              <div>
+                <div class="bonus-label">7일 연속 달성</div>
+                <div class="bonus-progress up">오늘 달성!</div>
+              </div>
+              <div class="bonus-val bv-done">+50 코인 🎉</div>
+            </div>
+            <div class="bonus-row">
+              <div>
+                <div class="bonus-label">30일 연속</div>
+                <div class="bonus-progress" style="color:var(--amber);">D-23 · 계속 이어가세요</div>
+              </div>
+              <div class="bonus-val bv-next">+300 코인</div>
+            </div>
+            <div class="bonus-row">
+              <div>
+                <div class="bonus-label">100일 연속</div>
+                <div class="bonus-progress" style="color:var(--ink-muted);">D-93</div>
+              </div>
+              <div class="bonus-val bv-far">특별 뱃지</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MONTHLY STATS -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">📊 이번 달 훈련 통계</div>
+          <div style="font-size:11px;color:var(--ink-muted);">5월 기준</div>
+        </div>
+        <div class="panel-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+            <div style="background:var(--surface-soft);border-radius:8px;padding:12px;">
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;">총 훈련 거리</div>
+              <div style="font-size:18px;font-weight:500;font-family:var(--mono);">42.5km</div>
+              <div style="font-size:11px;color:var(--teal);">▲ 지난달 대비 +8km</div>
+            </div>
+            <div style="background:var(--surface-soft);border-radius:8px;padding:12px;">
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;">총 훈련 시간</div>
+              <div style="font-size:18px;font-weight:500;font-family:var(--mono);">18.5h</div>
+              <div style="font-size:11px;color:var(--teal);">▲ 지난달 대비 +2.5h</div>
+            </div>
+            <div style="background:var(--surface-soft);border-radius:8px;padding:12px;">
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;">평균 거리/회</div>
+              <div style="font-size:18px;font-weight:500;font-family:var(--mono);">2,361m</div>
+              <div style="font-size:11px;color:var(--ink-muted);">18회 기록 기준</div>
+            </div>
+            <div style="background:var(--surface-soft);border-radius:8px;padding:12px;">
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;">일지 코인 적립</div>
+              <div style="font-size:18px;font-weight:500;font-family:var(--mono);color:var(--amber);">+180</div>
+              <div style="font-size:11px;color:var(--amber);">7일 보너스 예정 +50</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--border-light);padding-top:12px;">
+            <div style="font-size:11px;color:var(--ink-muted);margin-bottom:8px;font-weight:600;letter-spacing:0.04em;">강도별 분포</div>
+            <div style="display:flex;gap:6px;margin-bottom:6px;">
+              <div style="flex:3;background:var(--blue-light);border-radius:4px;padding:5px 8px;text-align:center;font-size:11px;color:var(--blue);">가볍게<br><strong>3회</strong></div>
+              <div style="flex:8;background:var(--teal-light);border-radius:4px;padding:5px 8px;text-align:center;font-size:11px;color:var(--teal);">보통<br><strong>9회</strong></div>
+              <div style="flex:6;background:var(--amber-light);border-radius:4px;padding:5px 8px;text-align:center;font-size:11px;color:var(--amber);">힘들게<br><strong>6회</strong></div>
+            </div>
+            <div style="font-size:11px;color:var(--ink-muted);margin-top:8px;">
+              평균 컨디션 <strong style="color:var(--ink);font-family:var(--mono);">3.9 / 5.0</strong> ⭐
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let starRating = 3;
+function setStar(n) {
+  starRating = n;
+  document.querySelectorAll('.star').forEach((s, i) => {
+    s.classList.toggle('on', i < n);
+  });
+}
+function saveJournal() {
+  const dist = document.getElementById('distInput').value;
+  const dur = document.getElementById('durInput').value;
+  if (!dist || !dur) { alert('거리와 시간을 입력해주세요.'); return; }
+  const btn = document.querySelector('.save-btn');
+  btn.textContent = '✓ 저장 완료 · +10 코인 적립';
+  btn.style.background = 'var(--teal)';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.textContent = '저장하기 →';
+    btn.style.background = 'var(--blue)';
+    btn.disabled = false;
+    document.getElementById('distInput').value = '';
+    document.getElementById('durInput').value = '';
+    document.querySelector('.memo-textarea').value = '';
+  }, 2500);
+}
+document.querySelectorAll('.sb-item').forEach(item => {
+  item.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+document.querySelectorAll('.cal-nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {});
+});
+</script>
+</body>
+</html>

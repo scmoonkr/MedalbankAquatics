@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medalbank SSE — 선수 목록</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue:#0D4F8B;--blue-mid:#1A6BB5;--blue-light:#E8F2FC;--blue-pale:#F4F8FD;
+    --teal:#0A7A6A;--teal-light:#E4F5F2;
+    --red:#C0392B;--red-light:#FDF0EE;
+    --amber:#B06A00;--amber-light:#FDF4E3;
+    --purple:#5B21B6;--purple-light:#F0EEFF;
+    --ink:#0F1923;--ink-soft:#5A6B7B;--ink-muted:#8A99A8;
+    --border:#D8E4EE;--border-light:#EAF1F8;
+    --surface:#FFFFFF;--surface-soft:#F7FAFD;--surface-alt:#EEF5FB;
+    --mono:'DM Mono',monospace;--sans:'Pretendard',-apple-system,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--sans);background:var(--surface-soft);color:var(--ink);display:flex;min-height:100vh;}
+
+  /* SIDEBAR */
+  .sidebar{width:220px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;}
+  .sb-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;}
+  .sb-logo-mark{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .sb-logo-mark svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;}
+  .sb-logo-title{font-size:12px;font-weight:600;color:var(--ink);line-height:1.2;}
+  .sb-logo-sub{font-size:10px;color:var(--ink-muted);}
+  .sb-profile{padding:14px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;}
+  .sb-avatar{width:36px;height:36px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0;}
+  .sb-user-name{font-size:13px;font-weight:500;color:var(--ink);}
+  .sb-user-grade{font-size:10px;color:var(--ink-muted);margin-top:1px;}
+  .sb-coin-val{font-size:12px;font-weight:500;color:var(--amber);font-family:var(--mono);}
+  .sb-coin-label{font-size:9px;color:var(--ink-muted);}
+  .sb-nav{flex:1;padding:12px 0;overflow-y:auto;}
+  .sb-section-label{font-size:9px;font-weight:600;color:var(--ink-muted);letter-spacing:0.08em;text-transform:uppercase;padding:8px 20px 4px;}
+  .sb-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13px;color:var(--ink-soft);cursor:pointer;border-left:2px solid transparent;text-decoration:none;transition:all 0.12s;}
+  .sb-item:hover{background:var(--surface-soft);color:var(--ink);}
+  .sb-item.active{background:var(--blue-pale);color:var(--blue);border-left-color:var(--blue);font-weight:500;}
+  .sb-badge{margin-left:auto;font-size:10px;background:var(--red-light);color:var(--red);border-radius:10px;padding:1px 7px;font-family:var(--mono);}
+  .sb-footer{padding:14px 16px;border-top:1px solid var(--border-light);}
+  .sb-logout{font-size:12px;color:var(--ink-muted);cursor:pointer;}
+
+  /* MAIN */
+  .main{margin-left:220px;flex:1;display:flex;flex-direction:column;}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;}
+  .topbar-title{font-size:15px;font-weight:500;color:var(--ink);}
+  .topbar-right{display:flex;align-items:center;gap:10px;}
+  .topbar-notif{position:relative;width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;}
+  .notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid var(--surface);}
+  .topbar-avatar{width:30px;height:30px;border-radius:50%;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;}
+  .content{padding:24px 28px;flex:1;}
+
+  /* METRICS */
+  .metrics-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px;}
+  .metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;}
+  .metric-label{font-size:11px;color:var(--ink-muted);margin-bottom:4px;}
+  .metric-val{font-size:20px;font-weight:500;font-family:var(--mono);margin-bottom:2px;}
+  .metric-sub{font-size:11px;}
+  .up{color:var(--teal);} .down{color:var(--red);} .blue{color:var(--blue);}
+
+  /* SEARCH & FILTER BAR */
+  .filter-bar{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .search-wrap{position:relative;flex:1;min-width:200px;}
+  .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--ink-muted);}
+  .search-input{width:100%;padding:8px 10px 8px 32px;font-size:13px;border:1px solid var(--border);border-radius:8px;background:var(--surface-soft);color:var(--ink);font-family:var(--sans);outline:none;}
+  .search-input:focus{border-color:var(--blue);}
+  .filter-select{font-size:12px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-soft);color:var(--ink-soft);font-family:var(--sans);cursor:pointer;outline:none;}
+  .filter-select:focus{border-color:var(--blue);}
+  .ipo-btn{font-size:12px;font-weight:500;color:#fff;background:var(--blue);border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-family:var(--sans);white-space:nowrap;}
+
+  /* TAB PILLS */
+  .tab-pills{display:flex;gap:6px;margin-bottom:14px;}
+  .tp{font-size:12px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);color:var(--ink-soft);cursor:pointer;background:var(--surface);transition:all 0.12s;}
+  .tp:hover{background:var(--surface-soft);}
+  .tp.act{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .tp-cnt{font-size:10px;font-family:var(--mono);margin-left:4px;opacity:0.8;}
+
+  /* TABLE */
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .table-head{display:grid;grid-template-columns:40px 1fr 72px 90px 90px 90px 100px 90px;gap:0;background:var(--surface-alt);border-bottom:1px solid var(--border);padding:10px 16px;}
+  .th{font-size:10px;color:var(--ink-muted);font-weight:600;letter-spacing:0.04em;display:flex;align-items:center;gap:3px;cursor:pointer;user-select:none;}
+  .th:hover{color:var(--ink-soft);}
+  .th-sort{font-size:10px;color:var(--ink-muted);}
+  .th-sort.asc::after{content:'▲';}
+  .th-sort.desc::after{content:'▼';}
+  .th-sort.act{color:var(--blue);}
+
+  .tr{display:grid;grid-template-columns:40px 1fr 72px 90px 90px 90px 100px 90px;gap:0;padding:10px 16px;border-bottom:1px solid var(--border-light);align-items:center;cursor:pointer;transition:background 0.1s;}
+  .tr:last-child{border-bottom:none;}
+  .tr:hover{background:var(--surface-soft);}
+  .tr.me{background:var(--blue-pale);}
+  .tr.me:hover{background:#E0EDFA;}
+
+  .td-rank{font-size:12px;font-weight:500;font-family:var(--mono);text-align:center;color:var(--ink-muted);}
+  .td-rank.g{color:#B06A00;}
+  .td-rank.s{color:#5A6B7B;}
+  .td-rank.b{color:#7B5E3A;}
+  .td-rank.me{color:var(--blue);}
+
+  .td-player{display:flex;align-items:center;gap:10px;}
+  .pl-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+  .pl-name{font-size:13px;font-weight:500;color:var(--ink);}
+  .pl-sub{font-size:10px;color:var(--ink-muted);margin-top:1px;}
+  .pl-me{font-size:9px;color:var(--blue);font-weight:500;margin-left:4px;}
+  .pl-new{font-size:9px;color:var(--teal);background:var(--teal-light);border-radius:4px;padding:1px 5px;margin-left:4px;}
+
+  .td{font-size:12px;color:var(--ink);}
+  .td.mono{font-family:var(--mono);}
+  .td.right{text-align:right;}
+
+  .grade-badge{font-size:10px;padding:3px 8px;border-radius:5px;font-weight:500;display:inline-block;}
+  .gb-large{background:var(--blue-light);color:var(--blue);}
+  .gb-mid{background:var(--teal-light);color:var(--teal);}
+  .gb-small{background:var(--amber-light);color:var(--amber);}
+  .gb-startup{background:var(--purple-light);color:var(--purple);}
+
+  .index-bar-wrap{display:flex;align-items:center;gap:6px;}
+  .index-bar{flex:1;height:5px;background:var(--surface-alt);border-radius:3px;overflow:hidden;max-width:60px;}
+  .index-fill{height:100%;border-radius:3px;}
+  .index-score{font-size:11px;font-family:var(--mono);color:var(--ink-muted);}
+
+  .invest-btn-sm{font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--blue);color:var(--blue);background:none;cursor:pointer;font-family:var(--sans);transition:all 0.12s;white-space:nowrap;}
+  .invest-btn-sm:hover{background:var(--blue-light);}
+  .invest-btn-sm.invested{background:var(--blue-light);color:var(--blue);border-color:var(--blue-light);}
+
+  /* PAGINATION */
+  .pagination{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-top:1px solid var(--border-light);}
+  .page-info{font-size:12px;color:var(--ink-muted);}
+  .page-btns{display:flex;gap:4px;}
+  .page-btn{font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--ink-soft);cursor:pointer;font-family:var(--sans);}
+  .page-btn:hover{background:var(--surface-soft);}
+  .page-btn.act{background:var(--blue);color:#fff;border-color:var(--blue);}
+
+  /* DETAIL DRAWER (slide-in panel) */
+  .drawer-backdrop{position:fixed;inset:0;background:rgba(15,25,35,0.3);z-index:200;display:none;}
+  .drawer-backdrop.open{display:block;}
+  .drawer{position:fixed;top:0;right:-420px;width:420px;bottom:0;background:var(--surface);border-left:1px solid var(--border);z-index:201;transition:right 0.25s ease;overflow-y:auto;}
+  .drawer.open{right:0;}
+  .drawer-head{padding:20px 24px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:14px;}
+  .drawer-av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;flex-shrink:0;}
+  .drawer-name{font-size:16px;font-weight:500;color:var(--ink);}
+  .drawer-sub{font-size:12px;color:var(--ink-muted);margin-top:2px;}
+  .drawer-close{margin-left:auto;font-size:18px;cursor:pointer;color:var(--ink-muted);background:none;border:none;padding:4px 8px;}
+  .drawer-body{padding:20px 24px;}
+  .drawer-price{background:var(--blue);border-radius:10px;padding:16px 18px;margin-bottom:18px;}
+  .dp-label{font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:4px;letter-spacing:0.04em;}
+  .dp-price{font-family:var(--mono);font-size:28px;font-weight:500;color:#fff;}
+  .dp-change{font-size:13px;color:#4ADE80;font-family:var(--mono);margin-top:3px;}
+  .drawer-section{margin-bottom:18px;}
+  .ds-title{font-size:11px;font-weight:600;color:var(--ink-muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:10px;}
+  .ds-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border-light);}
+  .ds-row:last-child{border-bottom:none;}
+  .ds-label{font-size:12px;color:var(--ink-soft);}
+  .ds-val{font-size:13px;font-weight:500;color:var(--ink);font-family:var(--mono);}
+  .drawer-invest-btn{width:100%;font-size:14px;font-weight:500;color:#fff;background:var(--blue);border:none;border-radius:10px;padding:13px;cursor:pointer;font-family:var(--sans);}
+  .index-row-d{display:grid;grid-template-columns:100px 1fr 40px;gap:8px;align-items:center;margin-bottom:8px;}
+  .ir-label{font-size:11px;color:var(--ink-soft);}
+  .ir-track{height:6px;background:var(--surface-alt);border-radius:4px;overflow:hidden;}
+  .ir-fill{height:100%;border-radius:4px;}
+  .ir-val{font-size:11px;font-family:var(--mono);color:var(--ink-muted);text-align:right;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-mark">
+      <svg viewBox="0 0 20 20"><path d="M3 10 Q7 5 10 10 Q13 15 17 10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="4" r="2"/></svg>
+    </div>
+    <div>
+      <div class="sb-logo-title">Medalbank SSE</div>
+      <div class="sb-logo-sub">수영 주식 거래소</div>
+    </div>
+  </div>
+  <div class="sb-profile">
+    <div class="sb-avatar">김</div>
+    <div>
+      <div class="sb-user-name">김○○</div>
+      <div class="sb-user-grade">중형주 · 38주차</div>
+    </div>
+    <div style="margin-left:auto;text-align:right;">
+      <div class="sb-coin-val">3,240</div>
+      <div class="sb-coin-label">보유 코인</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section-label">메인</div>
+    <a class="sb-item" href="#">🏠 홈</a>
+    <a class="sb-item" href="#">📈 수영 지수</a>
+    <a class="sb-item active" href="#">👥 선수 목록</a>
+    <a class="sb-item" href="#">🏆 대회 현황</a>
+    <div class="sb-section-label">내 현황</div>
+    <a class="sb-item" href="#">👤 내 주가</a>
+    <a class="sb-item" href="#">💼 내 포트폴리오</a>
+    <a class="sb-item" href="#">📓 훈련 일지</a>
+    <a class="sb-item" href="#">🔔 공시 알림<span class="sb-badge">5</span></a>
+    <div class="sb-section-label">관리</div>
+    <a class="sb-item" href="#">📊 시즌 랭킹</a>
+    <a class="sb-item" href="#">⚙️ 설정</a>
+  </nav>
+  <div class="sb-footer"><div class="sb-logout">↩ 로그아웃</div></div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">👥 선수 목록 <span style="font-size:12px;color:var(--ink-muted);font-weight:400;">— 총 24명 상장 · 이번 주 갱신</span></div>
+    <div class="topbar-right">
+      <div class="topbar-notif">🔔<div class="notif-dot"></div></div>
+      <div class="topbar-avatar">김</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- METRICS -->
+    <div class="metrics-4">
+      <div class="metric">
+        <div class="metric-label">상장 선수</div>
+        <div class="metric-val" style="color:var(--ink);">24명</div>
+        <div class="metric-sub" style="color:var(--ink-muted);">시즌 1 기준</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">주간 상승</div>
+        <div class="metric-val up">16명</div>
+        <div class="metric-sub up">▲ 전체의 67%</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">주간 하락</div>
+        <div class="metric-val down">6명</div>
+        <div class="metric-sub down">▼ 결석·부상 포함</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">이번 주 PB</div>
+        <div class="metric-val blue">5명</div>
+        <div class="metric-sub blue">최고 +30%</div>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" type="text" placeholder="선수 이름 검색..." id="searchInput" oninput="filterTable()">
+      </div>
+      <select class="filter-select" id="gradeFilter" onchange="filterTable()">
+        <option value="">등급 전체</option>
+        <option value="대형주">🥇 대형주</option>
+        <option value="중형주">📈 중형주</option>
+        <option value="중소형주">🌱 중소형주</option>
+        <option value="스타트업">🚀 스타트업</option>
+      </select>
+      <select class="filter-select" id="sortFilter" onchange="sortTable()">
+        <option value="price">주가 높은순</option>
+        <option value="change">상승률 높은순</option>
+        <option value="record">기록 빠른순</option>
+        <option value="index">지수 높은순</option>
+      </select>
+      <button class="ipo-btn" onclick="alert('IPO 신청 페이지로 이동합니다')">+ IPO 신청</button>
+    </div>
+
+    <!-- TAB PILLS -->
+    <div class="tab-pills">
+      <div class="tp act" onclick="filterTab(this,'all')">전체<span class="tp-cnt">24</span></div>
+      <div class="tp" onclick="filterTab(this,'up')">📈 상승<span class="tp-cnt">16</span></div>
+      <div class="tp" onclick="filterTab(this,'down')">📉 하락<span class="tp-cnt">6</span></div>
+      <div class="tp" onclick="filterTab(this,'invested')">💼 내 투자<span class="tp-cnt">5</span></div>
+      <div class="tp" onclick="filterTab(this,'new')">✨ 신규 IPO<span class="tp-cnt">2</span></div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <div class="table-head">
+        <div class="th">#</div>
+        <div class="th">선수</div>
+        <div class="th">등급</div>
+        <div class="th">주가 <span class="th-sort act desc"></span></div>
+        <div class="th">주간 변동</div>
+        <div class="th">기록</div>
+        <div class="th">종합 지수</div>
+        <div class="th">투자</div>
+      </div>
+
+      <div id="tableBody">
+
+        <div class="tr" onclick="openDrawer('최○○','34세','대형주','2,100','+30%','32.1초','88','#FDF4E3','#B06A00','최',true)">
+          <div class="td-rank g">1</div>
+          <div class="td-player">
+            <div class="pl-av" style="background:#FDF4E3;color:#B06A00;">최</div>
+            <div><div class="pl-name">최○○</div><div class="pl-sub">34세 · 개근 11주</div></div>
+          </div>
+          <div class="td"><span class="grade-badge gb-large">대형주</span></div>
+          <div class="td mono" style="font-weight:500;">2,100</div>
+          <div class="td up mono" style="font-weight:500;">▲ 30%</div>
+          <div class="td mono">32.1초</div>
+          <div class="td">
+            <div class="index-bar-wrap">
+              <div class="index-bar"><div class="index-fill" style="width:88%;background:var(--blue);"></div></div>
+              <span class="index-score">88</span>
+            </div>
+          </div>
+          <div class="td"><button class="invest-btn-sm invested" onclick="event.stopPropagation()">투자중</button></div>
+        </div>
+
+        <div class="tr" onclick="openDrawer('박○○','42세','중형주','1,890','+8%','43.8초','72','#F1EFE8','#5F5E5A','박',false)">
+          <div class="td-rank s">2</div>
+          <div class="td-player">
+            <div class="pl-av" style="background:#F1EFE8;color:#5F5E5A;">박</div>
+            <div><div class="pl-name">박○○</div><div class="pl-sub">42세 · 개근 20주</div></div>
+          </div>
+          <div class="td"><span class="grade-badge gb-mid">중형주</span></div>
+          <div class="td mono" style="font-weight:500;">1,890</div>
+          <div class="td up mono" style="font-weight:500;">▲ 8%</div>
+          <div class="td mono">43.8초</div>
+          <div class="td">
+            <div class="index-bar-wrap">
+              <div class="index-bar"><div class="index-fill" style="width:72%;background:var(--teal);"></div></div>
+              <span class="index-score">72</span>
+            </div>
+          </div>
+          <div class="td"><button class="invest-btn-sm" onclick="event.stopPropagation();invest(this)">투자하기</button></div>
+        </div>
+
+        <div class="tr" onclick="openDrawer('이○○','15세','중형주','1,405','+15%','40.2초','70','#E4F5F2','#0A7A6A','이',true)">
+          <div class="td-rank b">3</div>
+          <div class="td-player">
+            <div class="pl-av" style="background:#E4F5F2;color:#0A7A6A;">이</div>
+            <div><div class="pl-name">이○○<span class="pl-new">신규</span></div><div class="pl-sub">15세 · IPO 3주차</div></div>
+          </div>
+          <div class="td"><span class="grade-badge gb-mid">중형주</span></div>
+          <div class="td mono" style="font-weight:500;">1,405</div>
+          <div class="td up mono" style="font-weight:500;">▲ 15%</div>
+          <div class="td mono">40.2초</div>
+          <div class="td">
+            <div class="index-bar-wrap">
+              <div class="index-bar"><div class="index-fill" style="width:70%;background:var(--teal);"></div></div>
+              <span class="index-score">70</span>
+            </div>
+          </div>
+          <div class="td"><button class="invest-btn-sm invested" onclick="event.stopPropagation()">투자중</button></div>
+        </div>
+
+        <div class="tr" onclick="openDrawer('강○○','28세','중형주','1,460','+5%','41.5초','65','#E8F2FC','#0D4F8B','강',false)">
+          <div class="td-rank">4</div>
+          <div class="td-player">
+            <div class="pl-av" style="background:#E8F2FC;color:#0D4F8B;">강</div>
+            <div><div class="pl-name">강○○</div><div class="pl-sub">28세 · 개근 6주</div></div>
+          </div>
+          <div class="td"><span class="grade-badge gb-mid">중형주</span></div>
+          <div class="td mono" style="font-weight:500;">1,460</div>
+          <div class="td up mono" style="font-weight:500;">▲ 5%</div>
+          <div class="td mono">41.5초</div>
+          <div class="td">
+            <div class="index-bar-wrap">
+              <div class="index-bar"><div class="index-fill" style="width:65%;background:var(--blue);"></div></div>
+              <span class="index-score">65</span>
+            </div>
+          </div>
+          <div class="td"><button class="invest-btn-sm" onclick="event.stopPropagation();invest(this)">투자하기</button></div>
+        </div>
+
+        <div class="tr me" onclick="openDrawer('김○○','25세','중형주','1,440','+20%','45.8초','70','#E8F2FC','#0D4F8B','김',false)">
+          <div class="td-rank me">5</div>
+          <div class="td-player">
+            <div class="pl-av" style="background:#E8F2FC;color:#0D4F8B;">김</div>
+            <div><div class="pl-name">김○○<span class="pl-me">나</span></div><div class="pl-sub">25세 · 개근 11주</div></div>
+          </div>
+          <div class="td"><span class="grade-badge gb-mid">중형주</span></div>
+          <div class="td mono" style="font-weight:500;color:var(--blue);">1,440</div>
+          <div class="td up mono" style="font-weight:500;">▲ 20%</div>
+          <div class="td mono">45.8초</div>
+          <div class="td">
+            <div class="index-bar-wrap">
+              <div class="index-bar"><div class="index-fill" style="width:70%;background:var(--blue);"></div></div>
+              <span class="index-score">70</span>
+            </div>
+          </div>
+          <div class="td"><button class="invest-btn-sm" onclick="event.stopPropagation();" style="color:var(--ink-muted);border-color:var(--border);">본인</button></div>
+        </div>
+
+        <div class="tr" onclick="openDrawer('정○○','38세','중소형주','980','-5%','47.3초','52','#FBEAF0','#9B2C6C','정',false)">
+          <div class="td-rank">6</div>
+          <div class="td-player">
+            <div class="pl-av" style="background:#FBEAF0;color:#9B2C6C;">정</div>
+            <div><div class="pl-name">정○○</div><div class="pl-sub">38세 · 결석 3주</div></div>
+          </div>
+          <div class="td"><span class="grade-badge gb-small">중소형주</span></div>
+          <div class="td mono" style="font-weight:500;">980</div>
+          <div class="td down mono" style="font-weight:500;">▼ 5%</div>
+          <div class="td mono">47.3초</div>
+          <div class="td">
+            <div class="index-bar-wrap">
+              <div class="index-bar"><div class="index-fill" style="width:52%;background:var(--amber);"></div></div>
+              <span class="index-score">52</span>
+            </div>
+          </div>
+          <div class="td"><button class="invest-btn-sm" onclick="event.stopPropagation();invest(this)">투자하기</button></div>
+        </div>
+
+        <div class="tr" onclick="openDrawer('강○○(2)','19세','중소형주','870','-10%','49.1초','48','#E1F5EE','#085041','강2',false)">
+          <div class="td-rank">7</div>
+          <div class="td-player">
+            <div class="pl-av" style="background:#E1F5EE;color:#085041;">강</div>
+            <div><div class="pl-name">강○○</div><div class="pl-sub">19세 · 패스트트랙</div></div>
+          </div>
+          <div class="td"><span class="grade-badge gb-small">중소형주</span></div>
+          <div class="td mono" style="font-weight:500;">870</div>
+          <div class="td down mono" style="font-weight:500;">▼ 10%</div>
+          <div class="td mono">49.1초</div>
+          <div class="td">
+            <div class="index-bar-wrap">
+              <div class="index-bar"><div class="index-fill" style="width:48%;background:var(--amber);"></div></div>
+              <span class="index-score">48</span>
+            </div>
+          </div>
+          <div class="td"><button class="invest-btn-sm invested" onclick="event.stopPropagation()">투자중</button></div>
+        </div>
+
+        <div class="tr" onclick="openDrawer('윤○○','12세','스타트업','700','+5%','54.6초','62','#F0EEFF','#5B21B6','윤',false)">
+          <div class="td-rank">8</div>
+          <div class="td-player">
+            <div class="pl-av" style="background:#F0EEFF;color:#5B21B6;">윤</div>
+            <div><div class="pl-name">윤○○<span class="pl-new">신규</span></div><div class="pl-sub">12세 · IPO 2주차</div></div>
+          </div>
+          <div class="td"><span class="grade-badge gb-startup">스타트업</span></div>
+          <div class="td mono" style="font-weight:500;">700</div>
+          <div class="td up mono" style="font-weight:500;">▲ 5%</div>
+          <div class="td mono">54.6초</div>
+          <div class="td">
+            <div class="index-bar-wrap">
+              <div class="index-bar"><div class="index-fill" style="width:62%;background:var(--purple);"></div></div>
+              <span class="index-score">62</span>
+            </div>
+          </div>
+          <div class="td"><button class="invest-btn-sm invested" onclick="event.stopPropagation()">투자중</button></div>
+        </div>
+
+      </div>
+
+      <!-- PAGINATION -->
+      <div class="pagination">
+        <div class="page-info">1–8 / 24명 표시 중</div>
+        <div class="page-btns">
+          <button class="page-btn">‹</button>
+          <button class="page-btn act">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">›</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DETAIL DRAWER -->
+<div class="drawer-backdrop" id="backdrop" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="drawer-av" id="d-av"></div>
+    <div>
+      <div class="drawer-name" id="d-name"></div>
+      <div class="drawer-sub" id="d-sub"></div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-price">
+      <div class="dp-label">현재 주가</div>
+      <div class="dp-price" id="d-price"></div>
+      <div class="dp-change" id="d-change"></div>
+    </div>
+    <div class="drawer-section">
+      <div class="ds-title">기본 정보</div>
+      <div class="ds-row"><span class="ds-label">현재 기록</span><span class="ds-val" id="d-record"></span></div>
+      <div class="ds-row"><span class="ds-label">종합 지수</span><span class="ds-val" id="d-index"></span></div>
+      <div class="ds-row"><span class="ds-label">등급</span><span class="ds-val" id="d-grade"></span></div>
+      <div class="ds-row"><span class="ds-label">IPO 공모가</span><span class="ds-val">1,000 코인</span></div>
+    </div>
+    <div class="drawer-section">
+      <div class="ds-title">지수 구성</div>
+      <div class="index-row-d"><div class="ir-label">현재 실적</div><div class="ir-track"><div class="ir-fill" style="width:75%;background:var(--blue);"></div></div><div class="ir-val">75</div></div>
+      <div class="index-row-d"><div class="ir-label">성장성</div><div class="ir-track"><div class="ir-fill" style="width:60%;background:var(--teal);"></div></div><div class="ir-val">60</div></div>
+      <div class="index-row-d"><div class="ir-label">훈련 투자</div><div class="ir-track"><div class="ir-fill" style="width:90%;background:var(--amber);"></div></div><div class="ir-val">90</div></div>
+      <div class="index-row-d"><div class="ir-label">시장 지위</div><div class="ir-track"><div class="ir-fill" style="width:70%;background:var(--purple);"></div></div><div class="ir-val">70</div></div>
+    </div>
+    <div class="drawer-section">
+      <div class="ds-title">최근 이벤트</div>
+      <div class="ds-row"><span class="ds-label">PB 달성 (5월 10일)</span><span class="ds-val up">+30%</span></div>
+      <div class="ds-row"><span class="ds-label">대회 출전 (4월 20일)</span><span class="ds-val up">+10%</span></div>
+    </div>
+    <button class="drawer-invest-btn" id="d-invest-btn">이 선수에게 투자하기 →</button>
+  </div>
+</div>
+
+<script>
+function openDrawer(name, age, grade, price, change, record, index, bg, fg, letter, isInvested) {
+  document.getElementById('d-av').style.background = bg;
+  document.getElementById('d-av').style.color = fg;
+  document.getElementById('d-av').textContent = letter;
+  document.getElementById('d-name').textContent = name;
+  document.getElementById('d-sub').textContent = age + ' · ' + grade;
+  document.getElementById('d-price').textContent = price + ' 코인';
+  document.getElementById('d-change').textContent = (change.startsWith('+') ? '▲ ' : '▼ ') + change + ' 이번 주';
+  document.getElementById('d-record').textContent = record;
+  document.getElementById('d-index').textContent = index + '점';
+  document.getElementById('d-grade').textContent = grade;
+  const btn = document.getElementById('d-invest-btn');
+  btn.textContent = isInvested ? '✓ 투자중 · 추가 투자하기' : '이 선수에게 투자하기 →';
+  document.getElementById('backdrop').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('backdrop').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+}
+function invest(btn) {
+  btn.textContent = '투자중';
+  btn.classList.add('invested');
+}
+function filterTab(el, type) {
+  document.querySelectorAll('.tp').forEach(t => t.classList.remove('act'));
+  el.classList.add('act');
+}
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('#tableBody .tr').forEach(tr => {
+    const name = tr.querySelector('.pl-name').textContent.toLowerCase();
+    tr.style.display = name.includes(q) ? '' : 'none';
+  });
+}
+function sortTable() { /* sort logic placeholder */ }
+document.querySelectorAll('.sb-item').forEach(item => {
+  item.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+document.querySelectorAll('.page-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.page-btn').forEach(b => b.classList.remove('act'));
+    this.classList.add('act');
+  });
+});
+</script>
+</body>
+</html>
