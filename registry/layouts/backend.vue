@@ -13,6 +13,11 @@
           <NuxtLink to="/backend/leaderboard" :class="{ active: route.path === '/backend/leaderboard' }">Leaderboard</NuxtLink>
           <NuxtLink to="/backend/errata"      :class="{ active: route.path === '/backend/errata'      }">Errata</NuxtLink>
           <a href="/" class="be-home">← Site</a>
+          <div class="be-user" v-if="user">
+            <img v-if="user.avatar" :src="user.avatar" class="be-avatar" />
+            <span class="be-username">{{ user.name || user.nickname }}</span>
+            <button class="be-logout" @click="logout">로그아웃</button>
+          </div>
         </nav>
       </div>
     </header>
@@ -24,6 +29,12 @@
 
 <script setup lang="ts">
 const route = useRoute()
+const { user } = useUserSession()
+
+async function logout() {
+  await $fetch('/auth/logout', { method: 'POST' })
+  await navigateTo('/login')
+}
 </script>
 
 <style scoped>
@@ -54,6 +65,18 @@ const route = useRoute()
 .be-nav a:hover { background: #1a1a1a; color: #ccc; }
 .be-nav a.active { background: #1e3a5f; color: #fff; }
 .be-nav a.be-home { margin-left: 8px; color: #555; border-left: 1px solid #222; padding-left: 16px; }
+.be-user {
+  display: flex; align-items: center; gap: 8px;
+  margin-left: 12px; padding-left: 12px; border-left: 1px solid #222;
+}
+.be-avatar { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+.be-username { font-size: 12px; color: #aaa; }
+.be-logout {
+  font-size: 11px; color: #666; background: none; border: 1px solid #333;
+  border-radius: 3px; padding: 3px 8px; cursor: pointer; letter-spacing: 0.05em;
+  transition: background 0.15s, color 0.15s;
+}
+.be-logout:hover { background: #1a1a1a; color: #ccc; }
 
 .be-main { padding: 28px 32px; }
 

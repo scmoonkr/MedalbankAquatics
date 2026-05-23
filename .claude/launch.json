@@ -14,6 +14,13 @@
       "runtimeArgs": ["run", "dev"],
       "port": 6632,
       "cwd": "C:/Develop/MedalbankAquatics/registry"
+    },
+    {
+      "name": "sse",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 6633,
+      "cwd": "C:/Develop/MedalbankAquatics/sse"
     }
   ]
 }

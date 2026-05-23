@@ -4,6 +4,7 @@
 //   - "기록오류 정정"   → match an existing doc and $set the fields
 // Marks the errata with confirmed_at on success.
 import { ObjectId } from 'mongodb'
+import { nextTid } from '~/server/utils/tid'
 
 // Fields copied from errata.time → mergedTimes.
 const COPY_FIELDS = [
@@ -47,7 +48,8 @@ export default defineEventHandler(async (event) => {
     if (!payload.name || !payload.time) {
       throw createError({ statusCode: 400, statusMessage: 'name and time required for insert' })
     }
-    const result = await db.collection('mergedTimes').insertOne(payload)
+    const tid = await nextTid(db)
+    const result = await db.collection('mergedTimes').insertOne({ ...payload, tid })
     await db.collection('errata').updateOne(
       { _id: new ObjectId(id) },
       { $set: { confirmed_at: new Date().toISOString(), confirmed_target: String(result.insertedId), confirmed_action: 'insert' } }

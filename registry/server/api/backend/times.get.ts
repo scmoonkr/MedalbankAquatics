@@ -23,6 +23,7 @@ export default defineEventHandler(async (event) => {
 
   return docs.map(d => ({
     id:              String(d._id),
+    tid:             d.tid             ?? null,
     gender:          d.gender          || '—',
     discipline:      d.discipline      || '—',
     distance:        d.distance        || '—',

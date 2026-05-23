@@ -8,12 +8,16 @@ dotenv.config({ path: resolve(__dirname, '../.env') })
 export default defineNuxtConfig({
   devtools: { enabled: false },
   devServer: { port: 6632 },
+  modules: ['nuxt-auth-utils'],
 
   runtimeConfig: {
-    mongoAddr: process.env.MONGODB_ADDR    || '221.143.48.153:4529',
-    mongoUser: process.env.MONGO_USERNAME  || 'mscadmin',
-    mongoPwd:  process.env.MONGO_PWD       || '~Mscadmin',
-    mongoDb:   process.env.MONGO_DBNAME_BR || 'Breaststroke',
+    mongoAddr:         process.env.MONGODB_ADDR       || '221.143.48.153:4529',
+    mongoUser:         process.env.MONGO_USERNAME     || 'mscadmin',
+    mongoPwd:          process.env.MONGO_PWD          || '~Mscadmin',
+    mongoDb:           process.env.MONGO_DBNAME_BR    || 'Breaststroke',
+    naverClientId:     process.env.NAVER_CLIENT_ID     || '',
+    naverClientSecret: process.env.NAVER_CLIENT_SECRET  || '',
+    siteUrl:           process.env.NUXT_SITE_URL        || '',
     public: {
       naverFormInsert: process.env.NAVER_FORM_INSERT || '',
     },

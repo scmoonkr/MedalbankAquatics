@@ -25,6 +25,9 @@
           <NuxtLink to="/ledger" :class="{ current: route.path === '/ledger' }">
             <span class="nav-en">The Ledger</span><span class="nav-ko">기록대장</span>
           </NuxtLink>
+          <NuxtLink to="/cannon" :class="{ current: route.path === '/cannon' }">
+            <span class="nav-en">The Canon</span><span class="nav-ko">정전</span>
+          </NuxtLink>
           <NuxtLink to="/charter" :class="{ current: route.path === '/charter' }">
             <span class="nav-en">The Charter</span><span class="nav-ko">헌장</span>
           </NuxtLink>
