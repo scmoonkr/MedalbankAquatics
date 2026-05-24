@@ -1,12 +1,8 @@
-// GET /api/similar — mergedTimes에서 WA 포인트 기준 유사 기록 조회
-// params: gender(M|W), stroke(FR|BK|BR|FL|IM), distance(number), course(LCM|SCM), pts(number)
-// waPoints 필드를 직접 사용 (timeStamp 범위 계산 불필요)
+// GET /api/similar — 선수별 PB 기준 WA 포인트 유사 기록 조회
+// 같은 종목: 동일 성별·영법·거리·코스에서 선수별 PB → waPoints 유사 순 10개
+// 타 영법:  성별 무관, 현재 종목 제외 전 종목에서 선수별 PB → waPoints 유사 순 10개
 
-import { getBasetime, calcWAPoints, BASE_TIMES } from '~/server/utils/wapoints'
-
-// ±150 pts 이내 유사 기록 조회
-const SAME_MARGIN  = 150
-const OTHER_MARGIN = 150
+import { BASE_TIMES } from '~/server/utils/wapoints'
 
 export default defineEventHandler(async (event) => {
   const q        = getQuery(event)
@@ -21,53 +17,62 @@ export default defineEventHandler(async (event) => {
   const dbGender = gender === 'M' ? 'men' : 'women'
   const distStr  = `${distance}M`
   const db       = await getDb()
+  const coll     = db.collection('mergedTimes')
 
-  // ── 같은 종목 ─────────────────────────────────────────────
-  const sameDocs = await db.collection('mergedTimes').aggregate([
-    { $match: {
-      gender:     dbGender,
-      discipline: stroke,
-      distance:   distStr,
-      course,
-      waPoints:   { $gte: pts - SAME_MARGIN, $lte: pts + SAME_MARGIN },
-    }},
-    { $addFields: { diff: { $abs: { $subtract: ['$waPoints', pts] } } } },
-    { $sort: { diff: 1 } },
-    { $limit: 200 },
-    // 이름 중복 제거 — diff 오름차순 정렬 후 $first 이므로 가장 가까운 기록 유지
-    { $group: { _id: '$name', doc: { $first: '$$ROOT' } } },
+  // ── 같은 종목: 선수별 PB(min timeStamp) → waPoints diff 순 10개 ──
+  const sameDocs = await coll.aggregate([
+    { $match: { gender: dbGender, discipline: stroke, distance: distStr, course } },
+    { $sort: { timeStamp: 1 } },                          // 빠른 기록 먼저 (PB first)
+    { $group: { _id: '$name', doc: { $first: '$$ROOT' } } }, // 선수별 PB
     { $replaceRoot: { newRoot: '$doc' } },
+    { $addFields: { diff: { $abs: { $subtract: ['$waPoints', pts] } } } },
     { $sort: { diff: 1 } },
     { $limit: 10 },
   ]).toArray()
 
-  // ── 타 영법/거리 ─────────────────────────────────────────
-  // 같은 course 내 모든 종목을 waPoints 범위로 한 번에 조회 후 종목별 집계
-  const otherDocs = await db.collection('mergedTimes').aggregate([
-    { $match: {
-      gender:   dbGender,
-      course,
-      waPoints: { $gte: pts - OTHER_MARGIN, $lte: pts + OTHER_MARGIN },
-      $nor: [{ discipline: stroke, distance: distStr }],  // 현재 종목 제외
-    }},
-    { $addFields: { diff: { $abs: { $subtract: ['$waPoints', pts] } } } },
-    { $sort: { diff: 1 } },
-    { $limit: 500 },
-    // 종목+이름 기준 중복 제거
-    {
-      $group: {
-        _id: { discipline: '$discipline', distance: '$distance', name: '$name' },
-        doc: { $first: '$$ROOT' },
-      },
-    },
-    { $replaceRoot: { newRoot: '$doc' } },
-    { $sort: { diff: 1 } },
-    { $limit: 50 },
-  ]).toArray()
+  // ── 타 영법: 성별 무관, BASE_TIMES 전 종목(현재 제외) 병렬 조회 ──
+  type EventKey = { genderDb: string; s: string; dist: number; distStr: string }
+  const events: EventKey[] = []
+
+  for (const [g, strokes] of Object.entries(BASE_TIMES[course] ?? {})) {
+    const gDb = g === 'M' ? 'men' : 'women'
+    for (const [s, dists] of Object.entries(strokes)) {
+      for (const d of Object.keys(dists)) {
+        const dist = Number(d)
+        const ds   = `${dist}M`
+        // 현재 종목(성별+영법+거리) 제외
+        if (gDb === dbGender && s === stroke && ds === distStr) continue
+        events.push({ genderDb: gDb, s, dist, distStr: ds })
+      }
+    }
+  }
+
+  // 종목별 선수 PB 병렬 조회
+  const otherResults = await Promise.all(
+    events.map(({ genderDb, s, distStr: ds }) =>
+      coll.aggregate([
+        { $match: { gender: genderDb, discipline: s, distance: ds, course } },
+        { $sort: { timeStamp: 1 } },
+        { $group: { _id: '$name', doc: { $first: '$$ROOT' } } },
+        { $replaceRoot: { newRoot: '$doc' } },
+        { $addFields: { diff: { $abs: { $subtract: ['$waPoints', pts] } } } },
+        { $sort: { diff: 1 } },
+        { $limit: 20 },
+      ]).toArray(),
+    ),
+  )
+
+  // 전체 합산 후 diff 순 상위 10개
+  const otherAll: any[] = []
+  for (const docs of otherResults) otherAll.push(...docs)
+  otherAll.sort((a, b) => a.diff - b.diff)
+  const otherDocs = otherAll.slice(0, 10)
 
   // ── 포맷 ──────────────────────────────────────────────────
+  const fmtGender = (g: string) => (g === 'men' || g === 'M') ? 'M' : 'W'
+
   const fmt = (d: any, s: string, dist: number) => ({
-    gender,
+    gender:   fmtGender(d.gender),
     stroke:   s,
     distance: dist,
     course,
@@ -77,23 +82,8 @@ export default defineEventHandler(async (event) => {
     points:   d.waPoints ?? 0,
   })
 
-  const same = sameDocs.map(d => fmt(d, stroke, distance))
-
-  // 타 종목: 종목별 최대 5건, 전체 상위 10건
-  const otherByEvent: Map<string, ReturnType<typeof fmt>[]> = new Map()
-  for (const d of otherDocs) {
-    const key  = `${d.discipline}-${d.distance}`
-    const dist = parseInt(d.distance || '0')
-    const arr  = otherByEvent.get(key) ?? []
-    if (arr.length < 5) {
-      arr.push(fmt(d, d.discipline, dist))
-      otherByEvent.set(key, arr)
-    }
-  }
-
-  const otherAll = [...otherByEvent.values()].flat()
-  otherAll.sort((a, b) => Math.abs(a.points - pts) - Math.abs(b.points - pts))
-  const other = otherAll.slice(0, 10)
+  const same  = sameDocs.map(d => fmt(d, stroke, distance))
+  const other = otherDocs.map(d => fmt(d, d.discipline, parseInt(d.distance || '0')))
 
   return { same, other }
 })
