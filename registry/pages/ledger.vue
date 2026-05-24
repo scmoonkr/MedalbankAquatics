@@ -31,7 +31,21 @@
               <p>{{ doc.meet }}</p>
             </div>
             <div class="figures">
-              <span class="time">{{ doc.time }}</span>
+              <span
+                v-if="doc.rawGender && doc.rawStroke && doc.rawDistance && doc.rawCourse && doc.time !== '—'"
+                class="time time-trigger"
+                :data-gender="doc.rawGender"
+                :data-stroke="doc.rawStroke"
+                :data-distance="doc.rawDistance"
+                :data-course="doc.rawCourse"
+                :data-time="doc.time"
+                :data-athlete="doc.name"
+                :data-venue="doc.meet"
+                :data-date="doc.date"
+                role="button"
+                tabindex="0"
+              >{{ doc.time }}</span>
+              <span v-else class="time">{{ doc.time }}</span>
               <span class="when">
                 {{ doc.date }}
                 <template v-if="doc.report_date"><br />등재 {{ doc.report_date }}</template>
@@ -71,15 +85,19 @@ const PER_PAGE = 25
 const page = ref(1)
 
 interface LedgerDoc {
-  event: string
-  group: string
-  name: string
-  city: string
-  team: string
-  time: string
-  date: string
-  meet: string
+  event:       string
+  group:       string
+  name:        string
+  city:        string
+  team:        string
+  time:        string
+  date:        string
+  meet:        string
   report_date: string | null
+  rawGender:   string
+  rawStroke:   string
+  rawDistance: number
+  rawCourse:   string
 }
 
 const { data: ledgerData, pending } = await useFetch<LedgerDoc[]>('/api/ledger')
@@ -87,4 +105,22 @@ const ledgerList = computed(() => ledgerData.value ?? [])
 const totalPages = computed(() => Math.max(1, Math.ceil(ledgerList.value.length / PER_PAGE)))
 const pagedRows  = computed(() => ledgerList.value.slice((page.value - 1) * PER_PAGE, page.value * PER_PAGE))
 watch(ledgerList, () => { page.value = 1 })
+
+// ── scoring + modal scripts ────────────────────────────────────
+function loadScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return }
+    const s = document.createElement('script')
+    s.src = src
+    s.onload  = () => resolve()
+    s.onerror = () => reject(new Error(`script load failed: ${src}`))
+    document.head.appendChild(s)
+  })
+}
+
+onMounted(() => {
+  loadScript('/cannon/js/scoring.js')
+    .then(() => loadScript('/cannon/js/modal.js'))
+    .catch(err => console.error('[ledger] script load error', err))
+})
 </script>

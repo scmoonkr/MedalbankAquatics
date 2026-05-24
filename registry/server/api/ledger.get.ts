@@ -21,6 +21,12 @@ export default defineCachedEventHandler(async () => {
     const eventParts = [gender, stroke, distance, course].filter(Boolean)
     const event      = eventParts.join(' ')
 
+    // modal용 raw 필드
+    const rawGender   = d.gender === 'men' ? 'M' : d.gender === 'women' ? 'W' : ''
+    const rawStroke   = d.discipline ?? ''
+    const rawDistance = d.distance ? parseInt(String(d.distance)) : 0
+    const rawCourse   = d.course ? String(d.course).toUpperCase() : ''
+
     return {
       event:       event,
       group:       d.group        || '—',
@@ -31,6 +37,11 @@ export default defineCachedEventHandler(async () => {
       date:        d.datetime     ? String(d.datetime).slice(0, 10) : '—',
       meet:        d.competitionName || '—',
       report_date: d.report_date  ? String(d.report_date).slice(0, 10) : null,
+      // modal trigger용
+      rawGender,
+      rawStroke,
+      rawDistance,
+      rawCourse,
     }
   })
 }, {
