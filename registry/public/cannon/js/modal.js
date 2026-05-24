@@ -78,6 +78,20 @@
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <button class="modal-close" type="button" aria-label="닫기">×</button>
     <button class="pdf-btn" type="button" aria-label="PDF 저장" id="pdfBtn">PDF</button>
+    <button class="info-btn" type="button" aria-label="계산 방식 안내" id="infoBtn">i</button>
+    <div class="info-popover" id="infoPopover" hidden>
+      <p>본 계산은 <strong>World Aquatics Points</strong> 공식을 따릅니다.
+      각 종목의 베이스타임은 LCM 세계기록을 기준으로 하며,
+      <em>포인트 = 1000 × (베이스타임 ÷ 기록)³</em> 의 정수 부분으로 산출됩니다.
+      세계수영연맹이 공식 발간하는 FINA Points 표와 동일한 방식이며,
+      수영계 전반에서 가장 보편적으로 쓰이는 비교 척도입니다.</p>
+      <p>연령 보정은 <strong>Rowson-style</strong> 단일 계수 모델로,
+      각 5세 연령부의 마스터즈 세계기록을 25-29(오픈) 마스터즈 세계기록과 비교한
+      근사 비율을 적용합니다. 종목·거리에 따라 실제 비율이 다소 변동하나,
+      본 표에서는 평균 계수를 사용하여 큰 그림을 가늠합니다.</p>
+      <p>두 방식 모두 어디까지나 <em>참고용 환산</em>이며,
+      공식 등재나 인증 기록과는 구분됩니다.</p>
+    </div>
 
     <header class="modal-head">
       <div class="modal-eyebrow">기록 분석 · TIME ANALYSIS</div>
@@ -204,20 +218,6 @@
     </div>
 
     <footer class="modal-foot">
-      <button class="info-btn" type="button" aria-label="계산 방식 안내" id="infoBtn">i</button>
-      <div class="info-popover" id="infoPopover" hidden>
-        <p>본 계산은 <strong>World Aquatics Points</strong> 공식을 따릅니다.
-        각 종목의 베이스타임은 LCM 세계기록을 기준으로 하며,
-        <em>포인트 = 1000 × (베이스타임 ÷ 기록)³</em> 의 정수 부분으로 산출됩니다.
-        세계수영연맹이 공식 발간하는 FINA Points 표와 동일한 방식이며,
-        수영계 전반에서 가장 보편적으로 쓰이는 비교 척도입니다.</p>
-        <p>연령 보정은 <strong>Rowson-style</strong> 단일 계수 모델로,
-        각 5세 연령부의 마스터즈 세계기록을 25-29(오픈) 마스터즈 세계기록과 비교한
-        근사 비율을 적용합니다. 종목·거리에 따라 실제 비율이 다소 변동하나,
-        본 표에서는 평균 계수를 사용하여 큰 그림을 가늠합니다.</p>
-        <p>두 방식 모두 어디까지나 <em>참고용 환산</em>이며,
-        공식 등재나 인증 기록과는 구분됩니다.</p>
-      </div>
     </footer>
   </div>
 </div>`;
