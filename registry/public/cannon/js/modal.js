@@ -754,9 +754,53 @@
       </div>`;
   }
 
-  // ── PDF 저장 (window.print → 브라우저 Save as PDF) ───────
+  // ── PDF 미리보기 (새 탭) ──────────────────────────────────
   function downloadPdf() {
-    window.print();
+    const shell = document.querySelector('#recordModal .modal');
+    if (!shell) return;
+
+    // 현재 문서의 모든 스타일시트 수집
+    const styles = Array.from(document.styleSheets).map(ss => {
+      try {
+        return Array.from(ss.cssRules).map(r => r.cssText).join('\n');
+      } catch (e) {
+        // cross-origin stylesheet → <link> 태그로 대체
+        return ss.href ? `@import url("${ss.href}");` : '';
+      }
+    }).join('\n');
+
+    // 모달 콘텐츠 클론 + PDF 모드 적용
+    const clone = shell.cloneNode(true);
+    clone.classList.add('modal-pdf-mode');
+    // 위치/사이즈 초기화
+    clone.style.cssText = 'position:static;width:100%;max-width:none;border:none;margin:0;box-shadow:none;';
+
+    const gKo  = genderKo(state.gender);
+    const sKo  = strokeKo(state.stroke);
+    const tStr = fmt(state.time) || '';
+    const title = 'KSR · ' + gKo + ' ' + sKo + ' ' + state.distance + 'm ' + state.course
+      + (tStr ? ' · ' + tStr : '');
+
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>${esc(title)}</title>
+  <style>
+    ${styles}
+    @page { size: A4 portrait; margin: 6mm; }
+    html, body { margin: 0; padding: 0; background: #fff; }
+    .modal { padding: 32px 40px !important; }
+  </style>
+</head>
+<body>
+  ${clone.outerHTML}
+</body>
+</html>`);
+    win.document.close();
   }
 
   // ── Trigger binding ──────────────────────────────────────
