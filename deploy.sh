@@ -21,6 +21,11 @@ cd "$PROJECT_DIR/registry"
 npm install
 npm run build
 
+echo "=== [4/6] SSE 패키지 설치 & 빌드 ==="
+cd "$PROJECT_DIR/sse"
+npm install
+npm run build
+
 echo "=== [5/6] PM2 재시작 ==="
 cd "$PROJECT_DIR"
 
@@ -42,6 +47,13 @@ if pm2 list | grep -q "medalbank-aquatics-registry"; then
 else
   PORT=6632 pm2 start "$PROJECT_DIR/registry/.output/server/index.mjs" \
     --name medalbank-aquatics-registry --env production
+fi
+
+if pm2 list | grep -q "medalbank-aquatics-sse"; then
+  pm2 restart medalbank-aquatics-sse
+else
+  PORT=6632 pm2 start "$PROJECT_DIR/sse/.output/server/index.mjs" \
+    --name medalbank-aquatics-sse --env production
 fi
 
 echo "=== [6/6] PM2 저장 ==="
