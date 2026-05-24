@@ -351,8 +351,10 @@
 
     let data;
     try {
+      const athleteParam = state.attribution?.athlete
+        ? `&athlete=${encodeURIComponent(state.attribution.athlete)}` : '';
       const res = await fetch(
-        `/api/similar?gender=${state.gender}&stroke=${state.stroke}&distance=${state.distance}&course=${state.course}&pts=${pts}`
+        `/api/similar?gender=${state.gender}&stroke=${state.stroke}&distance=${state.distance}&course=${state.course}&pts=${pts}${athleteParam}`
       );
       if (!res.ok) throw new Error('fetch failed');
       data = await res.json();
