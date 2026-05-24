@@ -1,11 +1,19 @@
 <template>
   <div class="login-wrap">
     <div class="login-card">
-      <div class="login-brand">
-        <span class="login-label">KSR</span>
-        <span class="login-sep">/</span>
-        <span class="login-title">Backend</span>
+
+      <div class="login-logo">
+        <img src="/images/logo.png" alt="KSR" class="login-logo-img" />
+        <div class="login-logo-text">
+          <span class="login-site">Korean Swimming Registry</span>
+          <span class="login-sub">로그인</span>
+        </div>
       </div>
+
+      <p class="login-desc">
+        제보·기여 기능을 이용하려면 로그인이 필요합니다.<br>
+        본 사이트는 <strong>네이버 아이디</strong>를 통한 로그인만 허용합니다.
+      </p>
 
       <p v-if="errorMsg" class="login-error">{{ errorMsg }}</p>
 
@@ -15,13 +23,21 @@
         </svg>
         네이버로 로그인
       </a>
+
+      <p class="login-note">
+        로그인 시 이름·성별·생년월일 등<br>
+        네이버 계정 정보 일부가 수집되며,<br>
+        본인인증 및 제보 실명 확인 목적으로만 사용됩니다.
+      </p>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-const route = useRoute()
+useHead({ title: '로그인 — KSR · Korean Swimming Registry' })
 
+const route = useRoute()
 const errorMsg = computed(() => {
   const e = route.query.error as string | undefined
   if (!e) return ''
@@ -38,8 +54,9 @@ const errorMsg = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f3;
+  background: var(--bg-soft, #f5f5f3);
   font-family: var(--sans);
+  padding: 40px 16px;
 }
 .login-card {
   background: #fff;
@@ -47,31 +64,46 @@ const errorMsg = computed(() => {
   border-radius: 6px;
   padding: 48px 40px;
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
 }
-.login-brand {
+.login-logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 14px;
 }
-.login-label {
+.login-logo-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+.login-logo-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.login-site {
   font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.04em;
   color: #0a0a0a;
-  text-transform: uppercase;
 }
-.login-sep { color: #ccc; font-size: 16px; }
-.login-title {
+.login-sub {
+  font-size: 11px;
+  color: #aaa;
+  letter-spacing: 0.1em;
+}
+.login-desc {
   font-size: 13px;
-  letter-spacing: 0.16em;
-  color: #888;
-  text-transform: uppercase;
+  color: #555;
+  line-height: 1.8;
+  text-align: center;
+  margin: 0;
 }
+.login-desc strong { color: #0a0a0a; }
 .login-error {
   font-size: 13px;
   color: #c0392b;
@@ -89,7 +121,7 @@ const errorMsg = computed(() => {
   justify-content: center;
   gap: 10px;
   width: 100%;
-  padding: 12px 20px;
+  padding: 13px 20px;
   background: #03c75a;
   color: #fff;
   font-size: 14px;
@@ -100,4 +132,14 @@ const errorMsg = computed(() => {
   letter-spacing: 0.02em;
 }
 .btn-naver:hover { background: #02b350; }
+.login-note {
+  font-size: 11.5px;
+  color: #aaa;
+  line-height: 1.8;
+  text-align: center;
+  margin: 0;
+  border-top: 1px solid #f0f0ee;
+  padding-top: 16px;
+  width: 100%;
+}
 </style>

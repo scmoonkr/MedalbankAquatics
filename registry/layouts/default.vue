@@ -6,6 +6,18 @@
           <img class="logo-img" src="/images/logo.png" alt="KSR · Korean Swimming Registry" />
           <span class="full">Korean Swimming Registry</span>
         </NuxtLink>
+        <NuxtLink :to="loggedIn ? '/user' : '/login'" class="lock-btn" :title="loggedIn ? '로그인됨' : '로그인 필요'">
+          <!-- closed lock: logged in -->
+          <svg v-if="loggedIn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <!-- open lock: not logged in -->
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+          </svg>
+        </NuxtLink>
         <button
           class="menu-toggle"
           :class="{ open: menuOpen }"
@@ -72,6 +84,7 @@
 const route = useRoute()
 const menuOpen = ref(false)
 const naverFormInsert = useRuntimeConfig().public.naverFormInsert as string
+const { loggedIn } = useUserSession()
 
 // Index page uses scroll snap; all other pages opt out
 useHead({
@@ -119,3 +132,19 @@ onUnmounted(() => {
   document.body.classList.remove('menu-open')
 })
 </script>
+
+<style scoped>
+.lock-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 10px;
+  color: var(--fg-dim, #888);
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.lock-btn:hover { color: var(--fg, #0a0a0a); }
+.lock-btn svg { width: 16px; height: 16px; }
+</style>

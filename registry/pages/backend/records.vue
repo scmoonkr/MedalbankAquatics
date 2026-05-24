@@ -1,18 +1,11 @@
 <template>
   <div class="rc-root">
 
-    <!-- Tabs -->
-    <div class="rc-tabs">
-      <button v-for="t in TABS" :key="t.key"
-        class="rc-tab" :class="{ active: activeTab === t.key }"
-        @click="activeTab = t.key">
-        {{ t.label }}
-      </button>
-    </div>
-
     <!-- Toolbar -->
     <div class="rc-bar">
-      <span></span>
+      <nav class="rc-jumps">
+        <a v-for="s in STROKE_ORDER" :key="s" :href="`#sec-${s.toLowerCase()}`">{{ STROKE_LABELS[s].ko }}</a>
+      </nav>
       <div class="rc-bar-right">
         <button class="btn-csv-im" @click="importFileRef?.click()">CSV 불러오기</button>
         <button class="btn-csv-ex" @click="exportCSV">CSV 내보내기</button>
@@ -22,66 +15,114 @@
 
     <!-- Info -->
     <div class="rc-info">
-      <strong>WR / OR / AR / KR / WMR / KMR / ER</strong> 7가지 권위 기록을 종목별로 입력·수정합니다. LCM(장수영장) 기록만 다룹니다. <strong>국적</strong> 칸을 누르면 국가 검색 모달이 열리고, 선택 시 국가가 함께 표시됩니다. <strong>기록</strong>란은 숫자만 입력해도 자동 정형되고(002091 → 00:20.91), <strong>작성일</strong>도 20260518 → 2026-05-18 로 맞춰집니다. 엑셀·구글시트에서 범위를 복사해 셀에 붙여넣기(Ctrl+V)하면 한 번에 채워지고, 상단 <strong>CSV 내보내기·불러오기</strong>로 표 단위 편집도 가능합니다. <strong>저장</strong> 시 event_meta.json 이 다운로드됩니다. 50m 배영·평영·접영의 OR은 비올림픽 종목이라 입력란이 없습니다.
+      <strong>WR / OR / AR / KR / WMR / KMR / ER</strong> 7가지 권위 기록을 종목별로 입력·수정합니다. LCM(장수영장) 기록만 다룹니다. 셀을 클릭하면 우측 패널에서 편집할 수 있습니다. <strong>기록</strong>란은 숫자만 입력해도 자동 정형되고(002091 → 00:20.91), <strong>작성일</strong>도 20260518 → 2026-05-18 로 맞춰집니다. 상단 <strong>CSV 내보내기·불러오기</strong>로 전체 일괄 편집도 가능합니다. 50m 배영·평영·접영의 OR은 비올림픽 종목이라 입력란이 없습니다.
     </div>
 
     <!-- Body: table + optional right panel -->
     <div class="rc-body">
 
-      <!-- Content -->
+      <!-- Content: matrix by stroke -->
       <div class="rc-content" v-if="loaded">
-        <div class="rc-stroke-title">{{ curTab.genderLabel }} · {{ curTab.strokeLabel }}</div>
-
-        <div v-for="dist in curDistances" :key="dist" class="rc-event">
-          <div class="rc-event-head">
-            <span class="rc-ev-label">{{ curTab.genderLabel }} · {{ curTab.strokeLabel }} · {{ dist }}M · LCM</span>
-            <span class="rc-ev-slug">{{ mkKey(curTab.gender, curTab.stroke, dist) }}</span>
+        <section
+          v-for="s in STROKE_ORDER"
+          :key="s"
+          :id="`sec-${s.toLowerCase()}`"
+          class="rc-section"
+        >
+          <div class="rc-section-head">
+            <span class="rc-ev-label">{{ STROKE_LABELS[s].ko }}</span>
+            <span class="rc-ev-slug">{{ STROKE_LABELS[s].en }} · LCM</span>
           </div>
           <div class="rc-table-wrap">
-            <table class="rc-table">
+            <table class="rc-table rc-matrix">
               <thead>
                 <tr>
-                  <th class="th-type">구분</th>
-                  <th class="th-time">기록</th>
-                  <th class="th-name">보유자</th>
-                  <th class="th-nat">국적</th>
-                  <th class="th-flag"></th>
-                  <th class="th-year">연도</th>
-                  <th class="th-date">작성일</th>
-                  <th class="th-age">연령대</th>
-                  <th class="th-sido">지역</th>
-                  <th class="th-meet">대회명</th>
-                  <th class="th-pool">수영장</th>
+                  <th class="th-dist">거리</th>
+                  <th class="th-gen">성별</th>
+                  <th v-for="rt in ALL_RT" :key="rt" class="th-rt">
+                    <span class="rt-code">{{ rt }}</span>
+                    <span class="rt-lbl">{{ RT_LABELS_SHORT[rt] }}</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="rt in rtList(curTab.stroke, dist)" :key="rt"
-                  class="row-clickable"
-                  :class="rowClass(curTab.gender, curTab.stroke, dist, rt)"
-                  @click="openPanel(curTab.gender, curTab.stroke, dist, rt)">
-                  <td class="td-type"><span class="rt-code">{{ rt }}</span><span class="rt-lbl">{{ RT_LABELS[rt] }}</span></td>
-                  <td class="td-time mono bold">
-                    <span
-                      v-if="entry(curTab.gender, curTab.stroke, dist, rt).time"
-                      class="time-trigger"
-                      @click.stop="openModal($event, curTab.gender, curTab.stroke, dist, rt)"
-                    >{{ entry(curTab.gender, curTab.stroke, dist, rt).time }}</span>
-                    <template v-else>—</template>
-                  </td>
-                  <td class="td-name">{{ entry(curTab.gender, curTab.stroke, dist, rt).name || '—' }}</td>
-                  <td class="td-nat mono">{{ entry(curTab.gender, curTab.stroke, dist, rt).nationality || '—' }}</td>
-                  <td class="td-flag">{{ entry(curTab.gender, curTab.stroke, dist, rt).nation_code }}</td>
-                  <td class="td-year mono dim">{{ entry(curTab.gender, curTab.stroke, dist, rt).year || '—' }}</td>
-                  <td class="td-date mono dim">{{ entry(curTab.gender, curTab.stroke, dist, rt).datetime || '—' }}</td>
-                  <td class="td-age dim">{{ entry(curTab.gender, curTab.stroke, dist, rt).age || '—' }}</td>
-                  <td class="td-sido dim">{{ entry(curTab.gender, curTab.stroke, dist, rt).sido || '—' }}</td>
-                  <td class="td-meet dim">{{ entry(curTab.gender, curTab.stroke, dist, rt).competitionName || '—' }}</td>
-                  <td class="td-pool dim">{{ entry(curTab.gender, curTab.stroke, dist, rt).pool || '—' }}</td>
-                </tr>
+                <template v-for="dist in STROKE_DISTS_STYLE[s]" :key="dist">
+                  <!-- 남자 -->
+                  <tr class="gender-m row-clickable">
+                    <td class="td-dist" rowspan="2">{{ dist }}m</td>
+                    <td class="td-gen">남자</td>
+                    <td
+                      v-for="rt in ALL_RT" :key="rt"
+                      class="td-rec"
+                      :class="{
+                        'rec-na':    isNoOR(s, dist, rt),
+                        'rec-empty': !isNoOR(s, dist, rt) && !entry('men', STYLE_TO_STROKE[s], dist, rt).time,
+                        'rec-dirty': !isNoOR(s, dist, rt) && entry('men', STYLE_TO_STROKE[s], dist, rt)._dirty,
+                        'rec-sel':   !isNoOR(s, dist, rt) && isCellSelected('men', STYLE_TO_STROKE[s], dist, rt),
+                      }"
+                      @click="isNoOR(s, dist, rt) ? null : openPanel('men', STYLE_TO_STROKE[s], dist, rt)"
+                    >
+                      <template v-if="isNoOR(s, dist, rt)">—</template>
+                      <template v-else-if="entry('men', STYLE_TO_STROKE[s], dist, rt).time">
+                        <span
+                          class="rec-time time-trigger"
+                          :data-gender="'M'"
+                          :data-stroke="s"
+                          :data-distance="dist"
+                          data-course="LCM"
+                          :data-time="entry('men', STYLE_TO_STROKE[s], dist, rt).time"
+                          :data-athlete="entry('men', STYLE_TO_STROKE[s], dist, rt).name"
+                          :data-nation="entry('men', STYLE_TO_STROKE[s], dist, rt).nationality"
+                          :data-year="entry('men', STYLE_TO_STROKE[s], dist, rt).year"
+                          :data-venue="entry('men', STYLE_TO_STROKE[s], dist, rt).competitionName"
+                          @click.stop="openModal($event, 'men', STYLE_TO_STROKE[s], dist, rt)"
+                        >{{ entry('men', STYLE_TO_STROKE[s], dist, rt).time }}</span>
+                        <span class="rec-who">{{ entry('men', STYLE_TO_STROKE[s], dist, rt).name }}</span>
+                        <span class="rec-when">{{ recWhen(entry('men', STYLE_TO_STROKE[s], dist, rt)) }}</span>
+                      </template>
+                      <template v-else>—</template>
+                    </td>
+                  </tr>
+                  <!-- 여자 -->
+                  <tr class="gender-w row-clickable">
+                    <td class="td-gen">여자</td>
+                    <td
+                      v-for="rt in ALL_RT" :key="rt"
+                      class="td-rec"
+                      :class="{
+                        'rec-na':    isNoOR(s, dist, rt),
+                        'rec-empty': !isNoOR(s, dist, rt) && !entry('women', STYLE_TO_STROKE[s], dist, rt).time,
+                        'rec-dirty': !isNoOR(s, dist, rt) && entry('women', STYLE_TO_STROKE[s], dist, rt)._dirty,
+                        'rec-sel':   !isNoOR(s, dist, rt) && isCellSelected('women', STYLE_TO_STROKE[s], dist, rt),
+                      }"
+                      @click="isNoOR(s, dist, rt) ? null : openPanel('women', STYLE_TO_STROKE[s], dist, rt)"
+                    >
+                      <template v-if="isNoOR(s, dist, rt)">—</template>
+                      <template v-else-if="entry('women', STYLE_TO_STROKE[s], dist, rt).time">
+                        <span
+                          class="rec-time time-trigger"
+                          :data-gender="'W'"
+                          :data-stroke="s"
+                          :data-distance="dist"
+                          data-course="LCM"
+                          :data-time="entry('women', STYLE_TO_STROKE[s], dist, rt).time"
+                          :data-athlete="entry('women', STYLE_TO_STROKE[s], dist, rt).name"
+                          :data-nation="entry('women', STYLE_TO_STROKE[s], dist, rt).nationality"
+                          :data-year="entry('women', STYLE_TO_STROKE[s], dist, rt).year"
+                          :data-venue="entry('women', STYLE_TO_STROKE[s], dist, rt).competitionName"
+                          @click.stop="openModal($event, 'women', STYLE_TO_STROKE[s], dist, rt)"
+                        >{{ entry('women', STYLE_TO_STROKE[s], dist, rt).time }}</span>
+                        <span class="rec-who">{{ entry('women', STYLE_TO_STROKE[s], dist, rt).name }}</span>
+                        <span class="rec-when">{{ recWhen(entry('women', STYLE_TO_STROKE[s], dist, rt)) }}</span>
+                      </template>
+                      <template v-else>—</template>
+                    </td>
+                  </tr>
+                </template>
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
       </div>
       <div v-else class="rc-loading">불러오는 중…</div>
 
@@ -203,6 +244,33 @@ const RT_LABELS: Record<string, string> = {
 }
 const STYLE_TO_STROKE: Record<string, string> = { FR:'free', BK:'back', BR:'breast', FL:'fly', IM:'im' }
 const STROKE_TO_STYLE: Record<string, string> = { free:'FR', back:'BK', breast:'BR', fly:'FL', im:'IM' }
+
+const STROKE_ORDER = ['FR', 'BK', 'BR', 'FL', 'IM'] as const
+const STROKE_LABELS: Record<string, { ko: string; en: string }> = {
+  FR: { ko: '자유형',   en: 'Freestyle'         },
+  BK: { ko: '배영',     en: 'Backstroke'        },
+  BR: { ko: '평영',     en: 'Breaststroke'      },
+  FL: { ko: '접영',     en: 'Butterfly'         },
+  IM: { ko: '개인혼영', en: 'Individual Medley' },
+}
+const STROKE_DISTS_STYLE: Record<string, number[]> = {
+  FR: [50, 100, 200, 400, 800, 1500],
+  BK: [50, 100, 200], BR: [50, 100, 200], FL: [50, 100, 200], IM: [200, 400],
+}
+const RT_LABELS_SHORT: Record<string, string> = {
+  WR:'세계', OR:'올림픽', AR:'아시아', KR:'한국',
+  WMR:'세계M', KMR:'한국M', ER:'인핸스드',
+}
+
+function isNoOR(style: string, dist: number, rt: string): boolean {
+  return rt === 'OR' && dist === 50 && ['BK', 'BR', 'FL'].includes(style)
+}
+function recWhen(e: Entry): string {
+  return [e.year, e.competitionName].filter(Boolean).join(' · ')
+}
+function isCellSelected(gender: string, stroke: string, dist: number, rt: string): boolean {
+  return panel.open && panel.gender === gender && panel.stroke === stroke && panel.dist === dist && panel.rt === rt
+}
 
 const COUNTRIES = [
   { ioc:'KOR', flag:'🇰🇷', ko:'대한민국',         en:'South Korea' },
@@ -348,14 +416,14 @@ function rowClass(gender: string, stroke: string, dist: number, rt: string) {
 }
 
 // ── Data load ─────────────────────────────────────────────────────
-interface ApiRecord {
-  id:string; gender:string; style:string; distance:string; course:string; type:string
-  time:string; name:string; nationality:string; nation_code:string; year:string|number
-  datetime:string; age:string; sido:string; competitionName:string; pool:string
-}
-const { data: apiData } = useFetch<ApiRecord[]>('/api/backend/records')
+interface CanonRec { time: string; athlete: string; nation: string; year: string | number; venue: string }
+interface ApiRecord { id: string; type: string; gender: string; distance: string | number; time: string }
+
+const { data: canonData } = await useFetch<Record<string, CanonRec>>('/api/canon')
+const { data: backendRecs } = useFetch<ApiRecord[]>('/api/backend/records')
+
 watchEffect(() => {
-  if (!apiData.value) return
+  if (!canonData.value) return
   const map: EventMap = {}
   // init all slots
   for (const tab of TABS) {
@@ -365,18 +433,37 @@ watchEffect(() => {
       for (const rt of rtList(tab.stroke, dist)) map[k][rt] = mkEmpty()
     }
   }
-  // fill from API
-  for (const r of apiData.value) {
-    const stroke = STYLE_TO_STROKE[r.style]
-    if (!stroke) continue
-    const dist = parseInt(r.distance) // "50M" → 50
-    const k = mkKey(r.gender, stroke, dist)
-    if (!map[k]?.[r.type]) continue
-    map[k][r.type] = {
-      _id: r.id, _dirty: false, _new: false,
-      time: r.time, name: r.name, nationality: r.nationality, nation_code: r.nation_code,
-      year: String(r.year ?? ''), datetime: r.datetime, age: r.age || '25-29',
-      sido: r.sido, competitionName: r.competitionName, pool: r.pool,
+  // ID lookup from backend records (best-effort: type+gender+dist+time)
+  const idMap: Record<string, string> = {}
+  for (const r of (backendRecs.value ?? [])) {
+    const dist = parseInt(String(r.distance))
+    if (r.id && r.type && r.gender && dist && r.time)
+      idMap[`${r.type}-${r.gender}-${dist}-${r.time}`] = r.id
+  }
+  // fill from canon: key = "M-FR-50-WR"
+  for (const [cKey, rec] of Object.entries(canonData.value)) {
+    const parts = cKey.split('-')
+    if (parts.length < 4) continue
+    const [g, style, distStr, type] = parts
+    const gender = g === 'M' ? 'men' : g === 'W' ? 'women' : ''
+    const stroke = STYLE_TO_STROKE[style]
+    const dist = parseInt(distStr)
+    if (!gender || !stroke || !dist) continue
+    const k = mkKey(gender, stroke, dist)
+    if (!map[k]?.[type]) continue
+    const _id = idMap[`${type}-${gender}-${dist}-${rec.time}`]
+    map[k][type] = {
+      _id, _dirty: false, _new: !_id,
+      time:            rec.time    || '',
+      name:            rec.athlete || '',
+      nationality:     rec.nation  || '',
+      nation_code:     '',
+      year:            String(rec.year || ''),
+      datetime:        '',
+      age:             '25-29',
+      sido:            '',
+      competitionName: rec.venue   || '',
+      pool:            '',
     }
   }
   eventMap.value = map
@@ -509,19 +596,20 @@ function pickCtry(c: Country) {
 
 // ── CSV ───────────────────────────────────────────────────────────
 function exportCSV() {
-  const tab = curTab.value
   const header = ['event_key','type','time','name','nationality','nation_code','year','datetime','age','sido','competitionName','pool']
   const rows = [header]
-  for (const dist of curDistances.value) {
-    for (const rt of rtList(tab.stroke, dist)) {
-      const e = entry(tab.gender, tab.stroke, dist, rt)
-      rows.push([mkKey(tab.gender, tab.stroke, dist), rt, e.time, e.name, e.nationality, e.nation_code, e.year, e.datetime, e.age, e.sido, e.competitionName, e.pool])
+  for (const tab of TABS) {
+    for (const dist of STROKE_DISTS[tab.stroke]) {
+      for (const rt of rtList(tab.stroke, dist)) {
+        const e = entry(tab.gender, tab.stroke, dist, rt)
+        rows.push([mkKey(tab.gender, tab.stroke, dist), rt, e.time, e.name, e.nationality, e.nation_code, e.year, e.datetime, e.age, e.sido, e.competitionName, e.pool])
+      }
     }
   }
   const csv = rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g,'""')}"`).join(',')).join('\n')
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
-  const a = document.createElement('a'); a.href = url; a.download = `ksr_${activeTab.value}.csv`; a.click()
+  const a = document.createElement('a'); a.href = url; a.download = `ksr_records_all.csv`; a.click()
   URL.revokeObjectURL(url)
 }
 
@@ -539,21 +627,22 @@ function loadScript(src: string): Promise<void> {
 
 function injectCompareOverlay() {
   const scoring = (window as any).KSR_SCORING
-  if (!scoring || !apiData.value) return
+  if (!scoring || !canonData.value) return
   const overlay: Record<string, Record<string, any>> = {}
-  for (const r of apiData.value) {
-    if (!r.time || !r.name) continue
-    const gCode = r.gender === 'men' ? 'M' : r.gender === 'women' ? 'W' : ''
-    if (!gCode) continue
-    const dist = parseInt(r.distance)   // '50M' → 50
-    const key  = `${gCode}-${r.style}-${dist}-LCM`
-    if (!overlay[key]) overlay[key] = {}
-    overlay[key][r.type] = {
-      time:   scoring.parseTime(r.time),
-      holder: r.name          || undefined,
-      nation: r.nationality   || undefined,
-      year:   r.year          ? parseInt(String(r.year)) : null,
-      venue:  r.competitionName || undefined,
+  for (const [cKey, rec] of Object.entries(canonData.value)) {
+    // cKey: "M-FR-50-WR" → overlayKey: "M-FR-50-LCM"
+    const parts = cKey.split('-')
+    if (parts.length < 4) continue
+    const [g, style, distStr, type] = parts
+    const dist = parseInt(distStr)
+    const overlayKey = `${g}-${style}-${dist}-LCM`
+    if (!overlay[overlayKey]) overlay[overlayKey] = {}
+    overlay[overlayKey][type] = {
+      time:   scoring.parseTime(rec.time),
+      holder: rec.athlete || undefined,
+      nation: rec.nation  || undefined,
+      year:   rec.year    ? parseInt(String(rec.year)) : null,
+      venue:  rec.venue   || undefined,
     }
   }
   scoring.injectOverlay(overlay)
@@ -612,18 +701,16 @@ async function importCSV(e: Event) {
 <style scoped>
 .rc-root { font-family: var(--sans); }
 
-/* ── Tabs ── */
-.rc-tabs {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  padding: 0 0 16px; border-bottom: 1px solid #e8e8e4; margin-bottom: 0;
+/* ── Jump nav ── */
+.rc-jumps {
+  display: flex; gap: 20px; flex-wrap: wrap; align-items: center;
 }
-.rc-tab {
-  height: 34px; padding: 0 16px; border: 1px solid #ddd; background: #fff;
-  font-size: 13px; color: #555; cursor: pointer; border-radius: 3px;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+.rc-jumps a {
+  font-size: 13px; color: #555; text-decoration: none; padding: 4px 0;
+  border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
 }
-.rc-tab:hover  { background: #f5f5f3; color: #222; }
-.rc-tab.active { background: #0a1d3a; color: #fff; border-color: #0a1d3a; font-weight: 600; }
+.rc-jumps a:hover { color: #0a1d3a; border-bottom-color: #0a1d3a; }
 
 /* ── Toolbar ── */
 .rc-bar {
@@ -655,21 +742,13 @@ async function importCSV(e: Event) {
 /* ── Loading ── */
 .rc-loading { padding: 60px; text-align: center; color: #aaa; }
 
-/* ── Content ── */
-.rc-stroke-title {
-  font-size: 28px; font-weight: 700; color: #0a0a0a; letter-spacing: -0.02em;
-  margin-bottom: 24px; padding-bottom: 12px;
-  border-bottom: 2px solid #0a0a0a;
-  font-family: var(--serif-ko);
-}
-
-/* ── Event block ── */
-.rc-event { margin-bottom: 36px; }
-.rc-event-head {
+/* ── Sections ── */
+.rc-section { margin-bottom: 48px; scroll-margin-top: 80px; }
+.rc-section-head {
   display: flex; align-items: baseline; gap: 16px;
-  padding: 10px 0 8px; border-bottom: 1px solid #e8e8e4; margin-bottom: 0;
+  padding: 10px 0 8px; border-bottom: 2px solid #0a0a0a; margin-bottom: 0;
 }
-.rc-ev-label { font-size: 15px; font-weight: 600; color: #0a0a0a; font-family: var(--serif-ko); }
+.rc-ev-label { font-size: 18px; font-weight: 700; color: #0a0a0a; font-family: var(--serif-ko); }
 .rc-ev-slug  { font-size: 11px; color: #bbb; font-family: var(--mono); letter-spacing: 0.04em; }
 
 .rc-table-wrap { overflow-x: auto; }
@@ -696,7 +775,7 @@ td.dim  { color: #777; font-size: 12px; }
 .rt-code  { font-family: var(--mono); font-size: 12px; font-weight: 700; color: #0a0a0a; margin-right: 6px; }
 .rt-lbl   { font-size: 11.5px; color: #888; }
 
-/* ── Column widths ── */
+/* ── Column widths (original) ── */
 .th-type  { width: 130px; }
 .th-time  { width: 96px; }
 .th-name  { min-width: 110px; }
@@ -709,6 +788,46 @@ td.dim  { color: #777; font-size: 12px; }
 .th-meet  { min-width: 160px; }
 .th-pool  { min-width: 100px; }
 .td-flag  { font-size: 18px; padding: 4px 6px !important; }
+
+/* ── Matrix table ── */
+.rc-matrix { min-width: 900px; }
+.rc-matrix thead th { padding: 8px 10px; border-right: 1px solid #e8e8e4; }
+.rc-matrix thead th:last-child { border-right: 0; }
+.th-dist { width: 72px; text-align: center; }
+.th-gen  { width: 52px; }
+.th-rt   { min-width: 120px; }
+.th-rt .rt-code { display: block; font-size: 11px; font-weight: 700; color: #0a0a0a; letter-spacing: 0.1em; }
+.th-rt .rt-lbl  { display: block; margin-top: 2px; font-size: 10px; font-weight: 400; color: #aaa; text-transform: none; letter-spacing: 0; }
+.td-dist {
+  font-family: var(--mono); font-size: 18px; font-weight: 600; color: #0a0a0a;
+  text-align: center; vertical-align: middle; background: #fafaf8;
+  border-right: 1px solid #e8e8e4; padding: 0 !important;
+}
+.td-gen {
+  font-size: 11px; color: #888; letter-spacing: 0.12em; white-space: nowrap;
+  border-right: 1px solid #eee; padding: 6px 8px !important;
+}
+.td-rec {
+  padding: 6px 10px !important; vertical-align: top; cursor: pointer;
+  border-right: 1px solid #f0f0ee;
+  transition: background 0.1s;
+}
+.td-rec:last-child { border-right: 0; }
+.td-rec:hover:not(.rec-na) { background: #f0f5ff; }
+.td-rec.rec-na    { color: #ccc; text-align: center; cursor: default; }
+.td-rec.rec-empty { color: #ccc; text-align: center; }
+.td-rec.rec-dirty { background: #fffbeb; }
+.td-rec.rec-sel   { background: #dbeafe !important; }
+.rec-time {
+  display: block; font-family: var(--mono); font-size: 13px; font-weight: 600;
+  color: #0a0a0a; cursor: pointer; border-bottom: 1px dashed #999;
+  transition: color 0.12s, border-color 0.12s; white-space: nowrap;
+}
+.rec-time:hover { color: #1d4ed8; border-bottom-color: #1d4ed8; }
+.rec-who  { display: block; font-size: 11px; color: #888; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.rec-when { display: block; font-size: 10px; color: #bbb; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.rc-matrix tbody tr.gender-m { border-bottom: 1px dashed #eee; }
+.rc-matrix tbody tr.gender-w { border-bottom: 1px solid #e8e8e4; }
 
 /* ── Inputs ── */
 .inp {

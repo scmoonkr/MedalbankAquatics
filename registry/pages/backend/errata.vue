@@ -74,8 +74,7 @@
               <td class="dim mono small">{{ r.report_date || '—' }}</td>
               <td class="dim small">{{ r.magazine || '—' }}</td>
               <td class="status small">
-                <span v-if="r.confirmed_at" class="status-tag" :title="`${r.confirmed_action} · ${r.confirmed_at}`">✓ {{ r.confirmed_action || 'confirmed' }}</span>
-                <span v-else class="status-dim">—</span>
+                <span class="status-tag" :class="`status-${r.status}`">{{ r.status || 'pending' }}</span>
               </td>
             </tr>
           </tbody>
@@ -700,10 +699,12 @@ td.chk input, th .c-chk input { cursor: pointer; }
 .be-table tbody tr.confirmed:hover { background: #ecf6ed; }
 .status-tag {
   display: inline-block; padding: 2px 6px; border-radius: 2px;
-  background: #dcfce7; color: #166534; font-size: 10.5px; font-weight: 600;
-  letter-spacing: 0.04em;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em;
+  background: #f1f5f9; color: #64748b;
 }
-.status-dim { color: #ccc; }
+.status-tag.status-pending   { background: #fef9c3; color: #854d0e; }
+.status-tag.status-confirmed { background: #dcfce7; color: #166534; }
+.status-tag.status-rejected  { background: #fee2e2; color: #991b1b; }
 
 /* Edit panel */
 .ep-backdrop {

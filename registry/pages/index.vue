@@ -128,7 +128,7 @@
         <div class="aside-submit">
           <div class="small">Contribute</div>
           <button class="cta" type="button" @click="submitOpen = true">
-            제보하기 <span class="arrow">→</span>
+            직접 기록 추가하기 <span class="arrow">→</span>
           </button>
           <div class="note">발굴 기록·정정 제보 시 실명 등재</div>
         </div>
@@ -141,8 +141,11 @@
             <span class="ctx-meta">{{ resultsMeta }}</span>
           </div>
         </div>
-        <div v-if="pending && !sheet" class="empty-state">데이터를 불러오는 중입니다…</div>
+        <div v-if="pending && !allRanks.length" class="empty-state">데이터를 불러오는 중입니다…</div>
         <div v-else v-html="tableHtml"></div>
+        <div ref="sentinelEl" class="scroll-sentinel"></div>
+        <div v-if="loadingMore" class="load-more-state">불러오는 중…</div>
+        <div v-else-if="!hasMore && allRanks.length > 100" class="load-end-state">— 전체 {{ totalCount.toLocaleString() }}명 표시 완료 —</div>
       </main>
     </div>
   </div>
@@ -243,6 +246,13 @@ const state = reactive({
 type EventRank     = { rank: number; name: string; city: string; team: string; date: string; time: string; meet: string; meet_full: string }
 type SheetResponse = { page: number; pageSize: number; total: number; ranks: EventRank[] }
 
+const allRanks    = ref<EventRank[]>([])
+const currentPage = ref(1)
+const totalCount  = ref(0)
+const loadingMore = ref(false)
+const sentinelEl  = ref<HTMLElement | null>(null)
+const hasMore     = computed(() => allRanks.value.length < totalCount.value)
+
 // ── helpers ────────────────────────────────────────────────────
 function esc(s: unknown): string {
   if (s == null) return ''
@@ -283,11 +293,41 @@ const { data: sheet, pending } = useFetch<SheetResponse>('/api/sheet', {
   key: () => `sheet:${Date.now()}:${Math.random()}`,
 })
 
+// filters 바뀌면 즉시 초기화 (fetch 완료 전에 비워서 깜빡임 방지)
+watch(fetchQuery, () => {
+  allRanks.value   = []
+  currentPage.value = 1
+  totalCount.value  = 0
+})
+// fetch 완료 → 첫 페이지 채우기
+watch(sheet, (s) => {
+  if (!s) return
+  allRanks.value   = [...s.ranks]
+  currentPage.value = s.page
+  totalCount.value  = s.total
+})
+
+// ── load more ─────────────────────────────────────────────────
+async function loadMore() {
+  if (loadingMore.value || !hasMore.value || pending.value) return
+  loadingMore.value = true
+  try {
+    const next = await $fetch<SheetResponse>('/api/sheet', {
+      query: { ...fetchQuery.value, page: currentPage.value + 1 },
+    })
+    allRanks.value   = [...allRanks.value, ...next.ranks]
+    currentPage.value = next.page
+    totalCount.value  = next.total
+  } finally {
+    loadingMore.value = false
+  }
+}
+
 // ── stats ──────────────────────────────────────────────────────
-const rankCount    = computed(() => Math.min(sheet.value?.total ?? 0, 100))
-const athleteCount = computed(() => sheet.value?.total ?? 0)
-const currentEntryCount = computed(() => sheet.value ? `${sheet.value.total} entries` : '—')
-const heroStat = computed(() => sheet.value ? `${sheet.value.total.toLocaleString()} ATHLETES LISTED` : '…')
+const rankCount    = computed(() => allRanks.value.length)
+const athleteCount = computed(() => totalCount.value)
+const currentEntryCount = computed(() => totalCount.value ? `${totalCount.value} entries` : '—')
+const heroStat = computed(() => totalCount.value ? `${totalCount.value.toLocaleString()} ATHLETES LISTED` : '…')
 
 // ── title / meta ───────────────────────────────────────────────
 const titleHtml = computed(() => {
@@ -298,50 +338,47 @@ const titleHtml = computed(() => {
   return `${esc(mPfx)}${esc(gPfx)}${gL} ${sL} <span class="em">${state.distance}m ${state.course.toUpperCase()}</span>`
 })
 const resultsMeta = computed(() => {
-  const dL   = DIVISIONS.find(d => d.v === state.division)?.label ?? state.division
+  const dL    = DIVISIONS.find(d => d.v === state.division)?.label ?? state.division
   const gPart = state.group === 'all' ? '' : ` · ${groupLabelFor(state.group, state.division).toUpperCase()}`
-  return `${dL.toUpperCase()}${gPart} · TOP 100`
+  const shown = allRanks.value.length
+  const total = totalCount.value
+  const cnt   = total > shown ? `TOP ${shown.toLocaleString()} / ${total.toLocaleString()}` : `${total.toLocaleString()}명`
+  return `${dL.toUpperCase()}${gPart} · ${cnt}`
 })
 
 // ── table builder ──────────────────────────────────────────────
+const THEAD = `<thead><tr>
+  <th class="c-rank">Rank · 순위</th><th class="c-name">Name · 성명</th>
+  <th class="c-city">City · 도시</th><th class="c-date">Date · 일자</th>
+  <th class="c-meet">Meet · 대회</th><th class="c-time">Time · 기록</th>
+</tr></thead>`
+
 const tableHtml = computed(() => {
-  if (!sheet.value || sheet.value.total === 0) {
+  if (!totalCount.value && !pending.value) {
     return `<div class="empty-state">선택한 조합에 해당하는 종목 데이터가 아직 수집되지 않았습니다.<br/>제보를 통해 The Index에 처음으로 이름을 올려보세요.</div>`
   }
-  return buildTable(sheet.value.ranks)
+  if (!allRanks.value.length) return ''
+  const p1  = allRanks.value.filter(r => r.rank <= 100)
+  const ext = allRanks.value.filter(r => r.rank > 100)
+  const body = buildFirstPageRows(p1) + ext.map(r => rowHtml(r, false)).join('')
+  return `<table class="index-table">${THEAD}<tbody>${body}</tbody></table>`
 })
 
-function buildTable(ranks: EventRank[]): string {
+function buildFirstPageRows(ranks: EventRank[]): string {
   const sorted = [...ranks].sort((a, b) => a.rank !== b.rank ? a.rank - b.rank : (a.date ?? '').localeCompare(b.date ?? ''))
   let body = ''
-  // Top 10. Ties consume slots: rank 12 ×2 → next rank is 14, not 13.
   let i = 1
   while (i <= 10) {
     const m = sorted.filter(r => r.rank === i)
-    if (m.length) {
-      m.forEach(r => { body += rowHtml(r, i === 1) })
-      i += m.length
-    } else {
-      body += emptyRowHtml(i, i === 1)
-      i++
-    }
+    if (m.length) { m.forEach(r => { body += rowHtml(r, i === 1) }); i += m.length }
+    else          { body += emptyRowHtml(i, i === 1); i++ }
   }
-  // Continue from wherever i landed (carries tie skips from the top block).
   while (i <= 100) {
     const m = sorted.filter(r => r.rank === i)
-    if (m.length) {
-      m.forEach(r => { body += rowHtml(r, false) })
-      i += m.length
-    } else {
-      body += emptyRowHtml(i, false)
-      i++
-    }
+    if (m.length) { m.forEach(r => { body += rowHtml(r, false) }); i += m.length }
+    else          { body += emptyRowHtml(i, false); i++ }
   }
-  return `<table class="index-table"><thead><tr>
-    <th class="c-rank">Rank · 순위</th><th class="c-name">Name · 성명</th>
-    <th class="c-city">City · 도시</th><th class="c-date">Date · 일자</th>
-    <th class="c-meet">Meet · 대회</th><th class="c-time">Time · 기록</th>
-  </tr></thead><tbody>${body}</tbody></table>`
+  return body
 }
 function rowHtml(r: EventRank, isFirst: boolean): string {
   const hasTime   = r.time && r.time !== '—'
@@ -411,6 +448,17 @@ onMounted(() => {
     })
   }, { threshold: 0 })
   io.observe(resultsTitleEl.value)
+  onUnmounted(() => io.disconnect())
+})
+
+// ── infinite scroll sentinel ───────────────────────────────────
+onMounted(() => {
+  const io = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) loadMore()
+  }, { rootMargin: '300px' })
+  watchEffect(() => {
+    if (sentinelEl.value) io.observe(sentinelEl.value)
+  })
   onUnmounted(() => io.disconnect())
 })
 

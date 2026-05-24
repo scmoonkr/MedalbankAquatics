@@ -77,8 +77,10 @@
 <div class="modal-overlay" id="recordModal" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <button class="modal-close" type="button" aria-label="닫기">×</button>
-    <button class="pdf-btn" type="button" aria-label="PDF 저장" id="pdfBtn">PDF</button>
-    <button class="info-btn" type="button" aria-label="계산 방식 안내" id="infoBtn">i</button>
+    <div class="modal-toolbar">
+      <button class="info-btn" type="button" aria-label="계산 방식 안내" id="infoBtn">i</button>
+      <button class="pdf-btn" type="button" aria-label="PDF 저장" id="pdfBtn">PDF</button>
+    </div>
     <div class="info-popover" id="infoPopover" hidden>
       <p>본 계산은 <strong>World Aquatics Points</strong> 공식을 따릅니다.
       각 종목의 베이스타임은 LCM 세계기록을 기준으로 하며,
@@ -217,6 +219,8 @@
       Korean Swimming Registry · medalbankaquatics.com
     </div>
 
+    <div class="modal-date-line" id="modalDateLine"></div>
+
     <footer class="modal-foot">
     </footer>
   </div>
@@ -315,6 +319,14 @@
     renderAge();
     renderSpeed();
     renderPace();
+    renderFooterDate();
+  }
+
+  function renderFooterDate() {
+    const el = document.getElementById('modalDateLine');
+    if (!el) return;
+    const today = new Date().toISOString().slice(0, 10);
+    el.textContent = today + ' 기준';
   }
 
   function renderAttribution() {
@@ -797,12 +809,14 @@
   </style>
 </head>
 <body>
-  ${clone.outerHTML}
+  <div id="recordModal" style="display:block;position:static;background:none;">
+    ${clone.outerHTML}
+  </div>
+  <script>setTimeout(function(){ window.print(); }, 250);<\/script>
 </body>
 </html>`);
     win.document.close();
     win.focus();
-    win.onload = () => win.print();
   }
 
   // ── Trigger binding ──────────────────────────────────────

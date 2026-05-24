@@ -1,7 +1,7 @@
 // GET /api/errata  — errata list, cached 30 seconds
 export default defineCachedEventHandler(async () => {
   const db   = await getDb()
-  const docs = await db.collection('errata').find({}).sort({ submittedAt: 1 }).toArray()
+  const docs = await db.collection('errata').find({ status: 'confirmed' }).sort({ submittedAt: 1 }).toArray()
 
   // ── before 없는 오류 정정 건 → mergedTimes에서 일괄 조회 ──────
   const missingTids = docs

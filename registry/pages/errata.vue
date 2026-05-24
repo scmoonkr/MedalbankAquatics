@@ -112,50 +112,47 @@ function eventLabel(t: TimeData): string {
 function buildEntry(doc: ErrataDoc): string {
   const t     = doc.time   ?? {}
   const b     = doc.before ?? null
-  const isNew = !doc.timeID  // timeID === 0 → 신규 등재
+  const isNew = !doc.timeID
+
+  const evtLabel = esc(eventLabel(t))
+  const nameStr  = esc(t.name)
+  const noteHtml = doc.note ? ` <span class="note-text">— ${esc(doc.note)}</span>` : ''
 
   if (isNew) {
-    // 신규: "남자 평영 50M LCM 1위 홍길동 00:33.45 누락 등재(2026-05-01 충남도민체전, 수영장)"
     const rank = t.rank ? `${t.rank}위 ` : ''
     const tail = [t.datetime, t.competitionName, t.pool].filter(Boolean).map(esc).join(' ')
     return [
-      esc(eventLabel(t)),
-      rank + `<strong>${esc(t.name)}</strong>`,
+      evtLabel,
+      rank + `<strong>${nameStr}</strong>`,
       `<span class="mono">${esc(t.time)}</span>`,
       '누락 등재',
       tail ? `<span class="tail">(${tail})</span>` : '',
+      noteHtml,
     ].filter(Boolean).join(' ')
   }
 
-  // 수정: before → after diff
-  const evtLabel = esc(eventLabel(t))
-  const nameStr  = esc(t.name)
+  // 오류정정: "[종목] [이름] 오류정정. [bTime] [aTime] · [bDate] [aDate] · [bVenue] [aVenue]"
+  const pairs: string[] = []
 
-  if (!b) {
-    const noteHtml = doc.note ? ` — <span class="note-text">${esc(doc.note)}</span>` : ''
-    // 구버전: evtLabel·nameStr이 없으면 기록·대회명으로 대체
-    const subject = [evtLabel, nameStr].filter(Boolean).join(' ')
-      || [
-          t.time            ? `<span class="mono">${esc(t.time)}</span>` : '',
-          t.competitionName ? `<span class="tail">(${esc(t.competitionName)})</span>` : '',
-        ].filter(Boolean).join(' ')
-    return `${subject} 정정${noteHtml}`
+  const addPair = (bVal: unknown, aVal: unknown, mono = false) => {
+    const bStr = String(bVal ?? '').trim()
+    const aStr = String(aVal ?? '').trim()
+    if (!bStr && !aStr) return
+    const fmt = (v: string) => mono ? `<span class="mono">${esc(v)}</span>` : esc(v)
+    pairs.push(`<span class="before">${fmt(bStr)}</span> <span class="after">${fmt(aStr)}</span>`)
   }
 
-  const diffs: string[] = []
-  const chk = (label: string, bVal: unknown, aVal: unknown, suffix = '') => {
-    if (String(bVal ?? '') !== String(aVal ?? ''))
-      diffs.push(`${label} <span class="before">${esc(bVal)}</span> → <span class="after">${esc(aVal)}</span>${suffix}`)
+  if (b) {
+    addPair(b.time,            t.time,            true)
+    addPair(b.datetime,        t.datetime)
+    addPair(b.competitionName ?? b.pool, t.competitionName ?? t.pool)
+  } else {
+    if (t.time)            pairs.push(`<span class="mono">${esc(t.time)}</span>`)
+    if (t.datetime)        pairs.push(esc(t.datetime))
+    if (t.competitionName) pairs.push(esc(t.competitionName))
   }
-  chk('기록',   b.time,            t.time)
-  chk('성명',   b.name,            t.name)
-  chk('순위',   b.rank != null ? `${b.rank}위` : '—', t.rank != null ? `${t.rank}위` : '—')
-  chk('대회일', b.datetime,        t.datetime)
-  chk('대회명', b.competitionName, t.competitionName)
-  chk('경기장', b.pool,            t.pool)
 
-  const diffHtml  = diffs.length ? `오류정정: ${diffs.join(' · ')}` : '오류정정'
-  const noteHtml  = doc.note ? ` <span class="note-text">— ${esc(doc.note)}</span>` : ''
-  return [evtLabel, nameStr, diffHtml, noteHtml].filter(Boolean).join(' ')
+  const diffStr = pairs.join(' · ')
+  return [evtLabel, nameStr, `오류정정.`, diffStr, noteHtml].filter(Boolean).join(' ')
 }
 </script>

@@ -82,8 +82,8 @@ export default defineEventHandler(async (event) => {
   )
 
   await setUserSession(event, {
-    user: { id, name, email, nickname, avatar: profile_image, gender, provider: 'naver' },
+    user: { id, name, email, nickname, avatar: profile_image, gender, birthyear, birthday, provider: 'naver' },
   })
 
-  return sendRedirect(event, '/backend/records')
+  return sendRedirect(event, '/user')
 })

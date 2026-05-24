@@ -84,6 +84,25 @@ useHead({ title: 'The Ledger — KSR · Korean Swimming Registry' })
 const PER_PAGE = 25
 const page = ref(1)
 
+interface TimeData {
+  name?: string; time?: string; gender?: string; discipline?: string
+  distance?: string; course?: string; rank?: number | null
+  datetime?: string; competitionName?: string; pool?: string
+  sido?: string; team?: string; isMasters?: boolean; group?: string
+}
+
+interface ErrataDoc {
+  no:          number
+  category:    string
+  timeID:      number
+  time:        TimeData
+  before:      TimeData | null
+  note:        string
+  reporter:    string
+  report_date: string
+  magazine:    string
+}
+
 interface LedgerDoc {
   event:       string
   group:       string
@@ -100,8 +119,56 @@ interface LedgerDoc {
   rawCourse:   string
 }
 
-const { data: ledgerData, pending } = await useFetch<LedgerDoc[]>('/api/ledger')
-const ledgerList = computed(() => ledgerData.value ?? [])
+const GENDER_LABEL: Record<string, string> = { men: '남자', women: '여자', M: '남자', W: '여자' }
+const DISC_LABEL:   Record<string, string> = { BR: '평영', FR: '자유형', BK: '배영', FL: '접영', IM: '개인혼영' }
+
+function toRawGender(g: string | undefined): string {
+  if (!g) return ''
+  if (g === 'men'   || g === 'M') return 'M'
+  if (g === 'women' || g === 'W') return 'W'
+  return g
+}
+
+function toEventLabel(t: TimeData): string {
+  return [GENDER_LABEL[t.gender ?? ''] ?? t.gender, DISC_LABEL[t.discipline ?? ''] ?? t.discipline, t.distance, t.course].filter(Boolean).join(' ')
+}
+
+function toGroupLabel(t: TimeData): string {
+  if (!t.isMasters) return ''
+  return t.group ? `M${t.group}` : 'Masters'
+}
+
+function toDoc(d: ErrataDoc): LedgerDoc {
+  const t = d.time ?? {}
+  const rawGender   = toRawGender(t.gender)
+  const rawStroke   = t.discipline ?? ''
+  const rawDistance = parseInt(String(t.distance ?? '0'), 10) || 0
+  const rawCourse   = t.course ?? 'LCM'
+  return {
+    event:       toEventLabel(t),
+    group:       toGroupLabel(t),
+    name:        t.name        ?? '—',
+    city:        t.sido        ?? '—',
+    team:        t.team        ?? '—',
+    time:        t.time        ?? '—',
+    date:        t.datetime    ?? '—',
+    meet:        t.competitionName ?? t.pool ?? '—',
+    report_date: d.report_date ?? null,
+    rawGender,
+    rawStroke,
+    rawDistance,
+    rawCourse,
+  }
+}
+
+interface CanonRec { time: string; athlete: string; nation: string; year: string | number; venue: string }
+const { data: canonData } = await useFetch<Record<string, CanonRec>>('/api/canon')
+const { data: errataData, pending } = await useFetch<ErrataDoc[]>('/api/errata')
+const ledgerList = computed(() =>
+  (errataData.value ?? [])
+    .filter(d => d.category !== '오류 정정')
+    .map(toDoc)
+)
 const totalPages = computed(() => Math.max(1, Math.ceil(ledgerList.value.length / PER_PAGE)))
 const pagedRows  = computed(() => ledgerList.value.slice((page.value - 1) * PER_PAGE, page.value * PER_PAGE))
 watch(ledgerList, () => { page.value = 1 })
@@ -118,9 +185,26 @@ function loadScript(src: string): Promise<void> {
   })
 }
 
+function injectCompareOverlay() {
+  const scoring = (window as any).KSR_SCORING
+  if (!scoring || !canonData.value) return
+  const overlay: Record<string, any> = {}
+  for (const [key, rec] of Object.entries(canonData.value)) {
+    // key: "M-FR-50-WR" → overlayKey: "M-FR-50-LCM"
+    const parts = key.split('-')
+    if (parts.length < 4) continue
+    const [gCode, style, dist, type] = parts
+    const overlayKey = `${gCode}-${style}-${dist}-LCM`
+    if (!overlay[overlayKey]) overlay[overlayKey] = {}
+    overlay[overlayKey][type] = { time: rec.time, athlete: rec.athlete, nation: rec.nation, year: rec.year, venue: rec.venue }
+  }
+  scoring.injectOverlay(overlay)
+}
+
 onMounted(() => {
   loadScript('/cannon/js/scoring.js')
     .then(() => loadScript('/cannon/js/modal.js'))
+    .then(() => injectCompareOverlay())
     .catch(err => console.error('[ledger] script load error', err))
 })
 </script>

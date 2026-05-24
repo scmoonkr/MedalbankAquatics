@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
     timeID, name, time, gender, isMasters, group,
     discipline, distance, course, rank, sido, team,
     datetime, competitionName, pool, note,
+    evidenceUrls,
   } = body
 
   if (!name || !time || !gender || !discipline || !distance || !course || !datetime || !competitionName) {
@@ -75,6 +76,7 @@ export default defineEventHandler(async (event) => {
     },
     before,
     note: String(note || ''),
+    evidenceUrls: evidenceUrls ?? null,
     submittedBy: {
       id:    session.user.id,
       name:  session.user.name,

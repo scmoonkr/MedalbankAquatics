@@ -149,6 +149,40 @@
 
             </div>
 
+            <!-- 증빙자료 -->
+            <div class="sm-evidence">
+              <div class="sm-ev-head">
+                증빙자료
+                <span class="sm-hint">하나 이상 첨부를 권장합니다 · 복수 선택 가능</span>
+              </div>
+
+              <div class="sm-ev-item">
+                <div class="sm-ev-label">기사 URL</div>
+                <input v-model="form.evidenceUrl" type="url" class="sm-ev-input" placeholder="https://" />
+              </div>
+
+              <div class="sm-ev-item">
+                <div class="sm-ev-label">전광판 사진</div>
+                <label class="sm-file-btn">
+                  <span>{{ evidenceImage ? evidenceImage.name : '파일 선택' }}</span>
+                  <input type="file" accept="image/*" hidden
+                    @change="(e) => evidenceImage = (e.target as HTMLInputElement).files?.[0] ?? null" />
+                </label>
+                <button v-if="evidenceImage" class="sm-file-clear" type="button" @click="evidenceImage = null">×</button>
+              </div>
+
+              <div class="sm-ev-item">
+                <div class="sm-ev-label">기록지</div>
+                <label class="sm-file-btn">
+                  <span>{{ evidenceDoc ? evidenceDoc.name : '파일 선택' }}</span>
+                  <input type="file" accept=".pdf,.xlsx,.xls,.hwp,.hwpx" hidden
+                    @change="(e) => evidenceDoc = (e.target as HTMLInputElement).files?.[0] ?? null" />
+                </label>
+                <button v-if="evidenceDoc" class="sm-file-clear" type="button" @click="evidenceDoc = null">×</button>
+                <span class="sm-hint sm-ev-hint">PDF · Excel · HWP</span>
+              </div>
+            </div>
+
             <div v-if="error" class="sm-error">{{ error }}</div>
 
             <div class="sm-footer">
@@ -205,12 +239,15 @@ const defaultForm = () => ({
   competitionName: '',
   pool:            '',
   note:            '',
+  evidenceUrl:     '',
 })
 
-const form      = reactive(defaultForm())
-const submitting = ref(false)
-const error      = ref('')
-const done       = ref(false)
+const form         = reactive(defaultForm())
+const evidenceImage = ref<File | null>(null)
+const evidenceDoc   = ref<File | null>(null)
+const submitting    = ref(false)
+const error         = ref('')
+const done          = ref(false)
 
 const availableGroups = computed(() =>
   form.isMasters ? MASTERS_GROUPS : ELITE_GROUPS
@@ -235,23 +272,43 @@ function close() {
 watch(() => props.open, (v) => {
   if (v) {
     Object.assign(form, defaultForm())
-    error.value   = ''
-    done.value    = false
-    submitting.value = false
+    evidenceImage.value = null
+    evidenceDoc.value   = null
+    error.value         = ''
+    done.value          = false
+    submitting.value    = false
   }
 })
 
+async function uploadFile(file: File): Promise<string> {
+  const fd = new FormData()
+  fd.append('file', file)
+  const res = await $fetch<{ url: string }>('/api/upload', { method: 'POST', body: fd })
+  return res.url
+}
+
 async function submit() {
-  error.value   = ''
+  error.value      = ''
   submitting.value = true
   try {
-    const res = await $fetch('/api/submit', {
+    const [imageUrl, docUrl] = await Promise.all([
+      evidenceImage.value ? uploadFile(evidenceImage.value) : Promise.resolve(''),
+      evidenceDoc.value   ? uploadFile(evidenceDoc.value)   : Promise.resolve(''),
+    ])
+    await $fetch('/api/submit', {
       method: 'POST',
-      body: { ...form },
+      body: {
+        ...form,
+        evidenceUrls: {
+          article: form.evidenceUrl || null,
+          image:   imageUrl || null,
+          doc:     docUrl   || null,
+        },
+      },
     })
     done.value = true
   } catch (e: any) {
-    error.value = e?.data?.message || '제출에 실패했습니다. 다시 시도해 주세요.'
+    error.value = e?.data?.message || e?.data?.statusMessage || '제출에 실패했습니다. 다시 시도해 주세요.'
   } finally {
     submitting.value = false
   }
@@ -338,6 +395,49 @@ async function submit() {
   font-family: var(--sans); font-size: 11px; color: var(--fg-faint);
   margin-top: -2px;
 }
+
+/* 증빙자료 */
+.sm-evidence {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sm-ev-head {
+  font-family: var(--sans); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-mute);
+  display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+}
+.sm-ev-item {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.sm-ev-label {
+  font-family: var(--sans); font-size: 11px; color: var(--fg-dim);
+  letter-spacing: 0.06em; width: 80px; flex-shrink: 0;
+}
+.sm-ev-input {
+  flex: 1; background: var(--bg-soft, #f8f8f8); border: 1px solid var(--line);
+  color: var(--fg); font-family: var(--sans); font-size: 13px;
+  padding: 8px 11px; outline: none; transition: border-color 0.15s; min-width: 0;
+}
+.sm-ev-input:focus { border-color: var(--fg-mute); }
+.sm-file-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--bg-soft, #f8f8f8); border: 1px solid var(--line);
+  font-family: var(--sans); font-size: 12px; color: var(--fg-dim);
+  padding: 7px 12px; cursor: pointer; transition: border-color 0.15s;
+  max-width: 260px; overflow: hidden;
+}
+.sm-file-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sm-file-btn:hover { border-color: var(--fg-mute); }
+.sm-file-clear {
+  background: none; border: none; cursor: pointer;
+  color: var(--fg-mute); font-size: 16px; line-height: 1; padding: 2px 4px;
+}
+.sm-file-clear:hover { color: var(--fg); }
+.sm-ev-hint { margin-left: 2px; }
 
 .sm-error {
   font-family: var(--sans); font-size: 13px; color: #c00;
