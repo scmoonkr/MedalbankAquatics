@@ -32,7 +32,7 @@
             </div>
             <div class="figures">
               <span
-                v-if="doc.rawGender && doc.rawStroke && doc.rawDistance && doc.rawCourse && doc.time !== '—'"
+                v-if="doc.time !== '—' && doc.rawGender && doc.rawStroke && doc.rawDistance > 0"
                 class="time time-trigger"
                 :data-gender="doc.rawGender"
                 :data-stroke="doc.rawStroke"

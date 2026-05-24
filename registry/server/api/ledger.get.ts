@@ -22,10 +22,11 @@ export default defineCachedEventHandler(async () => {
     const event      = eventParts.join(' ')
 
     // modal용 raw 필드
-    const rawGender   = d.gender === 'men' ? 'M' : d.gender === 'women' ? 'W' : ''
-    const rawStroke   = d.discipline ?? ''
-    const rawDistance = d.distance ? parseInt(String(d.distance)) : 0
-    const rawCourse   = d.course ? String(d.course).toUpperCase() : ''
+    const rawGender   = (d.gender === 'men' || d.gender === 'M') ? 'M'
+                      : (d.gender === 'women' || d.gender === 'W') ? 'W' : ''
+    const rawStroke   = String(d.discipline ?? '')
+    const rawDistance = parseInt(String(d.distance ?? '0')) || 0
+    const rawCourse   = d.course ? String(d.course).toUpperCase() : 'LCM'  // 미입력 시 LCM 기본값
 
     return {
       event:       event,
@@ -47,5 +48,5 @@ export default defineCachedEventHandler(async () => {
 }, {
   maxAge: 60,
   name:   'ksr-ledger',
-  getKey: () => 'all',
+  getKey: () => 'all-v2',
 })
