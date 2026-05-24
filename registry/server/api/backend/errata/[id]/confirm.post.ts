@@ -31,6 +31,13 @@ function buildPayload(time: Record<string, unknown>) {
   return out
 }
 
+function calcMagazine(from: Date = new Date()): string {
+  const d = new Date(from)
+  d.setDate(1)
+  d.setMonth(d.getMonth() + (from.getDate() <= 20 ? 1 : 2))
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월호`
+}
+
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
   const db = await getDb()
@@ -44,6 +51,9 @@ export default defineEventHandler(async (event) => {
   const time     = (errata.time || {}) as Record<string, unknown>
   const payload  = buildPayload(time)
 
+  const now      = new Date()
+  const magazine = calcMagazine(now)
+
   if (category.includes('누락건 신규 등재')) {
     if (!payload.name || !payload.time) {
       throw createError({ statusCode: 400, statusMessage: 'name and time required for insert' })
@@ -52,9 +62,9 @@ export default defineEventHandler(async (event) => {
     const result = await db.collection('mergedTimes').insertOne({ ...payload, tid })
     await db.collection('errata').updateOne(
       { _id: new ObjectId(id) },
-      { $set: { confirmed_at: new Date().toISOString(), confirmed_target: String(result.insertedId), confirmed_action: 'insert' } }
+      { $set: { confirmed_at: now.toISOString(), confirmed_target: String(result.insertedId), confirmed_action: 'insert', magazine } }
     )
-    return { ok: true, action: 'insert', target: String(result.insertedId) }
+    return { ok: true, action: 'insert', target: String(result.insertedId), magazine }
   }
 
   if (category.includes('기록오류 정정') || category.includes('오류 정정')) {
@@ -80,9 +90,9 @@ export default defineEventHandler(async (event) => {
     )
     await db.collection('errata').updateOne(
       { _id: new ObjectId(id) },
-      { $set: { confirmed_at: new Date().toISOString(), confirmed_target: String(targetId), confirmed_action: 'update' } }
+      { $set: { confirmed_at: now.toISOString(), confirmed_target: String(targetId), confirmed_action: 'update', magazine } }
     )
-    return { ok: true, action: 'update', target: String(targetId) }
+    return { ok: true, action: 'update', target: String(targetId), magazine }
   }
 
   throw createError({ statusCode: 400, statusMessage: `unsupported category for confirm: ${category}` })

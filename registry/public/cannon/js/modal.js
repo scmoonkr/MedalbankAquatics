@@ -333,7 +333,7 @@
     state.attribution = null;
   }
 
-  function renderSimilar() {
+  async function renderSimilar() {
     const host = document.getElementById('modalSimilar');
     const note = document.getElementById('modalSimilarNote');
     const strokeName = strokeKo(state.stroke);
@@ -346,18 +346,37 @@
       host.innerHTML = `<p class="modal-emptynote">기록을 입력하면 유사한 점수의 기록 20건이 표시됩니다.</p>`;
       return;
     }
-    const result = S().similarRecords(state.gender, state.stroke, state.distance, state.course, pts, 10);
+
+    host.innerHTML = `<p class="modal-emptynote">불러오는 중…</p>`;
+
+    let data;
+    try {
+      const res = await fetch(
+        `/api/similar?gender=${state.gender}&stroke=${state.stroke}&distance=${state.distance}&course=${state.course}&pts=${pts}`
+      );
+      if (!res.ok) throw new Error('fetch failed');
+      data = await res.json();
+    } catch (e) {
+      host.innerHTML = `<p class="modal-emptynote">기록을 불러오는 데 실패했습니다.</p>`;
+      return;
+    }
+
     const renderRows = (records) => records.map(r => {
       const eventLabel = `${genderKo(r.gender)} ${strokeKo(r.stroke)} ${r.distance}m · ${r.course}`;
       return `
         <tr>
           <td class="event">${esc(eventLabel)}</td>
           <td class="athlete">${esc(r.athlete)}</td>
-          <td class="time">${esc(fmt(r.time))}</td>
+          <td class="time">${esc(r.time)}</td>
           <td class="date">${esc(r.date)}</td>
           <td class="pts">${esc(r.points.toLocaleString())}점</td>
         </tr>`;
     }).join('');
+
+    if (!data.same.length && !data.other.length) {
+      host.innerHTML = `<p class="modal-emptynote">유사한 기록이 없습니다.</p>`;
+      return;
+    }
 
     host.innerHTML = `
       <table class="modal-similar-table">
@@ -371,10 +390,10 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="group-head"><td colspan="5">${esc(strokeName)} (${result.same.length}건)</td></tr>
-          ${renderRows(result.same)}
-          <tr class="group-head"><td colspan="5">타 영법 (${result.other.length}건)</td></tr>
-          ${renderRows(result.other)}
+          <tr class="group-head"><td colspan="5">${esc(strokeName)} (${data.same.length}건)</td></tr>
+          ${renderRows(data.same)}
+          <tr class="group-head"><td colspan="5">타 영법 (${data.other.length}건)</td></tr>
+          ${renderRows(data.other)}
         </tbody>
       </table>`;
   }

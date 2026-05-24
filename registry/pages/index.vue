@@ -127,9 +127,9 @@
         <!-- Submit CTA -->
         <div class="aside-submit">
           <div class="small">Contribute</div>
-          <a class="cta" :href="naverFormInsert" target="_blank" rel="noopener">
+          <button class="cta" type="button" @click="submitOpen = true">
             제보하기 <span class="arrow">→</span>
-          </a>
+          </button>
           <div class="note">발굴 기록·정정 제보 시 실명 등재</div>
         </div>
       </aside>
@@ -146,12 +146,48 @@
       </main>
     </div>
   </div>
+
+  <SubmitModal :open="submitOpen" @close="submitOpen = false" />
 </template>
 
 <script setup lang="ts">
 useHead({ title: 'The Index — KSR · Korean Swimming Registry' })
 
 const naverFormInsert = useRuntimeConfig().public.naverFormInsert as string
+
+// Canon comparison overlay — modal의 권위 기록 비교 섹션에 DB 데이터 주입
+const { data: dbRecords } = await useFetch('/api/canon')
+
+function parseTimeSec(str: string): number | null {
+  if (!str) return null
+  const s = str.replace(/^0+:/, '')
+  if (s.includes(':')) {
+    const [m, sec] = s.split(':')
+    return parseInt(m) * 60 + parseFloat(sec)
+  }
+  return parseFloat(s) || null
+}
+
+function injectCompareOverlay() {
+  const scoring = (window as any).KSR_SCORING
+  if (!scoring || !dbRecords.value) return
+  const overlay: Record<string, any> = {}
+  for (const [key, rec] of Object.entries(dbRecords.value as Record<string, any>)) {
+    const parts = key.split('-')
+    if (parts.length < 4) continue
+    const [gender, stroke, dist, type] = parts
+    const overlayKey = `${gender}-${stroke}-${dist}-LCM`
+    if (!overlay[overlayKey]) overlay[overlayKey] = {}
+    overlay[overlayKey][type] = {
+      time:   parseTimeSec(rec.time),
+      holder: rec.athlete,
+      nation: rec.nation,
+      year:   rec.year ? parseInt(String(rec.year)) : null,
+      venue:  rec.venue || undefined,
+    }
+  }
+  scoring.injectOverlay(overlay)
+}
 
 // ── taxonomies ─────────────────────────────────────────────────
 const DIVISIONS = [
@@ -185,6 +221,12 @@ const COURSES = [
 const GENDER_LABEL: Record<string, string> = { m: '남자', f: '여자' }
 const STROKE_LABEL: Record<string, string> = {
   breast: '평영', free: '자유형', back: '배영', fly: '접영', im: '개인혼영',
+}
+
+// index state → modal data 속성 매핑
+const MODAL_GENDER: Record<string, string> = { m: 'M', f: 'W' }
+const MODAL_STROKE: Record<string, string> = {
+  free: 'FR', back: 'BK', breast: 'BR', fly: 'FL', im: 'IM',
 }
 
 // ── state ──────────────────────────────────────────────────────
@@ -284,7 +326,6 @@ function buildTable(ranks: EventRank[]): string {
       i++
     }
   }
-  body += `<tr class="tier-divider"><td colspan="6">RANKS 11 – 100 · 등재 대기중</td></tr>`
   // Continue from wherever i landed (carries tie skips from the top block).
   while (i <= 100) {
     const m = sorted.filter(r => r.rank === i)
@@ -303,13 +344,34 @@ function buildTable(ranks: EventRank[]): string {
   </tr></thead><tbody>${body}</tbody></table>`
 }
 function rowHtml(r: EventRank, isFirst: boolean): string {
+  const hasTime   = r.time && r.time !== '—'
+  const mGender   = MODAL_GENDER[state.gender] ?? 'M'
+  const mStroke   = MODAL_STROKE[state.stroke]  ?? 'FR'
+  const mCourse   = state.course.toUpperCase()
+  const year      = r.date ? r.date.slice(0, 4) : ''
+  const timeTd    = hasTime
+    ? `<td class="time"><span
+        class="time-trigger"
+        data-gender="${mGender}"
+        data-stroke="${mStroke}"
+        data-distance="${state.distance}"
+        data-course="${mCourse}"
+        data-time="${esc(r.time)}"
+        data-athlete="${esc(r.name)}"
+        data-nation="${esc(r.team)}"
+        data-year="${esc(year)}"
+        data-venue="${esc(r.meet_full || r.meet)}"
+        role="button"
+        tabindex="0"
+      >${esc(r.time)}</span></td>`
+    : `<td class="time">—</td>`
   return `<tr${isFirst ? ' class="first"' : ''}>
     <td class="rank">${r.rank}</td>
     <td class="name">${esc(r.name||'—')}</td>
     <td class="city">${esc(r.city||'—')}</td>
     <td class="date">${esc(r.date||'—')}</td>
     <td class="meet"><span class="meet-full">${esc(r.meet_full||r.meet||'—')}</span><span class="meet-short">${esc(r.meet||r.meet_full||'—')}</span></td>
-    <td class="time">${esc(r.time||'—')}</td>
+    ${timeTd}
   </tr>`
 }
 function emptyRowHtml(i: number, isFirst: boolean): string {
@@ -319,9 +381,24 @@ function emptyRowHtml(i: number, isFirst: boolean): string {
   </tr>`
 }
 
+// ── submit modal ───────────────────────────────────────────────
+const submitOpen = ref(false)
+
 // ── filter setter ──────────────────────────────────────────────
 function setFilter(key: string, val: string | number) {
   ;(state as Record<string, unknown>)[key] = val
+}
+
+// ── modal scripts ─────────────────────────────────────────────
+function loadScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return }
+    const s = document.createElement('script')
+    s.src = src
+    s.onload  = () => resolve()
+    s.onerror = () => reject(new Error(`Failed to load ${src}`))
+    document.body.appendChild(s)
+  })
 }
 
 // ── sticky brand: IntersectionObserver ────────────────────────
@@ -335,6 +412,14 @@ onMounted(() => {
   }, { threshold: 0 })
   io.observe(resultsTitleEl.value)
   onUnmounted(() => io.disconnect())
+})
+
+// ── scoring + modal scripts ────────────────────────────────────
+onMounted(() => {
+  loadScript('/cannon/js/scoring.js')
+    .then(() => loadScript('/cannon/js/modal.js'))
+    .then(() => injectCompareOverlay())
+    .catch(err => console.error('[index] script load error', err))
 })
 
 // ── auto-scroll past hero on first load (matches MVP behavior) ─

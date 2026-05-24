@@ -1144,6 +1144,11 @@ footer.site .imprint {
   letter-spacing: -0.005em;
 }
 .errata-list td.entry .delta { color: var(--highlight); font-style: italic; font-family: var(--serif); }
+.errata-list td.entry .before { color: var(--fg-mute); text-decoration: line-through; font-family: var(--mono); font-size: 0.9em; }
+.errata-list td.entry .after  { color: var(--fg); font-family: var(--mono); font-size: 0.9em; font-weight: 600; }
+.errata-list td.entry .tail   { color: var(--fg-faint); font-size: 0.88em; }
+.errata-list td.entry .note-text { color: var(--fg-mute); font-style: italic; font-size: 0.9em; }
+.errata-list td.entry .mono   { font-family: var(--mono); font-size: 0.92em; }
 .errata-list td.reporter {
   font-family: var(--serif-ko);
   font-size: 13.5px;

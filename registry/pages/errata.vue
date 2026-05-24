@@ -72,19 +72,29 @@ useHead({ title: 'The Errata — KSR · Korean Swimming Registry' })
 const PER_PAGE = 100
 const page = ref(1)
 
+interface TimeData {
+  name?: string; time?: string; gender?: string; discipline?: string
+  distance?: string; course?: string; rank?: number | null
+  datetime?: string; competitionName?: string; pool?: string
+  sido?: string; team?: string
+}
+
 interface ErrataDoc {
-  no: number
-  category: string
-  time: Record<string, string | number>
-  reporter: string
+  no:          number
+  category:    string
+  timeID:      number
+  time:        TimeData
+  before:      TimeData | null
+  note:        string
+  reporter:    string
   report_date: string
-  magazine: string
+  magazine:    string
 }
 
 const { data: errataData, pending } = await useFetch<ErrataDoc[]>('/api/errata')
-const errataList  = computed(() => errataData.value ?? [])
-const totalPages  = computed(() => Math.max(1, Math.ceil(errataList.value.length / PER_PAGE)))
-const pagedRows   = computed(() => errataList.value.slice((page.value - 1) * PER_PAGE, page.value * PER_PAGE))
+const errataList = computed(() => errataData.value ?? [])
+const totalPages = computed(() => Math.max(1, Math.ceil(errataList.value.length / PER_PAGE)))
+const pagedRows  = computed(() => errataList.value.slice((page.value - 1) * PER_PAGE, page.value * PER_PAGE))
 watch(errataList, () => { page.value = 1 })
 
 const GENDER_LABEL: Record<string, string> = { men: '남자', women: '여자' }
@@ -95,22 +105,57 @@ function esc(s: unknown): string {
   return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m as string] ?? m))
 }
 
+function eventLabel(t: TimeData): string {
+  return [GENDER_LABEL[t.gender ?? ''] ?? t.gender, DISC_LABEL[t.discipline ?? ''] ?? t.discipline, t.distance, t.course].filter(Boolean).join(' ')
+}
+
 function buildEntry(doc: ErrataDoc): string {
-  const t = doc.time ?? {}
-  const isNew = (doc.category ?? '').includes('신규 등재')
-  const eventLabel = [GENDER_LABEL[t.gender as string] ?? t.gender, DISC_LABEL[t.discipline as string] ?? t.discipline, t.distance, t.course].filter(Boolean).join(' ')
-  const rankPart   = t.rank ? `${t.rank}위` : ''
-  const nameHtml   = isNew ? `<strong>${esc(t.name)} ${esc(t.time)}</strong>` : (t.name ? esc(t.name) : '')
-  const corrHtml   = esc(t.correction ?? '').replace(/([^\s→][^→]*→[^(\n]*)/g, '<span class="delta">$1</span>')
-  const tail       = isNew ? [t.datetime, t.competitionName].filter(Boolean).map(esc).join(' ') : ''
-  const parts = [
-    [eventLabel, rankPart].filter(Boolean).join(' '),
-    nameHtml,
-    isNew ? '누락 보완 등재' : '',
-    corrHtml,
-    isNew ? '' : '정정',
-    tail ? `(${tail})` : '',
-  ]
-  return parts.filter(Boolean).join(' ').replace(/정정 정정/, '정정')
+  const t     = doc.time   ?? {}
+  const b     = doc.before ?? null
+  const isNew = !doc.timeID  // timeID === 0 → 신규 등재
+
+  if (isNew) {
+    // 신규: "남자 평영 50M LCM 1위 홍길동 00:33.45 누락 등재(2026-05-01 충남도민체전, 수영장)"
+    const rank = t.rank ? `${t.rank}위 ` : ''
+    const tail = [t.datetime, t.competitionName, t.pool].filter(Boolean).map(esc).join(' ')
+    return [
+      esc(eventLabel(t)),
+      rank + `<strong>${esc(t.name)}</strong>`,
+      `<span class="mono">${esc(t.time)}</span>`,
+      '누락 등재',
+      tail ? `<span class="tail">(${tail})</span>` : '',
+    ].filter(Boolean).join(' ')
+  }
+
+  // 수정: before → after diff
+  const evtLabel = esc(eventLabel(t))
+  const nameStr  = esc(t.name)
+
+  if (!b) {
+    const noteHtml = doc.note ? ` — <span class="note-text">${esc(doc.note)}</span>` : ''
+    // 구버전: evtLabel·nameStr이 없으면 기록·대회명으로 대체
+    const subject = [evtLabel, nameStr].filter(Boolean).join(' ')
+      || [
+          t.time            ? `<span class="mono">${esc(t.time)}</span>` : '',
+          t.competitionName ? `<span class="tail">(${esc(t.competitionName)})</span>` : '',
+        ].filter(Boolean).join(' ')
+    return `${subject} 정정${noteHtml}`
+  }
+
+  const diffs: string[] = []
+  const chk = (label: string, bVal: unknown, aVal: unknown, suffix = '') => {
+    if (String(bVal ?? '') !== String(aVal ?? ''))
+      diffs.push(`${label} <span class="before">${esc(bVal)}</span> → <span class="after">${esc(aVal)}</span>${suffix}`)
+  }
+  chk('기록',   b.time,            t.time)
+  chk('성명',   b.name,            t.name)
+  chk('순위',   b.rank != null ? `${b.rank}위` : '—', t.rank != null ? `${t.rank}위` : '—')
+  chk('대회일', b.datetime,        t.datetime)
+  chk('대회명', b.competitionName, t.competitionName)
+  chk('경기장', b.pool,            t.pool)
+
+  const diffHtml  = diffs.length ? `오류정정: ${diffs.join(' · ')}` : '오류정정'
+  const noteHtml  = doc.note ? ` <span class="note-text">— ${esc(doc.note)}</span>` : ''
+  return [evtLabel, nameStr, diffHtml, noteHtml].filter(Boolean).join(' ')
 }
 </script>

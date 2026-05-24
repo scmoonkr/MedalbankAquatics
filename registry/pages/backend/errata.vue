@@ -49,7 +49,7 @@
               <th class="c-event">종목</th>
               <th class="c-name">이름</th>
               <th class="c-time">기록</th>
-              <th class="c-corr">정정 / 비고</th>
+              <th class="c-corr">정정 내용</th>
               <th class="c-reporter">제보자</th>
               <th class="c-date">제보일</th>
               <th class="c-mag">반영호</th>
@@ -69,7 +69,7 @@
               <td class="dim small">{{ eventStr(r.time) }}</td>
               <td class="bold">{{ r.time?.name || '—' }}</td>
               <td class="mono">{{ r.time?.time || '—' }}</td>
-              <td class="small">{{ r.time?.correction || '—' }}</td>
+              <td class="small entry" v-html="buildEntry(r)"></td>
               <td class="dim small">{{ r.reporter || '—' }}</td>
               <td class="dim mono small">{{ r.report_date || '—' }}</td>
               <td class="dim small">{{ r.magazine || '—' }}</td>
@@ -95,11 +95,20 @@
         </div>
 
         <div class="ep-body">
-          <div class="ep-section">메타</div>
+          <!-- 메타 -->
+          <div class="ep-meta-id">
+            <span class="ep-meta-no">No. {{ panel.form.no ?? '—' }}</span>
+            <span class="ep-meta-sep">·</span>
+            <span class="ep-meta-tid">timeID {{ panel.form.timeID || '신규' }}</span>
+          </div>
           <div class="ep-grid">
             <div class="ep-field">
-              <label>No.</label>
-              <input v-model.number="panel.form.no" type="number" class="ep-inp mono" />
+              <label>상태 · status</label>
+              <select v-model="panel.form.status" class="ep-inp">
+                <option value="pending">pending</option>
+                <option value="confirmed">confirmed</option>
+                <option value="rejected">rejected</option>
+              </select>
             </div>
             <div class="ep-field">
               <label>분류 · category</label>
@@ -108,6 +117,127 @@
                 <option v-for="c in CATEGORY_ORDER" :key="c" :value="c">{{ c }}</option>
               </select>
             </div>
+          </div>
+
+          <!-- 기록 필드 -->
+          <div class="ep-divider"></div>
+          <div class="ep-grid">
+
+            <!-- 성명 | 반영호 -->
+            <div class="ep-field">
+              <label>성명 <span class="ep-req">*</span></label>
+              <input v-model="panel.form.time.name" :class="['ep-inp', { 'ep-inp-changed': mf.has('name') }]" placeholder="홍길동" />
+              <span v-if="panel.form.before && mf.has('name')" class="ep-orig">원본: {{ panel.form.before.name || '—' }}</span>
+            </div>
+            <div class="ep-field">
+              <label>반영호 · magazine</label>
+              <input v-model="panel.form.magazine" class="ep-inp" />
+            </div>
+
+            <!-- 기록 | 순위 -->
+            <div class="ep-field">
+              <label>기록 <span class="ep-req">*</span></label>
+              <input v-model="panel.form.time.time" :class="['ep-inp mono', { 'ep-inp-changed': mf.has('time') }]" placeholder="00:00.00" />
+              <span v-if="panel.form.before && mf.has('time')" class="ep-orig">원본: {{ panel.form.before.time || '—' }}</span>
+              <span v-else class="ep-hint">mm:ss.00 또는 ss.00</span>
+            </div>
+            <div class="ep-field">
+              <label>순위</label>
+              <input v-model.number="panel.form.time.rank" type="number" min="1" :class="['ep-inp mono', { 'ep-inp-changed': mf.has('rank') }]" placeholder="1" />
+              <span v-if="panel.form.before && mf.has('rank')" class="ep-orig">원본: {{ panel.form.before.rank ?? '—' }}</span>
+            </div>
+
+            <!-- 구분 | 연령부 -->
+            <div class="ep-field">
+              <label>구분 <span class="ep-req">*</span></label>
+              <select v-model="panel.form.time.isMasters" :class="['ep-inp', { 'ep-inp-changed': mf.has('isMasters') }]" @change="onDivisionChange">
+                <option :value="false">전문체육 (Elite)</option>
+                <option :value="true">마스터즈 (Masters)</option>
+              </select>
+            </div>
+            <div class="ep-field">
+              <label>연령부 <span class="ep-req">*</span></label>
+              <select v-model="panel.form.time.group" :class="['ep-inp', { 'ep-inp-changed': mf.has('group') }]">
+                <option v-for="g in panelAvailableGroups" :key="g" :value="g">{{ g }}</option>
+              </select>
+            </div>
+
+            <!-- 성별 | 영법 -->
+            <div class="ep-field">
+              <label>성별 <span class="ep-req">*</span></label>
+              <select v-model="panel.form.time.gender" :class="['ep-inp', { 'ep-inp-changed': mf.has('gender') }]">
+                <option value="men">남자</option>
+                <option value="women">여자</option>
+              </select>
+            </div>
+            <div class="ep-field">
+              <label>영법 <span class="ep-req">*</span></label>
+              <select v-model="panel.form.time.discipline" :class="['ep-inp', { 'ep-inp-changed': mf.has('discipline') }]">
+                <option value="FR">자유형 (FR)</option>
+                <option value="BK">배영 (BK)</option>
+                <option value="BR">평영 (BR)</option>
+                <option value="FL">접영 (FL)</option>
+                <option value="IM">개인혼영 (IM)</option>
+              </select>
+            </div>
+
+            <!-- 코스 | 거리 -->
+            <div class="ep-field">
+              <label>코스 <span class="ep-req">*</span></label>
+              <select v-model="panel.form.time.course" :class="['ep-inp', { 'ep-inp-changed': mf.has('course') }]" @change="onCourseChange">
+                <option value="LCM">LCM</option>
+                <option value="SCM">SCM</option>
+              </select>
+            </div>
+            <div class="ep-field">
+              <label>거리 <span class="ep-req">*</span></label>
+              <select v-model="panel.form.time.distance" :class="['ep-inp', { 'ep-inp-changed': mf.has('distance') }]">
+                <option v-for="d in panelAvailableDistances" :key="d" :value="d">{{ d }}</option>
+              </select>
+            </div>
+
+            <!-- 시도 | 소속 -->
+            <div class="ep-field">
+              <label>시도</label>
+              <select v-model="panel.form.time.sido" :class="['ep-inp', { 'ep-inp-changed': mf.has('sido') }]">
+                <option value="">선택</option>
+                <option v-for="s in SIDOS" :key="s" :value="s">{{ s }}</option>
+              </select>
+            </div>
+            <div class="ep-field">
+              <label>소속</label>
+              <input v-model="panel.form.time.team" :class="['ep-inp', { 'ep-inp-changed': mf.has('team') }]" placeholder="소속팀·클럽" />
+              <span v-if="panel.form.before && mf.has('team')" class="ep-orig">원본: {{ panel.form.before.team || '—' }}</span>
+            </div>
+
+            <!-- 대회일 | 경기장 -->
+            <div class="ep-field">
+              <label>대회일 <span class="ep-req">*</span></label>
+              <input v-model="panel.form.time.datetime" type="date" :class="['ep-inp mono', { 'ep-inp-changed': mf.has('datetime') }]" />
+              <span v-if="panel.form.before && mf.has('datetime')" class="ep-orig">원본: {{ (panel.form.before as any).datetime || '—' }}</span>
+            </div>
+            <div class="ep-field">
+              <label>경기장</label>
+              <input v-model="panel.form.time.pool" :class="['ep-inp', { 'ep-inp-changed': mf.has('pool') }]" placeholder="잠실실내수영장" />
+              <span v-if="panel.form.before && mf.has('pool')" class="ep-orig">원본: {{ (panel.form.before as any).pool || '—' }}</span>
+            </div>
+
+            <!-- 대회명 -->
+            <div class="ep-field ep-field-wide">
+              <label>대회명 <span class="ep-req">*</span></label>
+              <input v-model="panel.form.time.competitionName" :class="['ep-inp', { 'ep-inp-changed': mf.has('competitionName') }]" placeholder="2024 전국체육대회" />
+              <span v-if="panel.form.before && mf.has('competitionName')" class="ep-orig">원본: {{ (panel.form.before as any).competitionName || '—' }}</span>
+            </div>
+
+          </div>
+
+          <!-- 비고 / 제보 정보 -->
+          <div class="ep-divider"></div>
+          <div class="ep-grid">
+            <div class="ep-field ep-field-wide">
+              <label>비고 · note</label>
+              <textarea v-model="panel.form.note" rows="2" class="ep-inp ep-textarea" />
+            </div>
             <div class="ep-field">
               <label>제보자 · reporter</label>
               <input v-model="panel.form.reporter" class="ep-inp" />
@@ -115,89 +245,6 @@
             <div class="ep-field">
               <label>제보일 · report_date</label>
               <input v-model="panel.form.report_date" class="ep-inp mono" placeholder="YYYY-MM-DD" />
-            </div>
-            <div class="ep-field ep-field-wide">
-              <label>반영호 · magazine</label>
-              <input v-model="panel.form.magazine" class="ep-inp" />
-            </div>
-          </div>
-
-          <div class="ep-section">기록 (time)</div>
-          <div class="ep-grid">
-            <div class="ep-field">
-              <label>이름 · name</label>
-              <input v-model="panel.form.time.name" class="ep-inp" />
-            </div>
-            <div class="ep-field">
-              <label>기록 · time</label>
-              <input v-model="panel.form.time.time" class="ep-inp mono" placeholder="00:00.00" />
-            </div>
-            <div class="ep-field">
-              <label>성별 · gender</label>
-              <select v-model="panel.form.time.gender" class="ep-inp">
-                <option value=""></option>
-                <option value="men">men</option>
-                <option value="women">women</option>
-              </select>
-            </div>
-            <div class="ep-field">
-              <label>마스터즈 · isMasters</label>
-              <select v-model="panel.form.time.isMasters" class="ep-inp">
-                <option :value="false">false (elite)</option>
-                <option :value="true">true (masters)</option>
-              </select>
-            </div>
-            <div class="ep-field">
-              <label>그룹 · group</label>
-              <select v-model="panel.form.time.group" class="ep-inp">
-                <option value=""></option>
-                <option v-for="g in ALL_GROUPS" :key="g" :value="g">{{ g }}</option>
-              </select>
-            </div>
-            <div class="ep-field">
-              <label>종목 · discipline</label>
-              <select v-model="panel.form.time.discipline" class="ep-inp">
-                <option value=""></option>
-                <option v-for="d in DISCIPLINE_ORDER" :key="d" :value="d">{{ d }}</option>
-              </select>
-            </div>
-            <div class="ep-field">
-              <label>거리 · distance</label>
-              <select v-model="panel.form.time.distance" class="ep-inp">
-                <option value=""></option>
-                <option v-for="d in DISTANCE_ORDER" :key="d" :value="d">{{ d }}</option>
-              </select>
-            </div>
-            <div class="ep-field">
-              <label>코스 · course</label>
-              <select v-model="panel.form.time.course" class="ep-inp">
-                <option value=""></option>
-                <option v-for="c in COURSE_ORDER" :key="c" :value="c">{{ c }}</option>
-              </select>
-            </div>
-            <div class="ep-field">
-              <label>순위 · rank</label>
-              <input v-model.number="panel.form.time.rank" type="number" class="ep-inp mono" />
-            </div>
-            <div class="ep-field">
-              <label>시도 · sido</label>
-              <input v-model="panel.form.time.sido" class="ep-inp" />
-            </div>
-            <div class="ep-field ep-field-wide">
-              <label>소속 · team</label>
-              <input v-model="panel.form.time.team" class="ep-inp" />
-            </div>
-            <div class="ep-field">
-              <label>일자 · datetime</label>
-              <input v-model="panel.form.time.datetime" class="ep-inp mono" placeholder="YYYY-MM-DD" />
-            </div>
-            <div class="ep-field ep-field-wide">
-              <label>대회명 · competitionName</label>
-              <input v-model="panel.form.time.competitionName" class="ep-inp" />
-            </div>
-            <div class="ep-field ep-field-wide">
-              <label>정정 내용 · correction</label>
-              <textarea v-model="panel.form.time.correction" rows="2" class="ep-inp ep-textarea" placeholder="원본 → 정정 형식 권장"></textarea>
             </div>
           </div>
         </div>
@@ -226,18 +273,58 @@ const DISTANCE_ORDER   = ['25M', '50M', '100M', '200M', '400M', '800M', '1500M']
 const COURSE_ORDER     = ['LCM', 'SCM']
 const ALL_GROUPS       = ['유년부', '초등부', '중등부', '고등부', '일반부', '성인부']
 
-const GENDER_LABEL: Record<string, string> = { men: '남자', women: '여자' }
-const DISC_LABEL:   Record<string, string> = { BR: '평영', FR: '자유형', BK: '배영', FL: '접영', IM: '개인혼영' }
+const SIDOS        = ['서울','경기','인천','강원','대전','충남','충북','세종','부산','대구','울산','경북','경남','광주','전북','전남','제주','해외']
+const ELITE_GROUPS   = ['일반부','고등부','중등부','초등부','유년부']
+const MASTERS_GROUPS = ['성인부','고등부','중등부','초등부','유년부']
+const LCM_DISTS = ['50M','100M','200M','400M','800M','1500M']
+const SCM_DISTS = ['25M','50M','100M','200M','400M','800M','1500M']
+
+const panelAvailableGroups = computed(() =>
+  panel.form.time.isMasters ? MASTERS_GROUPS : ELITE_GROUPS
+)
+const panelAvailableDistances = computed(() =>
+  panel.form.time.course === 'SCM' ? SCM_DISTS : LCM_DISTS
+)
+function onDivisionChange() {
+  panel.form.time.group = panel.form.time.isMasters ? '성인부' : '일반부'
+}
+function onCourseChange() {
+  if (!panelAvailableDistances.value.includes(panel.form.time.distance ?? '')) {
+    panel.form.time.distance = panelAvailableDistances.value[0]
+  }
+}
+
+function calcMagazine(from: Date = new Date()): string {
+  const d = new Date(from)
+  d.setDate(1)
+  d.setMonth(d.getMonth() + (from.getDate() <= 20 ? 1 : 2))
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월호`
+}
+
+// modified fields: time 필드 중 before와 다른 항목 Set
+const TIME_KEYS = ['name','time','gender','isMasters','group','discipline','distance','course','rank','sido','team','datetime','competitionName','pool'] as const
+const mf = computed(() => {
+  const s = new Set<string>()
+  const b = panel.form.before
+  if (!b) return s
+  for (const k of TIME_KEYS) {
+    const bv = String((b as any)[k] ?? '')
+    const tv = String((panel.form.time as any)[k] ?? '')
+    if (bv !== tv) s.add(k)
+  }
+  return s
+})
 
 interface TimeBlock {
   gender?: string; discipline?: string; distance?: string; course?: string;
   rank?: number | null; name?: string; time?: string;
-  datetime?: string; competitionName?: string; correction?: string;
+  datetime?: string; competitionName?: string; pool?: string;
   team?: string; sido?: string; group?: string; isMasters?: boolean;
 }
 interface ErrataDoc {
-  id: string; no: number | null; category: string; time: TimeBlock;
-  reporter: string; report_date: string; magazine: string;
+  id: string; no: number | null; category: string; timeID: number;
+  time: TimeBlock; before: TimeBlock | null; note: string;
+  reporter: string; report_date: string; magazine: string; status: string;
   confirmed_at?: string; confirmed_target?: string; confirmed_action?: string;
 }
 
@@ -265,47 +352,129 @@ function resetFilters() {
   f.category = ''; f.gender = ''; f.discipline = ''; f.name = ''
 }
 
+const GENDER_LABEL: Record<string, string> = { men: '남자', women: '여자' }
+const DISC_LABEL:   Record<string, string> = { BR: '평영', FR: '자유형', BK: '배영', FL: '접영', IM: '개인혼영' }
+
+function esc(s: unknown): string {
+  if (s == null) return ''
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m as string] ?? m))
+}
+function eventLabel(t: TimeBlock): string {
+  return [GENDER_LABEL[t.gender ?? ''] ?? t.gender, DISC_LABEL[t.discipline ?? ''] ?? t.discipline, t.distance, t.course].filter(Boolean).join(' ')
+}
+function buildEntry(doc: ErrataDoc): string {
+  const t     = doc.time   ?? {}
+  const b     = doc.before ?? null
+  const isNew = !doc.timeID
+
+  if (isNew) {
+    const rank = (t as any).rank ? `${(t as any).rank}위 ` : ''
+    const tail = [(t as any).datetime, (t as any).competitionName, (t as any).pool].filter(Boolean).map(esc).join(' ')
+    return [
+      esc(eventLabel(t)),
+      rank + `<strong>${esc(t.name)}</strong>`,
+      `<span class="mono">${esc(t.time)}</span>`,
+      '누락 등재',
+      tail ? `<span class="ep-tail">(${tail})</span>` : '',
+    ].filter(Boolean).join(' ')
+  }
+
+  const evtLabel = esc(eventLabel(t))
+  const nameStr  = esc(t.name)
+
+  if (!b) {
+    const subject = [evtLabel, nameStr].filter(Boolean).join(' ')
+      || [
+          t.time            ? `<span class="mono">${esc(t.time)}</span>` : '',
+          (t as any).competitionName ? `<span class="ep-tail">(${esc((t as any).competitionName)})</span>` : '',
+        ].filter(Boolean).join(' ')
+    const noteHtml = doc.note ? ` — <span class="ep-note">${esc(doc.note)}</span>` : ''
+    return `${subject} 오류정정${noteHtml}`
+  }
+
+  const diffs: string[] = []
+  const chk = (label: string, bVal: unknown, aVal: unknown) => {
+    if (String(bVal ?? '') !== String(aVal ?? ''))
+      diffs.push(`${label} <span class="ep-before-val">${esc(bVal)}</span> → <span class="ep-after-val">${esc(aVal)}</span>`)
+  }
+  chk('기록',   b.time,            t.time)
+  chk('성명',   b.name,            t.name)
+  chk('순위',   b.rank != null ? `${b.rank}위` : '—', (t as any).rank != null ? `${(t as any).rank}위` : '—')
+  chk('대회일', b.datetime,        (t as any).datetime)
+  chk('대회명', b.competitionName, (t as any).competitionName)
+  chk('경기장', b.pool,            (t as any).pool)
+
+  const diffHtml = diffs.length ? `오류정정: ${diffs.join(' · ')}` : '오류정정'
+  const noteHtml = doc.note ? ` <span class="ep-note">— ${esc(doc.note)}</span>` : ''
+  return [evtLabel, nameStr, diffHtml, noteHtml].filter(Boolean).join(' ')
+}
+
 // ── edit / new panel ────────────────────────────────────────────
-function emptyForm(): { no: number | null; category: string; reporter: string; report_date: string; magazine: string; time: TimeBlock } {
+type FormTime = TimeBlock & { pool?: string }
+type PanelForm = {
+  no: number | null; category: string; timeID: number; status: string;
+  reporter: string; report_date: string; magazine: string; note: string;
+  time: FormTime; before: FormTime | null;
+}
+function emptyForm(): PanelForm {
   return {
-    no: null, category: '', reporter: '', report_date: '', magazine: '',
+    no: null, category: '', timeID: 0, status: 'pending',
+    reporter: '', report_date: '', magazine: '', note: '',
     time: {
       gender: '', discipline: '', distance: '', course: '', rank: null,
-      name: '', time: '', datetime: '', competitionName: '', correction: '',
+      name: '', time: '', datetime: '', competitionName: '', pool: '',
       team: '', sido: '', group: '', isMasters: false,
     },
+    before: null,
   }
 }
 const panel = reactive({
   open: false,
   id:   '',
-  form: emptyForm(),
+  form: emptyForm() as PanelForm,
 })
 function openPanel(r: ErrataDoc) {
   panel.open = true
   panel.id   = r.id
   panel.form = {
     no:          r.no ?? null,
-    category:    r.category || '',
-    reporter:    r.reporter || '',
+    category:    r.category   || '',
+    timeID:      r.timeID     ?? 0,
+    status:      r.status     || 'pending',
+    reporter:    r.reporter   || '',
     report_date: r.report_date || '',
-    magazine:    r.magazine || '',
+    magazine:    r.magazine   || calcMagazine(),
+    note:        r.note       || '',
     time: {
-      gender:          r.time?.gender ?? '',
-      discipline:      r.time?.discipline ?? '',
-      distance:        r.time?.distance ?? '',
-      course:          r.time?.course ?? '',
-      rank:            r.time?.rank ?? null,
-      name:            r.time?.name ?? '',
-      time:            r.time?.time ?? '',
-      datetime:        r.time?.datetime ?? '',
-      competitionName: r.time?.competitionName ?? '',
-      correction:      r.time?.correction ?? '',
-      team:            r.time?.team ?? '',
-      sido:            r.time?.sido ?? '',
-      group:           r.time?.group ?? '',
+      gender:          r.time?.gender          ?? '',
+      discipline:      r.time?.discipline      ?? '',
+      distance:        r.time?.distance        ?? '',
+      course:          r.time?.course          ?? '',
+      rank:            r.time?.rank            ?? null,
+      name:            r.time?.name            ?? '',
+      time:            r.time?.time            ?? '',
+      datetime:        (r.time as any)?.datetime        ?? '',
+      competitionName: (r.time as any)?.competitionName ?? '',
+      pool:            (r.time as any)?.pool            ?? '',
+      team:            r.time?.team            ?? '',
+      sido:            r.time?.sido            ?? '',
+      group:           r.time?.group           ?? '',
       isMasters:       !!r.time?.isMasters,
     },
+    before: r.before ? {
+      name:            r.before.name            ?? '',
+      time:            r.before.time            ?? '',
+      gender:          r.before.gender          ?? '',
+      discipline:      r.before.discipline      ?? '',
+      distance:        r.before.distance        ?? '',
+      course:          r.before.course          ?? '',
+      rank:            r.before.rank            ?? null,
+      sido:            r.before.sido            ?? '',
+      team:            r.before.team            ?? '',
+      datetime:        (r.before as any).datetime        ?? '',
+      competitionName: (r.before as any).competitionName ?? '',
+      pool:            (r.before as any).pool            ?? '',
+    } : null,
   }
 }
 function openNew() {
@@ -575,6 +744,28 @@ td.chk input, th .c-chk input { cursor: pointer; }
 .ep-inp:focus { border-color: #0a1d3a; }
 .ep-inp.mono { font-family: var(--mono); }
 .ep-textarea { height: auto; padding: 8px 10px; font-family: var(--sans); resize: vertical; }
+.ep-meta-id {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 12px; color: #888;
+  padding: 0 0 12px;
+}
+.ep-meta-no  { font-weight: 600; color: #444; }
+.ep-meta-sep { color: #ccc; }
+.ep-meta-tid { color: #888; }
+.ep-req  { color: #c00; margin-left: 2px; }
+.ep-hint { font-size: 11px; color: #aaa; margin-top: -2px; }
+.ep-orig { font-size: 11px; color: #999; margin-top: -2px; }
+.ep-inp-changed { background: #fffbe6; border-color: #f0c000 !important; }
+.ep-inp-changed:focus { border-color: #c89600 !important; }
+.ep-readonly { background: #f5f5f5; color: #999; cursor: default; }
+.ep-divider { border-top: 1px solid #eee; margin: 16px 0 14px; }
+.ep-before { background: #fef9f0; border-color: #f0d090; color: #7a5c00; }
+.ep-before:focus { border-color: #c8960a; }
+.ep-before-val { text-decoration: line-through; color: #999; font-family: var(--mono); font-size: 12px; }
+.ep-after-val  { color: #0a5c1a; font-family: var(--mono); font-size: 12px; font-weight: 600; }
+.ep-tail  { color: #aaa; font-size: 11.5px; }
+.ep-note  { color: #888; font-style: italic; font-size: 12px; }
+td.entry  { max-width: 420px; line-height: 1.5; }
 
 .ep-actions {
   display: flex; justify-content: space-between; align-items: center;

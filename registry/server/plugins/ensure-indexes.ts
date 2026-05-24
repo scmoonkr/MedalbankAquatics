@@ -13,6 +13,11 @@ export default defineNitroPlugin(async () => {
         { tid: 1 },
         { name: 'ksr-tid', unique: true, sparse: true },
       ),
+      // similar records 조회용 — timeStamp range scan
+      db.collection('mergedTimes').createIndex(
+        { gender: 1, discipline: 1, distance: 1, course: 1, timeStamp: 1 },
+        { name: 'ksr-event-ts' },
+      ),
     ])
   } catch (err) {
     console.error('[ensure-indexes] failed:', err)

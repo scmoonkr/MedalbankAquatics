@@ -23,7 +23,7 @@ export default defineNuxtConfig({
     },
   },
 
-  css: ['~/assets/css/registry.css'],
+  css: ['~/assets/css/registry.css', '~/assets/css/modal.css'],
 
   app: {
     head: {
