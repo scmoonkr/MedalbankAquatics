@@ -60,7 +60,14 @@
                   :class="rowClass(curTab.gender, curTab.stroke, dist, rt)"
                   @click="openPanel(curTab.gender, curTab.stroke, dist, rt)">
                   <td class="td-type"><span class="rt-code">{{ rt }}</span><span class="rt-lbl">{{ RT_LABELS[rt] }}</span></td>
-                  <td class="td-time mono bold">{{ entry(curTab.gender, curTab.stroke, dist, rt).time || '—' }}</td>
+                  <td class="td-time mono bold">
+                    <span
+                      v-if="entry(curTab.gender, curTab.stroke, dist, rt).time"
+                      class="time-trigger"
+                      @click.stop="openModal($event, curTab.gender, curTab.stroke, dist, rt)"
+                    >{{ entry(curTab.gender, curTab.stroke, dist, rt).time }}</span>
+                    <template v-else>—</template>
+                  </td>
                   <td class="td-name">{{ entry(curTab.gender, curTab.stroke, dist, rt).name || '—' }}</td>
                   <td class="td-nat mono">{{ entry(curTab.gender, curTab.stroke, dist, rt).nationality || '—' }}</td>
                   <td class="td-flag">{{ entry(curTab.gender, curTab.stroke, dist, rt).nation_code }}</td>
@@ -518,6 +525,70 @@ function exportCSV() {
   URL.revokeObjectURL(url)
 }
 
+// ── Modal (scoring + compare overlay) ────────────────────────────
+function loadScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return }
+    const s = document.createElement('script')
+    s.src = src
+    s.onload  = () => resolve()
+    s.onerror = () => reject(new Error(`script load failed: ${src}`))
+    document.head.appendChild(s)
+  })
+}
+
+function injectCompareOverlay() {
+  const scoring = (window as any).KSR_SCORING
+  if (!scoring || !apiData.value) return
+  const overlay: Record<string, Record<string, any>> = {}
+  for (const r of apiData.value) {
+    if (!r.time || !r.name) continue
+    const gCode = r.gender === 'men' ? 'M' : r.gender === 'women' ? 'W' : ''
+    if (!gCode) continue
+    const dist = parseInt(r.distance)   // '50M' → 50
+    const key  = `${gCode}-${r.style}-${dist}-LCM`
+    if (!overlay[key]) overlay[key] = {}
+    overlay[key][r.type] = {
+      time:   scoring.parseTime(r.time),
+      holder: r.name          || undefined,
+      nation: r.nationality   || undefined,
+      year:   r.year          ? parseInt(String(r.year)) : null,
+      venue:  r.competitionName || undefined,
+    }
+  }
+  scoring.injectOverlay(overlay)
+}
+
+function openModal(e: MouseEvent, gender: string, stroke: string, dist: number, rt: string) {
+  const modal = (window as any).KSR_MODAL
+  if (!modal) return
+  const ent = entry(gender, stroke, dist, rt)
+  if (!ent.time) return
+  const gCode = gender === 'men' ? 'M' : 'W'
+  const style = STROKE_TO_STYLE[stroke]
+  modal.open({
+    gender:      gCode,
+    stroke:      style,
+    distance:    dist,
+    course:      'LCM',
+    time:        ent.time,
+    attribution: {
+      athlete: ent.name             || null,
+      nation:  ent.nationality      || null,
+      year:    ent.year             || null,
+      date:    ent.datetime         || null,
+      venue:   ent.competitionName  || null,
+    },
+  })
+}
+
+onMounted(() => {
+  loadScript('/cannon/js/scoring.js')
+    .then(() => loadScript('/cannon/js/modal.js'))
+    .then(() => injectCompareOverlay())
+    .catch(err => console.error('[records] script load error', err))
+})
+
 async function importCSV(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
@@ -774,4 +845,15 @@ td.dim  { color: #777; font-size: 12px; }
   font-size: 13px; color: #555; cursor: pointer; border-radius: 3px;
 }
 .ep-btn-cancel:hover { background: #f5f5f3; }
+
+/* ── Time trigger ── */
+.td-time .time-trigger {
+  cursor: pointer;
+  border-bottom: 1px dashed #999;
+  transition: color 0.12s, border-color 0.12s;
+}
+.td-time .time-trigger:hover {
+  color: #1d4ed8;
+  border-bottom-color: #1d4ed8;
+}
 </style>
