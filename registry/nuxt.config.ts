@@ -18,6 +18,10 @@ export default defineNuxtConfig({
     naverClientId:     process.env.NAVER_CLIENT_ID     || '',
     naverClientSecret: process.env.NAVER_CLIENT_SECRET  || '',
     siteUrl:           process.env.NUXT_SITE_URL        || '',
+    // nuxt-auth-utils: NUXT_SESSION_PASSWORD는 런타임에서만 읽히므로 빌드 시 bake
+    session: {
+      password: process.env.NUXT_SESSION_PASSWORD || '',
+    },
     public: {
       naverFormInsert: process.env.NAVER_FORM_INSERT || '',
     },
