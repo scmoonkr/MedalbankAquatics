@@ -135,16 +135,43 @@ body.modal-open { overflow: hidden; }
 .pdf-btn:hover { color: var(--fg-dim); border-color: var(--fg-dim); }
 .pdf-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-/* ── PDF 캡처 모드 — 대화형 요소 숨김 ─── */
-.modal-pdf-mode .modal-close,
-.modal-pdf-mode .modal-foot,
-.modal-pdf-mode .section-info,
-.modal-pdf-mode .section-info-popover,
-.modal-pdf-mode .modal-filter-row,
-.modal-pdf-mode .modal-hint,
-.modal-pdf-mode .modal-report-inline,
-.modal-pdf-mode .modal-block-note { display: none !important; }
-.modal-pdf-mode .modal-pdf-credit { display: block !important; }
+/* ── Print / PDF ─── */
+@media print {
+  /* 모달 이외 모든 요소 숨김 */
+  body > * { display: none !important; }
+  body > #recordModal { display: block !important; }
+  /* overlay → static block */
+  body.modal-open { overflow: visible !important; }
+  #recordModal {
+    position: static !important;
+    background: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+  .modal {
+    position: static !important;
+    max-width: none !important;
+    border: none !important;
+    padding: 20px 32px !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+  /* 대화형 요소 숨김 */
+  .modal-close,
+  .modal-foot,
+  .section-info,
+  .section-info-popover,
+  .modal-filter-row,
+  .modal-hint,
+  .modal-report-inline,
+  .modal-block-note { display: none !important; }
+  /* KSR 크레딧 노출 */
+  .modal-pdf-credit { display: block !important; }
+  /* 섹션 페이지 분리 방지 */
+  .modal-block { page-break-inside: avoid; }
+  .modal-tiers, .modal-equiv, .modal-age-summary { page-break-inside: avoid; }
+}
 .info-popover { position: absolute; bottom: calc(100% + 8px); left: 0; background: var(--fg); color: var(--bg); padding: 20px 24px; width: 480px; max-width: calc(100vw - 96px); font-family: var(--serif-ko); font-size: 13px; line-height: 1.7; letter-spacing: -0.005em; z-index: 20; }
 .info-popover[hidden] { display: none; }
 .info-popover p { margin: 0 0 12px; }

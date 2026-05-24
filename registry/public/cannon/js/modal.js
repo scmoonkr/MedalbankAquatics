@@ -44,7 +44,6 @@
   };
 
   const REPORT_URL = 'https://naver.me/xeFYWn8m';
-  const HTML2PDF_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
 
   let modalEl = null;
   let lastFocus = null;
@@ -755,70 +754,9 @@
       </div>`;
   }
 
-  // ── PDF 다운로드 ─────────────────────────────────────────
-  async function downloadPdf() {
-    const btn = document.getElementById('pdfBtn');
-    if (!btn || btn.disabled) return;
-    btn.disabled = true;
-    btn.textContent = '생성 중…';
-
-    const shell = document.querySelector('#recordModal .modal');
-    if (!shell) { btn.disabled = false; btn.textContent = 'PDF'; return; }
-
-    let wrapper = null;
-
-    try {
-      if (!window.html2pdf) {
-        await loadScript(HTML2PDF_CDN);
-      }
-
-      // position:fixed 안의 요소는 html2canvas가 빈 캔버스를 반환하므로
-      // 클론을 body에 직접 추가한 뒤 캡처
-      const clone = shell.cloneNode(true);
-      clone.classList.add('modal-pdf-mode');
-      clone.style.cssText = [
-        'position:absolute', 'left:-9999px', 'top:0',
-        'width:794px', 'max-width:none',
-        'background:#ffffff', 'color:#000000',
-        'padding:48px 56px 40px', 'box-sizing:border-box',
-        'border:none',
-      ].join(';');
-
-      wrapper = document.createElement('div');
-      wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;overflow:visible;';
-      wrapper.appendChild(clone);
-      document.body.appendChild(wrapper);
-
-      // 렌더링 완료 대기 (레이아웃 안정화)
-      await new Promise(r => setTimeout(r, 120));
-
-      const gKo  = genderKo(state.gender);
-      const sKo  = strokeKo(state.stroke);
-      const tStr = fmt(state.time) || '';
-      const filename = ('KSR_' + gKo + '_' + sKo + '_' + state.distance + 'm_' + state.course
-        + (tStr ? '_' + tStr : '') + '.pdf')
-        .replace(/:/g, '-').replace(/\s+/g, '_');
-
-      await window.html2pdf()
-        .from(clone)
-        .set({
-          margin:      [10, 10, 10, 10],
-          filename,
-          image:       { type: 'jpeg', quality: 0.92 },
-          html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
-          jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak:   { mode: ['avoid-all', 'css', 'legacy'] },
-        })
-        .save();
-
-    } catch (e) {
-      console.error('[modal] pdf error', e);
-      alert('PDF 생성 중 오류가 발생했습니다.');
-    } finally {
-      if (wrapper && wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
-      btn.disabled = false;
-      btn.textContent = 'PDF';
-    }
+  // ── PDF 저장 (window.print → 브라우저 Save as PDF) ───────
+  function downloadPdf() {
+    window.print();
   }
 
   // ── Trigger binding ──────────────────────────────────────
