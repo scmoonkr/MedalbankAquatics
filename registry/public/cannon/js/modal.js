@@ -801,6 +801,8 @@
 </body>
 </html>`);
     win.document.close();
+    win.focus();
+    win.onload = () => win.print();
   }
 
   // ── Trigger binding ──────────────────────────────────────
