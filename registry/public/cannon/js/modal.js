@@ -44,9 +44,21 @@
   };
 
   const REPORT_URL = 'https://naver.me/xeFYWn8m';
+  const HTML2PDF_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
 
   let modalEl = null;
   let lastFocus = null;
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload  = resolve;
+      s.onerror = () => reject(new Error('script load failed: ' + src));
+      document.head.appendChild(s);
+    });
+  }
 
   function esc(s) {
     if (s == null) return '';
@@ -187,8 +199,13 @@
       <div id="modalPace"></div>
     </section>
 
+    <div class="modal-pdf-credit" style="display:none; padding: 18px 0 0; border-top: 1px solid var(--line); font-family: var(--sans); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-faint);">
+      Korean Swimming Registry · medalbankaquatics.com
+    </div>
+
     <footer class="modal-foot">
       <button class="info-btn" type="button" aria-label="계산 방식 안내" id="infoBtn">i</button>
+      <button class="pdf-btn" type="button" aria-label="PDF 저장" id="pdfBtn">PDF</button>
       <div class="info-popover" id="infoPopover" hidden>
         <p>본 계산은 <strong>World Aquatics Points</strong> 공식을 따릅니다.
         각 종목의 베이스타임은 LCM 세계기록을 기준으로 하며,
@@ -228,6 +245,8 @@
       const p = document.getElementById('infoPopover');
       p.hidden = !p.hidden;
     });
+
+    document.getElementById('pdfBtn').addEventListener('click', downloadPdf);
 
     // Section-level (i) buttons — open one at a time, close on outside click
     modalEl.addEventListener('click', (e) => {
@@ -734,6 +753,53 @@
         <div class="pace-paces">${paceCells}</div>
         <p class="pace-disclaimer">위 단순 속도와 페이스표는 정확한 지표가 아니며 단순 거리 비례 계산이므로 참고용으로만 사용하세요. 실제 수영은 스타트·턴·영법별 특성 때문에 거리 간 페이스가 선형으로 비례하지 않습니다. 지치지 않고 동일한 속도로 진행했을 때의 시간을 나타내는 표입니다.</p>
       </div>`;
+  }
+
+  // ── PDF 다운로드 ─────────────────────────────────────────
+  async function downloadPdf() {
+    const btn = document.getElementById('pdfBtn');
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = '생성 중…';
+
+    const shell = document.querySelector('#recordModal .modal');
+    if (!shell) { btn.disabled = false; btn.textContent = 'PDF'; return; }
+
+    try {
+      if (!window.html2pdf) {
+        await loadScript(HTML2PDF_CDN);
+      }
+
+      // PDF 모드 진입: 대화형 요소 숨김, 크레딧 노출
+      shell.classList.add('modal-pdf-mode');
+
+      const gKo  = genderKo(state.gender);
+      const sKo  = strokeKo(state.stroke);
+      const tStr = fmt(state.time) || '';
+      const filename = ('KSR_' + gKo + '_' + sKo + '_' + state.distance + 'm_' + state.course
+        + (tStr ? '_' + tStr : '') + '.pdf')
+        .replace(/:/g, '-').replace(/\s+/g, '_');
+
+      await window.html2pdf()
+        .from(shell)
+        .set({
+          margin:     [10, 10, 10, 10],
+          filename,
+          image:      { type: 'jpeg', quality: 0.92 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF:      { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak:  { mode: ['avoid-all', 'css', 'legacy'] },
+        })
+        .save();
+
+    } catch (e) {
+      console.error('[modal] pdf error', e);
+      alert('PDF 생성 중 오류가 발생했습니다.');
+    } finally {
+      shell.classList.remove('modal-pdf-mode');
+      btn.disabled = false;
+      btn.textContent = 'PDF';
+    }
   }
 
   // ── Trigger binding ──────────────────────────────────────
