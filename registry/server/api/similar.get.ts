@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
 
   // ── 같은 종목: 선수별 PB(min timeStamp) → waPoints diff 순 10개 ──
   const sameDocs = await coll.aggregate([
-    { $match: { gender: dbGender, discipline: stroke, distance: distStr, course } },
+    { $match: { gender: dbGender, discipline: stroke, distance: distStr, course, waPoints: { $gt: 0 } } },
     { $sort: { timeStamp: 1 } },                          // 빠른 기록 먼저 (PB first)
     { $group: { _id: '$name', doc: { $first: '$$ROOT' } } }, // 선수별 PB
     { $replaceRoot: { newRoot: '$doc' } },
@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
   const otherResults = await Promise.all(
     events.map(({ genderDb, s, distStr: ds }) =>
       coll.aggregate([
-        { $match: { gender: genderDb, discipline: s, distance: ds, course } },
+        { $match: { gender: genderDb, discipline: s, distance: ds, course, waPoints: { $gt: 0 } } },
         { $sort: { timeStamp: 1 } },
         { $group: { _id: '$name', doc: { $first: '$$ROOT' } } },
         { $replaceRoot: { newRoot: '$doc' } },
