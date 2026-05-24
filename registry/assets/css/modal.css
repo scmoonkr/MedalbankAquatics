@@ -136,7 +136,7 @@ body.modal-open { overflow: hidden; }
 .pdf-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ── Print / PDF ─── */
-@page { size: A4 portrait; margin: 15mm 14mm; }
+@page { size: A4 portrait; margin: 6mm; }
 @media print {
   /* 모달 이외 모든 요소 숨김 */
   body > * { display: none !important; }
