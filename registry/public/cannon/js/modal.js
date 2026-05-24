@@ -765,13 +765,32 @@
     const shell = document.querySelector('#recordModal .modal');
     if (!shell) { btn.disabled = false; btn.textContent = 'PDF'; return; }
 
+    let wrapper = null;
+
     try {
       if (!window.html2pdf) {
         await loadScript(HTML2PDF_CDN);
       }
 
-      // PDF 모드 진입: 대화형 요소 숨김, 크레딧 노출
-      shell.classList.add('modal-pdf-mode');
+      // position:fixed 안의 요소는 html2canvas가 빈 캔버스를 반환하므로
+      // 클론을 body에 직접 추가한 뒤 캡처
+      const clone = shell.cloneNode(true);
+      clone.classList.add('modal-pdf-mode');
+      clone.style.cssText = [
+        'position:absolute', 'left:-9999px', 'top:0',
+        'width:794px', 'max-width:none',
+        'background:#ffffff', 'color:#000000',
+        'padding:48px 56px 40px', 'box-sizing:border-box',
+        'border:none',
+      ].join(';');
+
+      wrapper = document.createElement('div');
+      wrapper.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;overflow:visible;';
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+
+      // 렌더링 완료 대기 (레이아웃 안정화)
+      await new Promise(r => setTimeout(r, 120));
 
       const gKo  = genderKo(state.gender);
       const sKo  = strokeKo(state.stroke);
@@ -781,14 +800,14 @@
         .replace(/:/g, '-').replace(/\s+/g, '_');
 
       await window.html2pdf()
-        .from(shell)
+        .from(clone)
         .set({
-          margin:     [10, 10, 10, 10],
+          margin:      [10, 10, 10, 10],
           filename,
-          image:      { type: 'jpeg', quality: 0.92 },
-          html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF:      { unit: 'mm', format: 'a4', orientation: 'portrait' },
-          pagebreak:  { mode: ['avoid-all', 'css', 'legacy'] },
+          image:       { type: 'jpeg', quality: 0.92 },
+          html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+          jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          pagebreak:   { mode: ['avoid-all', 'css', 'legacy'] },
         })
         .save();
 
@@ -796,7 +815,7 @@
       console.error('[modal] pdf error', e);
       alert('PDF 생성 중 오류가 발생했습니다.');
     } finally {
-      shell.classList.remove('modal-pdf-mode');
+      if (wrapper && wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
       btn.disabled = false;
       btn.textContent = 'PDF';
     }
