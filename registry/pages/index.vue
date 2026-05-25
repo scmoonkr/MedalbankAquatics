@@ -130,7 +130,7 @@
           <button class="cta" type="button" @click="submitOpen = true">
             직접 기록 추가하기 <span class="arrow">→</span>
           </button>
-          <div class="note">발굴 기록·정정 제보 시 실명 등재</div>
+          <div class="note">새로운 기록이나 누락된 기록 제보하기</div>
         </div>
       </aside>
 
@@ -157,6 +157,8 @@
 useHead({ title: 'The Index — KSR · Korean Swimming Registry' })
 
 const naverFormInsert = useRuntimeConfig().public.naverFormInsert as string
+const route  = useRoute()
+const router = useRouter()
 
 // Canon comparison overlay — modal의 권위 기록 비교 섹션에 DB 데이터 주입
 const { data: dbRecords } = await useFetch('/api/canon')
@@ -191,6 +193,9 @@ function injectCompareOverlay() {
   }
   scoring.injectOverlay(overlay)
 }
+
+// ── filter defaults ────────────────────────────────────────────
+const DEFAULTS = { division: 'all', group: 'all', gender: 'm', stroke: 'breast', distance: 50, course: 'lcm' }
 
 // ── taxonomies ─────────────────────────────────────────────────
 const DIVISIONS = [
@@ -232,18 +237,19 @@ const MODAL_STROKE: Record<string, string> = {
   free: 'FR', back: 'BK', breast: 'BR', fly: 'FL', im: 'IM',
 }
 
-// ── state ──────────────────────────────────────────────────────
+// ── state: init from URL query params, then localStorage fallback ─
+const _q = route.query
 const state = reactive({
-  division: 'elite',
-  group:    'all',
-  gender:   'm',
-  stroke:   'breast',
-  distance: 50,
-  course:   'lcm',
+  division: String(_q.division ?? DEFAULTS.division),
+  group:    String(_q.group    ?? DEFAULTS.group),
+  gender:   String(_q.gender   ?? DEFAULTS.gender),
+  stroke:   String(_q.stroke   ?? DEFAULTS.stroke),
+  distance: Number(_q.distance ?? DEFAULTS.distance) || DEFAULTS.distance,
+  course:   String(_q.course   ?? DEFAULTS.course),
 })
 
 // ── data ───────────────────────────────────────────────────────
-type EventRank     = { rank: number; name: string; city: string; team: string; date: string; time: string; meet: string; meet_full: string }
+type EventRank     = { rank: number; name: string; city: string; team: string; date: string; time: string; meet: string; meet_full: string; isMasters?: boolean }
 type SheetResponse = { page: number; pageSize: number; total: number; ranks: EventRank[] }
 
 const allRanks    = ref<EventRank[]>([])
@@ -402,9 +408,12 @@ function rowHtml(r: EventRank, isFirst: boolean): string {
         tabindex="0"
       >${esc(r.time)}</span></td>`
     : `<td class="time">—</td>`
+  const regBadge = state.division === 'all'
+    ? ` <span class="reg-badge">${r.isMasters ? '비등록' : '등록'}</span>`
+    : ''
   return `<tr${isFirst ? ' class="first"' : ''}>
     <td class="rank">${r.rank}</td>
-    <td class="name">${esc(r.name||'—')}</td>
+    <td class="name">${esc(r.name||'—')}${regBadge}</td>
     <td class="city">${esc(r.city||'—')}</td>
     <td class="date">${esc(r.date||'—')}</td>
     <td class="meet"><span class="meet-full">${esc(r.meet_full||r.meet||'—')}</span><span class="meet-short">${esc(r.meet||r.meet_full||'—')}</span></td>
@@ -424,6 +433,8 @@ const submitOpen = ref(false)
 // ── filter setter ──────────────────────────────────────────────
 function setFilter(key: string, val: string | number) {
   ;(state as Record<string, unknown>)[key] = val
+  try { localStorage.setItem('ksr-index-filters', JSON.stringify({ ...state })) } catch {}
+  router.replace({ query: { ...state } })
 }
 
 // ── modal scripts ─────────────────────────────────────────────
@@ -437,6 +448,22 @@ function loadScript(src: string): Promise<void> {
     document.body.appendChild(s)
   })
 }
+
+// ── localStorage fallback (runs only when no URL query params) ─
+onMounted(() => {
+  if (Object.keys(route.query).length) return
+  try {
+    const saved = JSON.parse(localStorage.getItem('ksr-index-filters') ?? 'null')
+    if (saved && typeof saved === 'object') {
+      state.division = String(saved.division ?? DEFAULTS.division)
+      state.group    = String(saved.group    ?? DEFAULTS.group)
+      state.gender   = String(saved.gender   ?? DEFAULTS.gender)
+      state.stroke   = String(saved.stroke   ?? DEFAULTS.stroke)
+      state.distance = Number(saved.distance) || DEFAULTS.distance
+      state.course   = String(saved.course   ?? DEFAULTS.course)
+    }
+  } catch {}
+})
 
 // ── sticky brand: IntersectionObserver ────────────────────────
 const resultsTitleEl = ref<HTMLElement | null>(null)

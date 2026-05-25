@@ -29,6 +29,16 @@
                 {{ doc.city }} · {{ doc.team }}
               </div>
               <p>{{ doc.meet }}</p>
+              <div v-if="compareRows(doc).length" class="compare">
+                <span v-for="row in compareRows(doc)" :key="row.type" class="row">
+                  <span class="lbl">{{ row.type }}</span>
+                  {{ row.label }}
+                  <template v-if="row.time">
+                    <span class="time"> {{ row.time }}</span> · <span class="diff">{{ row.diff }}</span>
+                  </template>
+                  <span v-if="row.credit" class="credit">{{ row.credit }}</span>
+                </span>
+              </div>
             </div>
             <div class="figures">
               <span
@@ -122,6 +132,61 @@ interface LedgerDoc {
 const GENDER_LABEL: Record<string, string> = { men: '남자', women: '여자', M: '남자', W: '여자' }
 const DISC_LABEL:   Record<string, string> = { BR: '평영', FR: '자유형', BK: '배영', FL: '접영', IM: '개인혼영' }
 
+// ── compare 비교 섹션 ──────────────────────────────────────────
+const TYPE_LABEL: Record<string, string> = {
+  WR:  '세계신기록',
+  OR:  '올림픽기록',
+  AR:  '아시아기록',
+  KR:  '한국신기록',
+  ER:  '인핸스드게임기록',
+  WMR: '세계마스터즈기록',
+  KMR: '한국마스터즈기록',
+}
+const TYPE_ORDER = ['WR', 'OR', 'AR', 'KR', 'ER', 'WMR', 'KMR']
+
+function parseTimeSec(str: string): number {
+  if (!str || str === '—') return Infinity
+  const parts = str.trim().split(':')
+  if (parts.length === 3) return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2])
+  if (parts.length === 2) return parseInt(parts[0]) * 60 + parseFloat(parts[1])
+  return parseFloat(str) || Infinity
+}
+
+function fmtDiff(myTime: string, refTime: string): string {
+  const my  = parseTimeSec(myTime)
+  const ref = parseTimeSec(refTime)
+  if (!isFinite(my) || !isFinite(ref)) return ''
+  const diff = my - ref
+  if (diff <= 0) return ''
+  if (diff < 60) return `+${diff.toFixed(2)}초`
+  const m = Math.floor(diff / 60)
+  const s = (diff - m * 60).toFixed(2).padStart(5, '0')
+  return `+${m}:${s}`
+}
+
+interface CompareRow { type: string; label: string; time: string; diff: string; credit: string }
+
+function compareRows(doc: LedgerDoc): CompareRow[] {
+  if (!canonData.value || !doc.rawGender || !doc.rawStroke || !doc.rawDistance) return []
+  const rows: CompareRow[] = []
+  for (const type of TYPE_ORDER) {
+    const key = `${doc.rawGender}-${doc.rawStroke}-${doc.rawDistance}-${type}`
+    const rec = (canonData.value as Record<string, any>)[key]
+    if (!rec?.time) continue
+    const diff = fmtDiff(doc.time, rec.time)
+    let credit: string
+    if (type === 'OR' || type === 'ER') {
+      credit = [rec.athlete, rec.nation, rec.venue].filter(Boolean).join(' · ')
+    } else if (type === 'KR' || type === 'KMR') {
+      credit = [rec.athlete, rec.year].filter(Boolean).join(' · ')
+    } else {
+      credit = [rec.athlete, rec.nation, rec.year].filter(Boolean).join(' · ')
+    }
+    rows.push({ type, label: TYPE_LABEL[type] ?? type, time: rec.time, diff, credit })
+  }
+  return rows
+}
+
 function toRawGender(g: string | undefined): string {
   if (!g) return ''
   if (g === 'men'   || g === 'M') return 'M'
@@ -196,7 +261,7 @@ function injectCompareOverlay() {
     const [gCode, style, dist, type] = parts
     const overlayKey = `${gCode}-${style}-${dist}-LCM`
     if (!overlay[overlayKey]) overlay[overlayKey] = {}
-    overlay[overlayKey][type] = { time: rec.time, athlete: rec.athlete, nation: rec.nation, year: rec.year, venue: rec.venue }
+    overlay[overlayKey][type] = { time: parseTimeSec(rec.time), holder: rec.athlete, nation: rec.nation, year: rec.year ? parseInt(String(rec.year)) : null, venue: rec.venue || undefined }
   }
   scoring.injectOverlay(overlay)
 }

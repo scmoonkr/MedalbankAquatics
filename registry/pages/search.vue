@@ -153,6 +153,14 @@ function loadScript(src: string): Promise<void> {
   })
 }
 
+function parseTimeSec(str: string): number {
+  if (!str || str === '—') return Infinity
+  const parts = str.trim().split(':')
+  if (parts.length === 3) return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2])
+  if (parts.length === 2) return parseInt(parts[0]) * 60 + parseFloat(parts[1])
+  return parseFloat(str) || Infinity
+}
+
 function injectCompareOverlay() {
   const scoring = (window as any).KSR_SCORING
   if (!scoring || !canonData.value) return
@@ -164,7 +172,7 @@ function injectCompareOverlay() {
     const overlayKey = `${gCode}-${style}-${dist}-LCM`
     if (!overlay[overlayKey]) overlay[overlayKey] = {}
     const type = parts[3]
-    overlay[overlayKey][type] = { time: rec.time, athlete: rec.athlete, nation: rec.nation, year: rec.year, venue: rec.venue }
+    overlay[overlayKey][type] = { time: parseTimeSec(rec.time), holder: rec.athlete, nation: rec.nation, year: rec.year ? parseInt(String(rec.year)) : null, venue: rec.venue || undefined }
   }
   scoring.injectOverlay(overlay)
 }
