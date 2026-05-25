@@ -1,16 +1,22 @@
 <template>
   <div>
-    <!-- Hero: 검색폼 없음, 타이틀만 -->
-    <div class="hero sr-hero">
-      <div class="hero-eyebrow">
-        02 · The Search · 선수 검색 <span class="dot">·</span> Korean Swimming Registry
-      </div>
-      <div class="hero-corner">KSR</div>
-      <h1>The <span class="em">Search.</span></h1>
-      <p class="hero-sub">선수명으로 전체 기록을 검색합니다. 여러 선수를 동시에 비교할 수 있습니다.</p>
+    <!-- ① 검색 헤더: Hero 대신, 전체 너비 검색 폼 영역 -->
+    <div class="sr-header">
+      <div class="sr-eyebrow">02 · The Search · 선수 검색</div>
+      <form class="sr-form" @submit.prevent="doSearch">
+        <input
+          v-model="searchInput"
+          class="sr-input"
+          type="text"
+          placeholder="선수명 입력 · 여러 명은 쉼표 또는 공백으로 구분"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button class="sr-btn" type="submit">검색 →</button>
+      </form>
     </div>
 
-    <!-- Shell: 사이드바 + 메인 -->
+    <!-- ② Shell: 사이드바 필터 + 메인 결과 -->
     <div class="shell">
       <aside class="filters">
         <div class="filters-head">
@@ -27,7 +33,7 @@
                 class="filter-btn"
                 :class="{ current: filterGender === g.v, disabled: !availableGenderSet.has(g.v) }"
                 :aria-disabled="availableGenderSet.has(g.v) ? undefined : 'true'"
-                @click="availableGenderSet.has(g.v) && setGender(g.v)"
+                @click="availableGenderSet.has(g.v) && (filterGender = g.v)"
               >
                 <span class="label-wrap"><span class="indicator">·</span><span>{{ g.label }}</span></span>
                 <span class="sub">{{ g.sub }}</span>
@@ -71,16 +77,10 @@
           </ul>
         </div>
 
-        <!-- 코스 COURSE -->
+        <!-- 코스 COURSE (전체 없음, 기본 LCM) -->
         <div class="filter-group">
           <div class="legend"><span>코스</span><span class="ko">COURSE</span></div>
           <ul class="filter-list">
-            <li>
-              <button class="filter-btn" :class="{ current: !filterCourse }" @click="filterCourse = ''">
-                <span class="label-wrap"><span class="indicator">·</span><span>전체</span></span>
-                <span class="sub">ALL</span>
-              </button>
-            </li>
             <li v-for="c in COURSES" :key="c.v">
               <button
                 class="filter-btn"
@@ -128,35 +128,19 @@
       </aside>
 
       <main class="results">
-        <!-- ① 검색 폼: 컨텐츠 타이틀 바로 위, 보더로 구분 -->
-        <div class="sr-search-bar">
-          <form class="sr-form" @submit.prevent="doSearch">
-            <input
-              v-model="searchInput"
-              class="sr-input"
-              type="text"
-              placeholder="선수명 입력 · 여러 명은 쉼표 또는 공백으로 구분"
-              autocomplete="off"
-              spellcheck="false"
-            />
-            <button class="sr-btn" type="submit">검색 →</button>
-          </form>
-        </div>
-
-        <!-- ② 결과 영역 -->
         <div v-if="!names.length" class="empty-state">선수명을 입력하고 검색하세요.</div>
         <div v-else-if="pending" class="empty-state">검색 중…</div>
         <div v-else-if="!displayRows.length" class="empty-state">결과가 없습니다.</div>
 
         <template v-else>
-          <!-- 타이틀: 현재 선택된 종목 / 서브타이틀: 선수명 -->
+          <!-- 타이틀: 현재 선택 종목 / ctx-meta: 검색 선수명 -->
           <div class="results-header">
             <h2 v-html="titleHtml"></h2>
             <div class="right">
               <span class="ctx-meta">{{ names.join(' · ') }}</span>
             </div>
           </div>
-          <!-- Index 스타일 테이블 -->
+          <!-- index-table 스타일 -->
           <div v-html="tableHtml"></div>
         </template>
       </main>
@@ -219,7 +203,7 @@ onMounted(() => {
     .catch(err => console.error('[search] script load error', err))
 })
 
-// ── 상수 ────────────────────────────────────────────────────────
+// ── 상수 ───────────────────────────────────────────────────────
 const STROKE_DISTS: Record<string, string[]> = {
   FR: ['25M', '50M', '100M', '200M', '400M', '800M', '1500M'],
   BK: ['25M', '50M', '100M', '200M'],
@@ -246,7 +230,7 @@ const COURSES = [
   { v: 'SCM', label: 'SCM', sub: '25m · SHORT' },
 ]
 
-// ── 헬퍼 ────────────────────────────────────────────────────────
+// ── 헬퍼 ───────────────────────────────────────────────────────
 function normalizeGender(g: string): string {
   if (g === 'M' || g === 'men'   || g === 'male')   return 'M'
   if (g === 'W' || g === 'women' || g === 'female') return 'W'
@@ -260,7 +244,7 @@ function esc(s: unknown): string {
   )
 }
 
-// ── 이름 파싱: 쉼표 또는 공백 모두 구분자 ─────────────────────
+// ── 이름 파싱 ───────────────────────────────────────────────────
 const nameQuery = computed(() => String(route.query.name || '').trim())
 const names     = computed(() =>
   nameQuery.value
@@ -271,11 +255,11 @@ const isPbMode    = computed(() => names.value.length > 1)
 const searchInput = ref(nameQuery.value)
 watch(nameQuery, v => { searchInput.value = v })
 
-// ── 필터 상태 ─────────────────────────────────────────────────
-const filterGender = ref('')
+// ── 필터 상태 (기본: BR · 50M · LCM) ──────────────────────────
+const filterGender = ref('M')
 const filterDisc   = ref('BR')
 const filterDist   = ref('50M')
-const filterCourse = ref('')
+const filterCourse = ref('LCM')
 const sortMode     = ref<'recent' | 'time'>('recent')
 
 // ── 데이터 ────────────────────────────────────────────────────
@@ -285,7 +269,8 @@ interface SearchRow {
   time: string; timeStamp: number | null; rank: number | null
   sido: string; team: string; datetime: string
   competitionName: string; pool: string
-  isMasters?: boolean; no?: number
+  isMasters: boolean; group: string
+  no?: number
 }
 
 const { data: rawData, pending } = await useFetch<SearchRow[]>('/api/search', {
@@ -296,20 +281,20 @@ const { data: rawData, pending } = await useFetch<SearchRow[]>('/api/search', {
 watch(nameQuery, () => {
   filterDisc.value   = 'BR'
   filterDist.value   = '50M'
-  filterCourse.value = ''
+  filterCourse.value = 'LCM'
   sortMode.value     = 'recent'
-  filterGender.value = ''
+  filterGender.value = 'M'
 })
 
-// 데이터 로드 시 성별 자동 선택
+// 데이터 로드 시 → 첫 번째 선수의 성별로 자동 선택
 watch(() => rawData.value, (data) => {
-  if (!data?.length) { filterGender.value = ''; return }
-  const mCount = data.filter(r => normalizeGender(r.gender) === 'M').length
-  const fCount = data.filter(r => normalizeGender(r.gender) === 'W').length
-  filterGender.value = mCount >= fCount ? 'M' : 'W'
+  if (!data?.length || !names.value.length) return
+  const firstName = names.value[0]
+  const firstRec  = data.find(r => r.name === firstName)
+  filterGender.value = firstRec ? normalizeGender(firstRec.gender) : 'M'
 })
 
-// 복수 선수 → 종목별 PB 축소
+// ── PB 축소 (복수 선수) ────────────────────────────────────────
 const pbRows = computed(() => {
   let rows = rawData.value ?? []
   if (isPbMode.value) {
@@ -324,13 +309,11 @@ const pbRows = computed(() => {
   return rows
 })
 
-// ── 선택 가능 필터 옵션 ────────────────────────────────────────
-// 성별: 전체 데이터 기준
+// ── 선택 가능 옵션 집합 ────────────────────────────────────────
 const availableGenderSet = computed(() =>
   new Set(pbRows.value.map(r => normalizeGender(r.gender)))
 )
 
-// 영법: 선택된 성별로 필터링한 데이터 기준
 const availableDiscSet = computed(() => {
   const rows = filterGender.value
     ? pbRows.value.filter(r => normalizeGender(r.gender) === filterGender.value)
@@ -338,8 +321,8 @@ const availableDiscSet = computed(() => {
   return new Set(rows.map(r => r.discipline))
 })
 
-// 거리: 선택된 성별+영법, 영법 룰 범위 내에서만
 const strokeDists = computed(() => STROKE_DISTS[filterDisc.value] ?? ['50M', '100M', '200M'])
+
 const availableDistSet = computed(() => {
   const rows = pbRows.value
     .filter(r => !filterGender.value || normalizeGender(r.gender) === filterGender.value)
@@ -348,7 +331,6 @@ const availableDistSet = computed(() => {
   return new Set(strokeDists.value.filter(d => has.has(d)))
 })
 
-// 코스: 선택된 성별+영법+거리 기준
 const availableCourseSet = computed(() => {
   const rows = pbRows.value
     .filter(r => !filterGender.value || normalizeGender(r.gender) === filterGender.value)
@@ -357,14 +339,12 @@ const availableCourseSet = computed(() => {
   return new Set(rows.map(r => r.course))
 })
 
-// ── 선택값 자동 교정 ──────────────────────────────────────────
-// 성별 변경 시 영법이 사라지면 교정
+// ── 필터값 자동 교정 ───────────────────────────────────────────
 watch(availableDiscSet, (set) => {
   if (!names.value.length || !set.size || set.has(filterDisc.value)) return
   filterDisc.value = set.has('BR') ? 'BR' : [...set][0]
 })
 
-// 영법 변경 시 거리가 사라지면 교정
 watch([filterDisc, availableDistSet], () => {
   if (!names.value.length || !availableDistSet.value.size) return
   if (availableDistSet.value.has(filterDist.value)) return
@@ -372,25 +352,22 @@ watch([filterDisc, availableDistSet], () => {
   if (pref) filterDist.value = pref
 })
 
-// 코스가 사라지면 전체로 교정
 watch(availableCourseSet, (set) => {
-  if (filterCourse.value && !set.has(filterCourse.value)) filterCourse.value = ''
+  if (!set.size || set.has(filterCourse.value)) return
+  // LCM 우선, 없으면 SCM
+  filterCourse.value = set.has('LCM') ? 'LCM' : [...set][0]
 })
 
-// ── 필터 액션 ─────────────────────────────────────────────────
-function setGender(v: string) {
-  filterGender.value = v
-}
+// ── 영법 변경 시 거리 교정 ─────────────────────────────────────
 function setDisc(v: string) {
   filterDisc.value = v
-  // 거리 교정: 새 영법의 룰에서 현재 거리가 없으면 50M 또는 첫번째로
   const dists = STROKE_DISTS[v] ?? []
   if (!dists.includes(filterDist.value)) {
     filterDist.value = dists.includes('50M') ? '50M' : (dists[0] ?? '50M')
   }
 }
 
-// ── 결과 ──────────────────────────────────────────────────────
+// ── 결과 rows ─────────────────────────────────────────────────
 const displayRows = computed(() => {
   let rows = pbRows.value
   if (filterGender.value) rows = rows.filter(r => normalizeGender(r.gender) === filterGender.value)
@@ -405,12 +382,12 @@ const displayRows = computed(() => {
   return rows.map((r, i) => ({ ...r, no: i + 1 }))
 })
 
-// ── 타이틀 HTML ────────────────────────────────────────────────
+// ── 타이틀 HTML ───────────────────────────────────────────────
 const titleHtml = computed(() => {
   if (!filterGender.value || !filterDisc.value) return '검색 결과'
-  const gL  = esc(GENDER_LABEL[filterGender.value] ?? filterGender.value)
-  const dL  = esc(DISC_LABEL[filterDisc.value] ?? filterDisc.value)
-  const cL  = filterCourse.value ? ` ${filterCourse.value}` : ''
+  const gL = esc(GENDER_LABEL[filterGender.value] ?? filterGender.value)
+  const dL = esc(DISC_LABEL[filterDisc.value] ?? filterDisc.value)
+  const cL = filterCourse.value ? ` ${filterCourse.value}` : ''
   return `${gL} ${dL} <span class="em">${esc(filterDist.value)}${esc(cL)}</span>`
 })
 
@@ -425,13 +402,15 @@ const THEAD = `<thead><tr>
 </tr></thead>`
 
 function rowHtml(r: SearchRow & { no: number }): string {
-  const hasTime  = r.time && r.time !== '—'
-  const gender   = normalizeGender(r.gender)
-  const distNum  = parseInt(r.distance) || 0
-  const year     = r.datetime ? r.datetime.slice(0, 4) : ''
-  const meetFull = r.competitionName || r.pool || '—'
+  const hasTime   = r.time && r.time !== '—'
+  const gender    = normalizeGender(r.gender)
+  const distNum   = parseInt(r.distance) || 0
+  const year      = r.datetime ? r.datetime.slice(0, 4) : ''
+  const meetFull  = r.competitionName || r.pool || '—'
   const meetShort = r.pool || r.competitionName || '—'
-  const badge    = `<span class="reg-badge">${r.isMasters ? '비등록' : '등록'}</span>`
+  // 전문체육=등록, 마스터즈=비등록 (isMasters 또는 group이 있으면 마스터즈)
+  const isMasters = r.isMasters === true || !!(r.group)
+  const badge     = `<span class="reg-badge">${isMasters ? '비등록' : '등록'}</span>`
 
   const timeTd = hasTime
     ? `<td class="time"><span
@@ -475,17 +454,52 @@ function doSearch() {
 </script>
 
 <style scoped>
-/* ── Hero: 검색폼 없음, 콤팩트 ──────────────────────────────── */
-.hero {
-  height: auto;
-  min-height: 420px;
-  justify-content: flex-start;
-  padding-top: 148px;
-  padding-bottom: 72px;
+/* ── 검색 헤더: Hero 대체 전체 너비 영역 ────────────────────── */
+.sr-header {
+  padding: 36px var(--pad-x) 32px;
+  border-bottom: 1px solid var(--line);
+  scroll-snap-align: start;
 }
-@media (max-width: 880px) {
-  .hero { min-height: 320px; padding-top: 110px; padding-bottom: 48px; }
+.sr-eyebrow {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin-bottom: 18px;
 }
+.sr-form {
+  display: flex;
+  max-width: 640px;
+}
+.sr-input {
+  flex: 1;
+  padding: 13px 18px;
+  border: 1px solid var(--line);
+  border-right: none;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 15px;
+  outline: none;
+  transition: border-color .15s;
+}
+.sr-input:focus { border-color: var(--fg-dim); }
+.sr-input::placeholder { color: var(--fg-mute); }
+.sr-btn {
+  padding: 13px 26px;
+  border: 1px solid var(--fg);
+  background: var(--fg);
+  color: var(--bg);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .15s;
+}
+.sr-btn:hover { opacity: 0.8; }
 
 /* ── 비활성화 필터 버튼 ──────────────────────────────────────── */
 .filter-btn.disabled {
@@ -494,47 +508,10 @@ function doSearch() {
   pointer-events: none;
 }
 
-/* ── 검색 폼: main.results 상단, 컨텐츠 타이틀 위 ──────────── */
-.sr-search-bar {
-  padding-top: 36px;
-  padding-bottom: 30px;
-  border-bottom: 1px solid var(--line);
-}
-.sr-form {
-  display: flex;
-  max-width: 540px;
-}
-.sr-input {
-  flex: 1;
-  padding: 11px 16px;
-  border: 1px solid var(--line);
-  border-right: none;
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--sans);
-  font-size: 14px;
-  outline: none;
-  transition: border-color .15s;
-}
-.sr-input:focus { border-color: var(--fg-dim); }
-.sr-input::placeholder { color: var(--fg-mute); }
-.sr-btn {
-  padding: 11px 22px;
-  border: 1px solid var(--fg);
-  background: var(--fg);
-  color: var(--bg);
-  font-family: var(--sans);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: opacity .15s;
-}
-.sr-btn:hover { opacity: 0.8; }
-
 /* ── 모바일 ─────────────────────────────────────────────────── */
-@media (max-width: 640px) {
+@media (max-width: 880px) {
+  .sr-header { padding: 28px var(--pad-x) 24px; }
   .sr-form { max-width: 100%; }
+  .sr-input { font-size: 14px; }
 }
 </style>

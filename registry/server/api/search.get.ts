@@ -28,5 +28,7 @@ export default defineEventHandler(async (event) => {
     datetime:        d.datetime        ?? '',
     competitionName: d.competitionName ?? '',
     pool:            d.pool            ?? '',
+    isMasters:       d.isMasters       === true,
+    group:           d.group           ?? '',
   }))
 })
