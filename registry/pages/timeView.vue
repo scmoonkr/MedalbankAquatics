@@ -2,12 +2,10 @@
   <div>
     <div class="stub-shell">
       <div class="eyebrow">기록 분석 · TIME ANALYSIS</div>
-      <h1>{{ genderKo(state.gender) }} {{ strokeKo(state.stroke) }} <span class="em">{{ state.distance }}m.</span></h1>
+      <h1>{{ genderKo(state.gender) }} {{ strokeKo(state.stroke) }} <span class="em">{{ state.distance }}M {{ state.course }}.</span></h1>
       <div class="stub-foot">
-        <span>{{ state.course }} · {{ state.timeSec && scoringReady ? fmtTime(state.timeSec) : '—' }}</span>
-        <button class="tv-pdf-btn" type="button" @click="downloadPdf">PDF</button>
+        <span>{{ state.timeSec && scoringReady ? fmtTime(state.timeSec) : '—' }}</span>
       </div>
-      <a v-if="hasAttribution" class="modal-report-inline" href="https://naver.me/xeFYWn8m" target="_blank" rel="noopener">이 기록에 오류가 있나요? 제보해주세요 →</a>
       <div v-if="hasAttribution" class="modal-attribution">
         <div class="attr-body">
           <span class="attr-ath">{{ attribution.athlete }}</span>
@@ -15,7 +13,21 @@
           <span class="attr-meta">{{ attrMeta }}</span>
         </div>
       </div>
+      <div class="tv-actions">
+        <button class="tv-action-btn" type="button" @click="copyUrl">
+          <span class="tv-action-icon">↗</span> URL 공유
+        </button>
+        <button class="tv-action-btn" type="button" @click="downloadPdf">
+          <span class="tv-action-icon">↓</span> PDF 다운로드
+        </button>
+        <button class="tv-action-btn" type="button" @click="submitOpen = true">
+          <span class="tv-action-icon">!</span> 오류 제보
+        </button>
+      </div>
+      <div v-if="copyMsg" class="tv-copy-toast">{{ copyMsg }}</div>
     </div>
+
+    <SubmitModal :open="submitOpen" :initial-data="submitInitialData" @close="submitOpen = false" />
 
     <div class="page-body">
 
@@ -153,7 +165,7 @@
         <div class="modal-block-head">
           <h3>동일한 점수대로 보는 유사한 경기실적들 · SIMILAR PERFORMANCES</h3>
         </div>
-        <p class="modal-block-note">World Aquatics 포인트가 가장 가까운 기록 20건 — {{ strokeKo(state.stroke) }} 10건 및 타 영법 10건.</p>
+        <p class="modal-block-note">World Aquatics 포인트가 가장 가까운 기록 모아보기.</p>
         <div v-if="similarPending" class="empty-state">불러오는 중…</div>
         <p v-else-if="!waPoints" class="modal-emptynote">기록을 입력하면 유사한 점수의 기록 20건이 표시됩니다.</p>
         <p v-else-if="!similarData?.same?.length && !similarData?.other?.length" class="modal-emptynote">유사한 기록이 없습니다.</p>
@@ -174,7 +186,7 @@
               <td class="athlete">{{ r.athlete }}</td>
               <td class="time">{{ r.time }}</td>
               <td class="date">{{ r.date }}</td>
-              <td class="pts">{{ r.points.toLocaleString() }}점</td>
+              <td class="pts">{{ r.points.toLocaleString() }}점<span class="pts-diff">{{ ptsDiff(r.points) }}</span></td>
             </tr>
             <tr class="group-head"><td colspan="5">타 영법 ({{ similarData?.other?.length ?? 0 }}건)</td></tr>
             <tr v-for="(r, i) in similarData?.other" :key="'o' + i">
@@ -182,7 +194,7 @@
               <td class="athlete">{{ r.athlete }}</td>
               <td class="time">{{ r.time }}</td>
               <td class="date">{{ r.date }}</td>
-              <td class="pts">{{ r.points.toLocaleString() }}점</td>
+              <td class="pts">{{ r.points.toLocaleString() }}점<span class="pts-diff">{{ ptsDiff(r.points) }}</span></td>
             </tr>
           </tbody>
         </table>
@@ -289,6 +301,22 @@
         </div>
       </section>
 
+      <!-- ── 계산 방식 안내 ─────────────────────── -->
+      <section class="modal-block tv-footnote">
+        <div class="modal-block-head">
+          <h3>계산 방식 안내 · METHODOLOGY</h3>
+        </div>
+        <div class="tv-footnote-body">
+          <p>본 계산은 <strong>World Aquatics Points</strong> 공식을 따릅니다. 각 종목의 베이스타임은 LCM 세계기록을 기준으로 하며, <em>포인트 = 1000 × (베이스타임 ÷ 기록)³</em> 의 정수 부분으로 산출됩니다. 세계수영연맹이 공식 발간하는 FINA Points 표와 동일한 방식이며, 수영계 전반에서 가장 보편적으로 쓰이는 비교 척도입니다.</p>
+          <p>연령 보정은 <strong>Rowson-style</strong> 단일 계수 모델로, 각 5세 연령부의 마스터즈 세계기록을 25-29(오픈) 마스터즈 세계기록과 비교한 근사 비율을 적용합니다. 종목·거리에 따라 실제 비율이 다소 변동하나, 본 표에서는 평균 계수를 사용하여 큰 그림을 가늠합니다.</p>
+          <p>두 방식 모두 어디까지나 <em>참고용 환산</em>이며, 공식 등재나 인증 기록과는 구분됩니다.</p>
+          <p class="tv-footnote-date">
+            {{ todayKo }} 기준 당시 세계기록을 기준으로 계산된 내용.<br>
+            <span v-if="wrRef" class="tv-footnote-wr">{{ wrRef }}</span>
+          </p>
+        </div>
+      </section>
+
     </div>
   </div>
 </template>
@@ -316,6 +344,42 @@ const RECORD_TYPES = [
 ]
 
 const scoringReady = ref(false)
+const canonLoaded  = ref(0)
+const _now    = new Date()
+const today   = _now.toISOString().slice(0, 10)
+const todayKo = `${_now.getFullYear()}년 ${_now.getMonth() + 1}월 ${_now.getDate()}일`
+
+const submitOpen = ref(false)
+const copyMsg    = ref('')
+
+const submitInitialData = computed(() => ({
+  gender:     state.gender === 'M' ? 'men' : 'women',
+  discipline: state.stroke,
+  distance:   `${state.distance}M`,
+  course:     state.course,
+  time:       state.timeSec && scoringReady.value ? S().formatTime(state.timeSec) : '',
+  name:       attribution.athlete || '',
+}))
+
+async function copyUrl() {
+  const q: Record<string, string> = {
+    gender:   state.gender,
+    stroke:   state.stroke,
+    distance: String(state.distance),
+    course:   state.course,
+  }
+  if (state.timeSec && scoringReady.value) q.time = S().formatTime(state.timeSec)
+  if (state.dob) q.dob = state.dob
+  const qs = new URLSearchParams(q).toString()
+  const url = `${location.origin}/timeView?${qs}`
+  try {
+    await navigator.clipboard.writeText(url)
+    copyMsg.value = 'URL이 복사됐습니다.'
+  } catch {
+    copyMsg.value = url
+  }
+  setTimeout(() => { copyMsg.value = '' }, 2500)
+}
 function S(): any { return (window as any).KSR_SCORING }
 
 function genderKo(g: string) { return g === 'M' ? '남자' : g === 'W' ? '여자' : g }
@@ -402,6 +466,7 @@ const waPoints = computed<number | null>(() => {
 
 const compareRecords = computed<Record<string, any> | null>(() => {
   if (!scoringReady.value) return null
+  canonLoaded.value // reactive dependency — forces recompute after canon inject
   return S().compareRecords(state.gender, state.stroke, state.distance, state.course)
 })
 
@@ -412,6 +477,28 @@ function diffStr(a: number | null, b: number): string {
 
 function creditStr(r: any): string {
   return [r.holder, r.nation, r.year, r.ageGroup].filter(Boolean).join(' · ')
+}
+
+const wrRef = computed(() => {
+  const wr = compareRecords.value?.['WR']
+  if (!wr?.time || !wr?.holder) return null
+  const parts = [
+    'Printed on ' + today,
+    'WR',
+    fmtTime(wr.time),
+    wr.holder,
+    wr.nation,
+    wr.year,
+    wr.venue,
+  ].filter(Boolean)
+  return parts.join(' | ')
+})
+
+function ptsDiff(pts: number): string {
+  if (!waPoints.value) return ''
+  const d = pts - waPoints.value
+  if (d === 0) return ''
+  return (d > 0 ? '+' : '−') + Math.abs(d).toLocaleString()
 }
 
 function timeForPts(target: number): number | null {
@@ -529,14 +616,14 @@ function downloadPdf() {
 
   const shellClone = stubShell ? (stubShell.cloneNode(true) as HTMLElement) : null
   if (shellClone) {
-    // hide the PDF button in the printed hero
-    const pdfBtn = shellClone.querySelector('.tv-pdf-btn') as HTMLElement | null
-    if (pdfBtn) pdfBtn.style.display = 'none'
+    // hide action buttons and toast in printed hero
+    ;['.tv-actions', '.tv-copy-toast'].forEach(sel => {
+      const el = shellClone.querySelector(sel) as HTMLElement | null
+      if (el) el.style.display = 'none'
+    })
   }
 
   const clone = pageBody.cloneNode(true) as HTMLElement
-  const inputSection = clone.querySelector('.modal-block:first-child')
-  if (inputSection) (inputSection as HTMLElement).style.display = 'none'
 
   const gKo  = genderKo(state.gender)
   const sKo  = strokeKo(state.stroke)
@@ -577,8 +664,12 @@ function downloadPdf() {
     .modal-equiv-table td .event, .modal-equiv-table td .base { font-size: 10px !important; }
     .modal-tiers, .modal-age-summary { page-break-inside: avoid; }
     @media print { .modal-block { page-break-inside: auto !important; break-inside: auto !important; } }
-    /* modal.css @media print "body > * { display:none }" 무효화 */
-    @media print { body > * { display: block !important; } }
+    /* modal.css @media print 규칙 무효화 */
+    @media print {
+      body > * { display: block !important; }
+      .modal-filter-row { display: flex !important; }
+      .modal-hint { display: block !important; }
+    }
     .tv-pdf-credit { display: block; margin-top: 20px; padding-top: 12px; border-top: 1px solid #ddd; font-family: var(--sans); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #aaa; }
   </style>
 </head>
@@ -595,9 +686,115 @@ function downloadPdf() {
   setTimeout(() => { try { win.print() } catch (_) {} }, 300)
 }
 
+function parseTimeSec(str: string): number | null {
+  if (!str) return null
+  const s = str.replace(/^0+:/, '')
+  if (s.includes(':')) {
+    const [m, sec] = s.split(':')
+    return parseInt(m) * 60 + parseFloat(sec)
+  }
+  return parseFloat(s) || null
+}
+
+async function injectCanonOverlay() {
+  try {
+    const dbRecords = await $fetch<Record<string, any>>('/api/canon')
+    const overlay: Record<string, any> = {}
+    for (const [key, rec] of Object.entries(dbRecords)) {
+      const parts = key.split('-')
+      if (parts.length < 4) continue
+      const [gender, stroke, dist, type] = parts
+      const overlayKey = `${gender}-${stroke}-${dist}-LCM`
+      if (!overlay[overlayKey]) overlay[overlayKey] = {}
+      overlay[overlayKey][type] = {
+        time:   parseTimeSec(rec.time),
+        holder: rec.athlete,
+        nation: rec.nation,
+        year:   rec.year ? parseInt(String(rec.year)) : null,
+        venue:  rec.venue || undefined,
+      }
+    }
+    S().injectOverlay(overlay)
+    canonLoaded.value++
+  } catch (e) {
+    console.error('[timeView] canon inject failed', e)
+  }
+}
+
 onMounted(async () => {
   await loadScript('/cannon/js/scoring.js')
   scoringReady.value = true
   initTimeFromRoute()
+  await injectCanonOverlay()
 })
 </script>
+
+<style scoped>
+.tv-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+.tv-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: 1px solid var(--line);
+  background: transparent;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  color: var(--fg-dim);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.tv-action-btn:hover {
+  background: var(--bg-soft);
+  color: var(--fg);
+  border-color: var(--fg-mute);
+}
+.tv-action-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+.tv-copy-toast {
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--fg-mute);
+  letter-spacing: 0.02em;
+}
+.pts-diff {
+  display: block;
+  font-size: 10px;
+  color: var(--fg-mute);
+  letter-spacing: 0;
+  margin-top: 1px;
+}
+.tv-footnote-body {
+  font-family: var(--serif-ko);
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--fg-dim);
+  max-width: 760px;
+}
+.tv-footnote-body p { margin: 0 0 12px; }
+.tv-footnote-body p:last-child { margin-bottom: 0; }
+.tv-footnote-date {
+  font-size: 12px;
+  color: var(--fg-mute);
+  margin-top: 16px !important;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.tv-footnote-wr {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--fg-faint);
+  letter-spacing: 0.02em;
+}
+</style>

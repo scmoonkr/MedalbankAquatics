@@ -57,17 +57,9 @@
                       <template v-if="rec('M', s, pair.distance, rt.code)?.time">
                         <span
                           class="time time-trigger"
-                          data-gender="M"
-                          :data-stroke="s"
-                          :data-distance="pair.distance"
-                          data-course="LCM"
-                          :data-time="rec('M', s, pair.distance, rt.code)!.time"
-                          :data-athlete="rec('M', s, pair.distance, rt.code)!.athlete"
-                          :data-nation="rec('M', s, pair.distance, rt.code)!.nation"
-                          :data-year="rec('M', s, pair.distance, rt.code)!.year"
-                          :data-venue="rec('M', s, pair.distance, rt.code)!.venue"
                           role="button"
                           tabindex="0"
+                          @click="goTimeView('M', s, pair.distance, rt.code)"
                         >{{ rec('M', s, pair.distance, rt.code)!.time }}</span>
                         <span class="who">
                           {{ rec('M', s, pair.distance, rt.code)!.athlete }}
@@ -91,17 +83,9 @@
                       <template v-if="rec('W', s, pair.distance, rt.code)?.time">
                         <span
                           class="time time-trigger"
-                          data-gender="W"
-                          :data-stroke="s"
-                          :data-distance="pair.distance"
-                          data-course="LCM"
-                          :data-time="rec('W', s, pair.distance, rt.code)!.time"
-                          :data-athlete="rec('W', s, pair.distance, rt.code)!.athlete"
-                          :data-nation="rec('W', s, pair.distance, rt.code)!.nation"
-                          :data-year="rec('W', s, pair.distance, rt.code)!.year"
-                          :data-venue="rec('W', s, pair.distance, rt.code)!.venue"
                           role="button"
                           tabindex="0"
+                          @click="goTimeView('W', s, pair.distance, rt.code)"
                         >{{ rec('W', s, pair.distance, rt.code)!.time }}</span>
                         <span class="who">
                           {{ rec('W', s, pair.distance, rt.code)!.athlete }}
@@ -216,6 +200,26 @@ function parseTimeSec(str: string): number | null {
   return parseFloat(s) || null
 }
 
+const router = useRouter()
+
+function goTimeView(gender: string, stroke: string, distance: number, type: string) {
+  const r = rec(gender, stroke, distance, type)
+  if (!r?.time) return
+  router.push({
+    path: '/timeView',
+    query: {
+      gender,
+      stroke,
+      distance:  String(distance),
+      course:    'LCM',
+      time:      r.time,
+      athlete:   r.athlete  || undefined,
+      year:      r.year     ? String(r.year)  : undefined,
+      meet:      r.venue    || undefined,
+    },
+  })
+}
+
 function injectCompareOverlay() {
   const scoring = (window as any).KSR_SCORING
   if (!scoring || !dbRecords.value) return
@@ -261,7 +265,6 @@ onMounted(() => {
   }
 
   loadScript('/cannon/js/scoring.js')
-    .then(() => loadScript('/cannon/js/modal.js'))
     .then(() => injectCompareOverlay())
     .catch(err => console.error('[cannon] script load error', err))
 })

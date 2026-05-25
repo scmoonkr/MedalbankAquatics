@@ -209,7 +209,7 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{ open: boolean; initialTimeID?: number }>()
+const props = defineProps<{ open: boolean; initialTimeID?: number; initialData?: Partial<ReturnType<typeof defaultForm>> }>()
 const emit  = defineEmits<{ (e: 'close'): void }>()
 
 const { loggedIn } = useUserSession()
@@ -272,6 +272,7 @@ function close() {
 watch(() => props.open, (v) => {
   if (v) {
     Object.assign(form, defaultForm())
+    if (props.initialData) Object.assign(form, props.initialData)
     evidenceImage.value = null
     evidenceDoc.value   = null
     error.value         = ''

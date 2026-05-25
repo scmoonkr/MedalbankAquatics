@@ -23,7 +23,7 @@
               <span class="label-ko">{{ doc.group }}</span>
             </div>
             <div class="body">
-              <h3>{{ doc.name }}</h3>
+              <h3 class="name-link" role="button" tabindex="0" @click="router.push({ path: '/search', query: { name: doc.name } })">{{ doc.name }}</h3>
               <div class="athlete">
                 <span class="rank">·</span>
                 {{ doc.city }} · {{ doc.team }}
@@ -44,16 +44,9 @@
               <span
                 v-if="doc.time !== '—' && doc.rawGender && doc.rawStroke && doc.rawDistance > 0"
                 class="time time-trigger"
-                :data-gender="doc.rawGender"
-                :data-stroke="doc.rawStroke"
-                :data-distance="doc.rawDistance"
-                :data-course="doc.rawCourse"
-                :data-time="doc.time"
-                :data-athlete="doc.name"
-                :data-venue="doc.meet"
-                :data-date="doc.date"
                 role="button"
                 tabindex="0"
+                @click="goTimeView(doc)"
               >{{ doc.time }}</span>
               <span v-else class="time">{{ doc.time }}</span>
               <span class="when">
@@ -266,9 +259,26 @@ function injectCompareOverlay() {
   scoring.injectOverlay(overlay)
 }
 
+const router = useRouter()
+
+function goTimeView(doc: any) {
+  router.push({
+    path: '/timeView',
+    query: {
+      gender:   doc.rawGender,
+      stroke:   doc.rawStroke,
+      distance: String(doc.rawDistance),
+      course:   doc.rawCourse || 'LCM',
+      time:     doc.time,
+      athlete:  doc.name   || undefined,
+      meet:     doc.meet   || undefined,
+      year:     doc.date   ? String(doc.date).slice(0, 4) : undefined,
+    },
+  })
+}
+
 onMounted(() => {
   loadScript('/cannon/js/scoring.js')
-    .then(() => loadScript('/cannon/js/modal.js'))
     .then(() => injectCompareOverlay())
     .catch(err => console.error('[ledger] script load error', err))
 })
