@@ -2,22 +2,25 @@
   <div>
     <header class="topbar">
       <div class="topbar-inner">
-        <NuxtLink class="brand" to="/">
-          <img class="logo-img" src="/images/logo.png" alt="KSR · Korean Swimming Registry" />
-          <span class="full">Korean Swimming Registry</span>
-        </NuxtLink>
-        <NuxtLink :to="loggedIn ? '/user' : '/login'" class="lock-btn" :title="loggedIn ? '로그인됨' : '로그인 필요'">
-          <!-- closed lock: logged in -->
-          <svg v-if="loggedIn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-          <!-- open lock: not logged in -->
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2"/>
-            <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
-          </svg>
-        </NuxtLink>
+        <!-- brand + lock: gap matches .brand's internal gap (14px) -->
+        <div class="brand-group">
+          <NuxtLink class="brand" to="/">
+            <img class="logo-img" src="/images/logo.png" alt="KSR · Korean Swimming Registry" />
+            <span class="full">Korean Swimming Registry</span>
+          </NuxtLink>
+          <NuxtLink :to="loggedIn ? '/user' : '/login'" class="lock-btn" :title="loggedIn ? '로그인됨' : '로그인 필요'">
+            <!-- closed lock: logged in -->
+            <svg v-if="loggedIn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <!-- open lock: not logged in -->
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+            </svg>
+          </NuxtLink>
+        </div>
         <button
           class="menu-toggle"
           :class="{ open: menuOpen }"
@@ -134,17 +137,24 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* brand-group: brand + lock을 묶어서 gap을 .brand 내부 gap(14px)과 동일하게 유지 */
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 100%;
+  min-width: 0;
+}
 .lock-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  margin-left: 10px;
-  color: var(--fg-dim, #888);
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
+  color: var(--fg-dim, #888);
   transition: color 0.15s;
 }
 .lock-btn:hover { color: var(--fg, #0a0a0a); }
-.lock-btn svg { width: 16px; height: 16px; }
+.lock-btn svg { width: 14px; height: 14px; }
 </style>
