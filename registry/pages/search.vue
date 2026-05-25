@@ -127,7 +127,7 @@
         </div>
       </aside>
 
-      <main class="results">
+      <main class="results" @click="handleResultsClick">
         <div v-if="!names.length" class="empty-state">선수명을 입력하고 검색하세요.</div>
         <div v-else-if="pending" class="empty-state">검색 중…</div>
         <div v-else-if="!displayRows.length" class="empty-state">결과가 없습니다.</div>
@@ -198,7 +198,6 @@ function injectCompareOverlay() {
 
 onMounted(() => {
   loadScript('/cannon/js/scoring.js')
-    .then(() => loadScript('/cannon/js/modal.js'))
     .then(() => injectCompareOverlay())
     .catch(err => console.error('[search] script load error', err))
 })
@@ -443,6 +442,28 @@ const tableHtml = computed(() => {
   const body = displayRows.value.map(r => rowHtml(r)).join('')
   return `<table class="index-table">${THEAD}<tbody>${body}</tbody></table>`
 })
+
+// ── results click delegation ───────────────────────────────────
+function handleResultsClick(e: MouseEvent) {
+  const trigger = (e.target as Element).closest('.time-trigger')
+  if (!trigger) return
+  e.preventDefault()
+  e.stopPropagation()
+  const d = (trigger as HTMLElement).dataset
+  router.push({
+    path: '/timeView',
+    query: {
+      gender:   d.gender,
+      stroke:   d.stroke,
+      distance: d.distance,
+      course:   d.course,
+      time:     d.time,
+      athlete:  d.athlete || undefined,
+      year:     d.year    || undefined,
+      meet:     d.venue   || undefined,
+    },
+  })
+}
 
 // ── 검색 제출 ─────────────────────────────────────────────────
 function doSearch() {
