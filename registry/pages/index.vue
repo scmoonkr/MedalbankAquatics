@@ -134,7 +134,7 @@
         </div>
       </aside>
 
-      <main class="results">
+      <main class="results" @click="handleResultsClick">
         <div class="results-header">
           <h2 ref="resultsTitleEl" v-html="titleHtml"></h2>
           <div class="right">
@@ -413,7 +413,7 @@ function rowHtml(r: EventRank, isFirst: boolean): string {
     : ''
   return `<tr${isFirst ? ' class="first"' : ''}>
     <td class="rank">${r.rank}</td>
-    <td class="name">${esc(r.name||'—')}${regBadge}</td>
+    <td class="name"><span class="name-link" data-name="${esc(r.name||'')}">${esc(r.name||'—')}</span>${regBadge}</td>
     <td class="city">${esc(r.city||'—')}</td>
     <td class="date">${esc(r.date||'—')}</td>
     <td class="meet"><span class="meet-full">${esc(r.meet_full||r.meet||'—')}</span><span class="meet-short">${esc(r.meet||r.meet_full||'—')}</span></td>
@@ -489,13 +489,43 @@ onMounted(() => {
   onUnmounted(() => io.disconnect())
 })
 
-// ── scoring + modal scripts ────────────────────────────────────
+// ── scoring script ─────────────────────────────────────────────
 onMounted(() => {
   loadScript('/cannon/js/scoring.js')
-    .then(() => loadScript('/cannon/js/modal.js'))
     .then(() => injectCompareOverlay())
     .catch(err => console.error('[index] script load error', err))
 })
+
+// ── results click delegation ───────────────────────────────────
+function handleResultsClick(e: MouseEvent) {
+  const timeTrigger = (e.target as Element).closest('.time-trigger')
+  if (timeTrigger) {
+    e.preventDefault()
+    e.stopPropagation()
+    const d = (timeTrigger as HTMLElement).dataset
+    router.push({
+      path: '/timeView',
+      query: {
+        gender:   d.gender,
+        stroke:   d.stroke,
+        distance: d.distance,
+        course:   d.course,
+        time:     d.time,
+        athlete:  d.athlete  || undefined,
+        year:     d.year     || undefined,
+        meet:     d.venue    || undefined,
+      },
+    })
+    return
+  }
+  const nameTrigger = (e.target as Element).closest('.name-link')
+  if (nameTrigger) {
+    e.preventDefault()
+    e.stopPropagation()
+    const name = (nameTrigger as HTMLElement).dataset.name
+    if (name) router.push({ path: '/search', query: { name } })
+  }
+}
 
 // ── auto-scroll past hero on first load (matches MVP behavior) ─
 onMounted(() => {

@@ -1,3 +1,27 @@
+/* ── TimeView PDF button ─── */
+.tv-pdf-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 20px; padding: 0 8px;
+  border: 1px solid var(--fg-mute); background: transparent;
+  font-family: var(--sans); font-size: 9px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg-mute);
+  cursor: pointer; transition: color .15s, border-color .15s;
+  vertical-align: middle; margin-left: 14px;
+}
+.tv-pdf-btn:hover { color: var(--fg-dim); border-color: var(--fg-dim); }
+
+/* ── Name link ─── */
+.name-link {
+  cursor: pointer;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.name-link:hover { text-decoration: underline; text-decoration-color: currentColor; }
+
 /* ── Time trigger ─── */
 .time-trigger {
   cursor: pointer;
