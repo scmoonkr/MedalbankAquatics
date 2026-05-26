@@ -63,10 +63,12 @@
               <input
                 ref="timeInputEl"
                 type="text" class="modal-time-input"
+                :class="{ 'input-error': timeInputError }"
                 v-model="timeInputRaw" @change="onTimeChange"
                 placeholder="00:00.00" inputmode="decimal"
               />
-              <span class="modal-hint">콜론 없이 숫자만 입력해도 정리돼요</span>
+              <span v-if="timeInputError" class="modal-input-error">{{ timeInputError }}</span>
+              <span v-else class="modal-hint">숫자만 입력해도 mm:ss.tt 형식으로 정리돼요</span>
             </div>
           </div>
           <div class="modal-filter-row">
@@ -435,7 +437,8 @@ const ledeText = computed(() => {
   return parts.join(' · ')
 })
 
-const timeInputRaw = ref((route.query.time as string) || '')
+const timeInputRaw   = ref((route.query.time as string) || '')
+const timeInputError = ref('')
 
 function initTimeFromRoute() {
   const raw = route.query.time as string
@@ -462,12 +465,62 @@ function setParam(key: string, val: any) {
   }
 }
 
+function normalizeTimeInput(raw: string): string {
+  const trimmed = raw.trim()
+  if (!trimmed) return ''
+
+  // Pure digits: right-align into 6 slots (mm ss tt) by left-padding with zeros
+  if (/^\d+$/.test(trimmed)) {
+    const d = trimmed.padStart(6, '0').slice(-6)
+    return `${d.slice(0, 2)}:${d.slice(2, 4)}.${d.slice(4, 6)}`
+  }
+
+  // Has colon → mm:ss[.tt]
+  if (trimmed.includes(':')) {
+    const [mRaw, rest = ''] = trimmed.split(':', 2)
+    const mm = mRaw.padStart(2, '0').slice(-2)
+    if (rest.includes('.')) {
+      const [sRaw, tRaw = ''] = rest.split('.', 2)
+      return `${mm}:${sRaw.padStart(2, '0').slice(-2)}.${(tRaw + '00').slice(0, 2)}`
+    }
+    return `${mm}:${rest.padStart(2, '0').slice(-2)}.00`
+  }
+
+  // Has dot only → ss.tt
+  if (trimmed.includes('.')) {
+    const [sRaw, tRaw = ''] = trimmed.split('.', 2)
+    return `00:${sRaw.padStart(2, '0').slice(-2)}.${(tRaw + '00').slice(0, 2)}`
+  }
+
+  return trimmed
+}
+
+function isValidTime(n: string): boolean {
+  const m = n.match(/^(\d{2}):(\d{2})\.\d{2}$/)
+  if (!m) return false
+  return +m[1] <= 59 && +m[2] <= 59
+}
+
 function onTimeChange(e: Event) {
   if (!scoringReady.value) return
-  const parsed = S().parseTime((e.target as HTMLInputElement).value)
+  const raw = (e.target as HTMLInputElement).value
+  if (!raw.trim()) {
+    state.timeSec = null
+    timeInputError.value = ''
+    isDirty.value = true
+    return
+  }
+  const normalized = normalizeTimeInput(raw)
+  if (!isValidTime(normalized)) {
+    timeInputError.value = '올바른 기록 형식이 아닙니다 (예: 01:23.45)'
+    state.timeSec = null
+    return
+  }
+  timeInputError.value = ''
+  const parsed = S().parseTime(normalized)
   if (parsed != null && parsed > 0) {
     state.timeSec = parsed
-    timeInputRaw.value = S().formatTime(parsed)
+    timeInputRaw.value = normTime(S().formatTime(parsed))
   } else {
     state.timeSec = null
   }
@@ -808,6 +861,17 @@ onMounted(async () => {
   font-size: 11.5px;
   color: var(--fg-mute);
   letter-spacing: 0.02em;
+}
+.modal-time-input.input-error {
+  border-color: #e05;
+  outline-color: #e05;
+}
+.modal-input-error {
+  font-family: var(--sans);
+  font-size: 11.5px;
+  color: #e05;
+  letter-spacing: 0.02em;
+  margin-top: 4px;
 }
 .pts-diff {
   display: block;
