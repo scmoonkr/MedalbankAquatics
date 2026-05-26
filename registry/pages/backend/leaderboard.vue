@@ -62,7 +62,7 @@
               <td class="dim small">{{ r.team }}</td>
               <td class="dim mono small">{{ r.date }}</td>
               <td class="dim small">{{ r.meet_full }}</td>
-              <td class="mono bold">{{ r.time }}</td>
+              <td class="mono bold">{{ normTime(r.time) }}</td>
             </tr>
           </tbody>
         </table>
@@ -165,7 +165,7 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'backend' })
-useHead({ title: 'Leaderboard — KSR Backend' })
+useHead({ title: 'Leaderboard — 메달뱅크 Backend' })
 
 // ── taxonomies (frontend filter values) ────────────────────────
 const DIVISIONS = [

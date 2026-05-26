@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-useHead({ title: 'The Errata — KSR · Korean Swimming Registry' })
+useHead({ title: 'The Errata — 메달뱅크 · Medalbank' })
 
 const PER_PAGE = 100
 const page = ref(1)
@@ -124,7 +124,7 @@ function buildEntry(doc: ErrataDoc): string {
     return [
       evtLabel,
       rank + `<strong>${nameStr}</strong>`,
-      `<span class="mono">${esc(t.time)}</span>`,
+      `<span class="mono">${esc(normTime(t.time))}</span>`,
       '누락 등재',
       tail ? `<span class="tail">(${tail})</span>` : '',
       noteHtml,
@@ -143,11 +143,11 @@ function buildEntry(doc: ErrataDoc): string {
   }
 
   if (b) {
-    addPair(b.time,            t.time,            true)
+    addPair(normTime(b.time),  normTime(t.time),  true)
     addPair(b.datetime,        t.datetime)
     addPair(b.competitionName ?? b.pool, t.competitionName ?? t.pool)
   } else {
-    if (t.time)            pairs.push(`<span class="mono">${esc(t.time)}</span>`)
+    if (t.time)            pairs.push(`<span class="mono">${esc(normTime(t.time))}</span>`)
     if (t.datetime)        pairs.push(esc(t.datetime))
     if (t.competitionName) pairs.push(esc(t.competitionName))
   }

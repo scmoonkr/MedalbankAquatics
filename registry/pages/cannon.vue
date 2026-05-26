@@ -60,7 +60,7 @@
                           role="button"
                           tabindex="0"
                           @click="goTimeView('M', s, pair.distance, rt.code)"
-                        >{{ rec('M', s, pair.distance, rt.code)!.time }}</span>
+                        >{{ normTime(rec('M', s, pair.distance, rt.code)!.time) }}</span>
                         <span class="who">
                           {{ rec('M', s, pair.distance, rt.code)!.athlete }}
                           <span v-if="rec('M', s, pair.distance, rt.code)!.nation" class="nation">{{ rec('M', s, pair.distance, rt.code)!.nation }}</span>
@@ -86,7 +86,7 @@
                           role="button"
                           tabindex="0"
                           @click="goTimeView('W', s, pair.distance, rt.code)"
-                        >{{ rec('W', s, pair.distance, rt.code)!.time }}</span>
+                        >{{ normTime(rec('W', s, pair.distance, rt.code)!.time) }}</span>
                         <span class="who">
                           {{ rec('W', s, pair.distance, rt.code)!.athlete }}
                           <span v-if="rec('W', s, pair.distance, rt.code)!.nation" class="nation">{{ rec('W', s, pair.distance, rt.code)!.nation }}</span>

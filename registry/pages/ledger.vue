@@ -34,7 +34,7 @@
                   <span class="lbl">{{ row.type }}</span>
                   {{ row.label }}
                   <template v-if="row.time">
-                    <span class="time"> {{ row.time }}</span> · <span class="diff">{{ row.diff }}</span>
+                    <span class="time"> {{ normTime(row.time) }}</span> · <span class="diff">{{ row.diff }}</span>
                   </template>
                   <span v-if="row.credit" class="credit">{{ row.credit }}</span>
                 </span>
@@ -47,8 +47,8 @@
                 role="button"
                 tabindex="0"
                 @click="goTimeView(doc)"
-              >{{ doc.time }}</span>
-              <span v-else class="time">{{ doc.time }}</span>
+              >{{ normTime(doc.time) }}</span>
+              <span v-else class="time">{{ normTime(doc.time) }}</span>
               <span class="when">
                 {{ doc.date }}
                 <template v-if="doc.report_date"><br />등재 {{ doc.report_date }}</template>

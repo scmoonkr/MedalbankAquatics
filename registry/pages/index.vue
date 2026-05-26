@@ -3,9 +3,9 @@
     <!-- Hero -->
     <div class="hero" ref="heroEl">
       <div class="hero-eyebrow">
-        01 · The Index · 등재부 <span class="dot">·</span> Korean Swimming Registry
+        01 · The Index · 등재부 <span class="dot">·</span> 메달뱅크
       </div>
-      <div class="hero-corner">KSR</div>
+      <div class="hero-corner">메달뱅크</div>
       <h1>The <span class="em">Index.</span></h1>
       <p class="hero-sub">대한민국 경영 전 종목 종합순위표. 한 명 한 명, 기록이 역사가 됩니다.</p>
       <div class="hero-foot">
@@ -154,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-useHead({ title: 'The Index — KSR · Korean Swimming Registry' })
+useHead({ title: 'The Index — 메달뱅크 · Medalbank' })
 
 const naverFormInsert = useRuntimeConfig().public.naverFormInsert as string
 const route  = useRoute()
@@ -406,7 +406,7 @@ function rowHtml(r: EventRank, isFirst: boolean): string {
         data-venue="${esc(r.meet_full || r.meet)}"
         role="button"
         tabindex="0"
-      >${esc(r.time)}</span></td>`
+      >${esc(normTime(r.time))}</span></td>`
     : `<td class="time">—</td>`
   const regBadge = state.division === 'all'
     ? ` <span class="reg-badge">${r.isMasters ? '비등록' : '등록'}</span>`

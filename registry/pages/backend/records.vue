@@ -76,7 +76,7 @@
                           :data-year="entry('men', STYLE_TO_STROKE[s], dist, rt).year"
                           :data-venue="entry('men', STYLE_TO_STROKE[s], dist, rt).competitionName"
                           @click.stop="openModal($event, 'men', STYLE_TO_STROKE[s], dist, rt)"
-                        >{{ entry('men', STYLE_TO_STROKE[s], dist, rt).time }}</span>
+                        >{{ normTime(entry('men', STYLE_TO_STROKE[s], dist, rt).time) }}</span>
                         <span class="rec-who">{{ entry('men', STYLE_TO_STROKE[s], dist, rt).name }}</span>
                         <span class="rec-when">{{ recWhen(entry('men', STYLE_TO_STROKE[s], dist, rt)) }}</span>
                       </template>
@@ -111,7 +111,7 @@
                           :data-year="entry('women', STYLE_TO_STROKE[s], dist, rt).year"
                           :data-venue="entry('women', STYLE_TO_STROKE[s], dist, rt).competitionName"
                           @click.stop="openModal($event, 'women', STYLE_TO_STROKE[s], dist, rt)"
-                        >{{ entry('women', STYLE_TO_STROKE[s], dist, rt).time }}</span>
+                        >{{ normTime(entry('women', STYLE_TO_STROKE[s], dist, rt).time) }}</span>
                         <span class="rec-who">{{ entry('women', STYLE_TO_STROKE[s], dist, rt).name }}</span>
                         <span class="rec-when">{{ recWhen(entry('women', STYLE_TO_STROKE[s], dist, rt)) }}</span>
                       </template>
@@ -218,7 +218,7 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'backend' })
-useHead({ title: 'Records — KSR Backend' })
+useHead({ title: 'Records — 메달뱅크 Backend' })
 
 // ── Constants ─────────────────────────────────────────────────────
 const TABS = [

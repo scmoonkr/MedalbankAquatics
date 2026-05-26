@@ -431,7 +431,7 @@ function rowHtml(r: SearchRow & { no: number }): string {
         data-venue="${esc(meetFull)}"
         role="button"
         tabindex="0"
-      >${esc(r.time)}</span></td>`
+      >${esc(normTime(r.time))}</span></td>`
     : `<td class="time">—</td>`
 
   return `<tr>

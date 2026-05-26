@@ -68,7 +68,7 @@
               <td class="dim small">{{ r.category || '—' }}</td>
               <td class="dim small">{{ eventStr(r.time) }}</td>
               <td class="bold">{{ r.time?.name || '—' }}</td>
-              <td class="mono">{{ r.time?.time || '—' }}</td>
+              <td class="mono">{{ normTime(r.time?.time) }}</td>
               <td class="small entry" v-html="buildEntry(r)"></td>
               <td class="dim small">{{ r.reporter || '—' }}</td>
               <td class="dim mono small">{{ r.report_date || '—' }}</td>
@@ -264,7 +264,7 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'backend' })
-useHead({ title: 'Errata — KSR Backend' })
+useHead({ title: 'Errata — 메달뱅크 Backend' })
 
 const CATEGORY_ORDER   = ['누락건 신규 등재', '기록오류 정정', '날짜오류 정정', '이름오류 정정', '기타오류 정정']
 const DISCIPLINE_ORDER = ['FR', 'BK', 'BR', 'FL', 'IM']

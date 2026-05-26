@@ -79,7 +79,7 @@
               <td class="bold">{{ r.name }}</td>
               <td class="dim small">{{ r.sido }}</td>
               <td class="dim small">{{ r.team }}</td>
-              <td class="mono bold">{{ r.time }}</td>
+              <td class="mono bold">{{ normTime(r.time) }}</td>
               <td class="dim mono small">{{ r.datetime }}</td>
               <td class="meet">{{ r.competitionName }}</td>
             </tr>
@@ -190,7 +190,7 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'backend' })
-useHead({ title: 'Times — KSR Backend' })
+useHead({ title: 'Times — 메달뱅크 Backend' })
 
 const PER = 100
 const page = ref(1)
