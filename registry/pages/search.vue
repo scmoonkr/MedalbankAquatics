@@ -416,8 +416,7 @@ function rowHtml(r: SearchRow & { no: number }): string {
   const year      = r.datetime ? r.datetime.slice(0, 4) : ''
   const meetFull  = r.competitionName || r.pool || '—'
   const meetShort = r.pool || r.competitionName || '—'
-  // 전문체육=등록, 마스터즈=비등록 (isMasters 또는 group이 있으면 마스터즈)
-  const isMasters = r.isMasters === true || !!(r.group)
+  const isMasters = r.isMasters === true
   const badge     = `<span class="reg-badge">${isMasters ? '비등록' : '등록'}</span>`
 
   const timeTd = hasTime
