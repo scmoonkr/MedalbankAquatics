@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
   const param  = String(q.name || '').trim()
   if (!param) return []
 
-  const names = [...new Set(param.split(',').map(n => n.trim()).filter(Boolean))]
+  const names = [...new Set(param.split(/[,\s]+/).map(n => n.trim()).filter(Boolean))]
   if (!names.length) return []
 
   const db   = await getDb()
