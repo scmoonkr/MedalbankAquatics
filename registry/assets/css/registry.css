@@ -156,10 +156,8 @@ body.scrolled-past-hero .brand-scrolled { opacity: 1; }
   white-space: nowrap;
   position: relative;
 }
-.brand .full-default { transition: opacity 0.18s; }
-.brand .full-hover { position: absolute; left: 0; top: 0; opacity: 0; transition: opacity 0.18s; }
-.brand:hover .full-default { opacity: 0; }
-.brand:hover .full-hover  { opacity: 1; }
+.brand .full-default,
+.brand .full-hover { white-space: nowrap; }
 @media (max-width: 880px) {
   .brand .logo-img { height: 22px; }
 }

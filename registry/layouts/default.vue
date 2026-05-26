@@ -4,9 +4,14 @@
       <div class="topbar-inner">
         <!-- brand + lock: gap matches .brand's internal gap (14px) -->
         <div class="brand-group">
-          <NuxtLink class="brand" to="/">
+          <NuxtLink class="brand" to="/" @mouseenter="brandHovered = true" @mouseleave="brandHovered = false">
             <img class="logo-img" src="/images/logo.png" alt="메달뱅크 · Medalbank" />
-            <span class="full"><span class="full-default">The Medallion Banca</span><span class="full-hover">Medalbank</span></span>
+            <span class="full">
+              <Transition name="brand-text">
+                <span v-if="!brandHovered" key="default" class="full-default">The Medallion Banca</span>
+                <span v-else key="hover" class="full-hover">Medalbank</span>
+              </Transition>
+            </span>
           </NuxtLink>
           <NuxtLink :to="loggedIn ? '/user' : '/login'" class="lock-btn" :title="loggedIn ? '로그인됨' : '로그인 필요'">
             <!-- closed lock: logged in -->
@@ -88,6 +93,7 @@
 <script setup lang="ts">
 const route = useRoute()
 const menuOpen = ref(false)
+const brandHovered = ref(false)
 const { loggedIn } = useUserSession()
 const submitOpen = ref(false)
 const submitData = ref<Record<string, any> | undefined>(undefined)
@@ -152,6 +158,12 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* brand text swap: leaving goes absolute so container shrinks to new text width immediately */
+.brand-text-leave-active { transition: opacity 0.15s; position: absolute; left: 0; top: 0; }
+.brand-text-enter-active { transition: opacity 0.2s; }
+.brand-text-leave-to    { opacity: 0; }
+.brand-text-enter-from  { opacity: 0; }
+
 /* brand-group: brand + lock을 묶어서 gap을 .brand 내부 gap(14px)과 동일하게 유지 */
 .brand-group {
   display: flex;

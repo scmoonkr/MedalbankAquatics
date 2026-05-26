@@ -42,6 +42,7 @@ export default defineNuxtConfig({
         { name: 'description', content: '대한민국 경영 전 종목 종합순위표. 메달뱅크.' },
       ],
       link: [
+        { rel: 'icon', type: 'image/png', href: '/images/logo.png' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
