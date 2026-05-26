@@ -171,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-useHead({ title: '내 계정 — KSR · Korean Swimming Registry' })
+useHead({ title: '내 계정 — 메달뱅크 · Medalbank' })
 
 const { loggedIn, user } = useUserSession()
 if (!loggedIn.value) await navigateTo('/login')

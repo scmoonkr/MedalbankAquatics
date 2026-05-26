@@ -7,6 +7,8 @@ export default defineEventHandler(async (event) => {
   const names = [...new Set(param.split(/[,\s]+/).map(n => n.trim()).filter(Boolean))]
   if (!names.length) return []
 
+  writeLog('search', { query: names }).catch(() => {})
+
   const db   = await getDb()
   const docs = await db.collection('mergedTimes')
     .find({ name: { $in: names } })

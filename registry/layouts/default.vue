@@ -46,10 +46,10 @@
           <NuxtLink to="/charter" :class="{ current: route.path === '/charter' }">
             <span class="nav-en">The Charter</span><span class="nav-ko">헌장</span>
           </NuxtLink>
-          <a class="nav-cta" :href="naverFormInsert" target="_blank" rel="noopener">
+          <button class="nav-cta" type="button" @click="openSubmit">
             <span>제보하기</span>
             <span class="arrow">→</span>
-          </a>
+          </button>
         </nav>
       </div>
     </header>
@@ -61,7 +61,7 @@
         <div class="col">
           <h4>Contribute</h4>
           <p>흩어진 기록, 누락된 순위, 정정이 필요한 한 줄을 알고 계신다면 제보해 주세요. 모든 제보자는 실명으로 명예 등재됩니다. (익명 희망시 가능.)</p>
-          <a :href="naverFormInsert" target="_blank" rel="noopener">제보하기 →</a>
+          <button class="footer-submit-btn" type="button" @click="openSubmit">제보하기 →</button>
         </div>
         <div class="col">
           <h4>In Print</h4>
@@ -80,14 +80,29 @@
         </span>
       </div>
     </footer>
+
+    <SubmitModal :open="submitOpen" :initial-data="submitData" @close="closeSubmit" />
   </div>
 </template>
 
 <script setup lang="ts">
 const route = useRoute()
 const menuOpen = ref(false)
-const naverFormInsert = useRuntimeConfig().public.naverFormInsert as string
 const { loggedIn } = useUserSession()
+const submitOpen = ref(false)
+const submitData = ref<Record<string, any> | undefined>(undefined)
+
+function openSubmit(data?: Record<string, any>) {
+  menuOpen.value = false
+  submitData.value = data
+  submitOpen.value = true
+}
+function closeSubmit() {
+  submitOpen.value = false
+  submitData.value = undefined
+}
+
+provide('submitModal', openSubmit)
 
 // Index page uses scroll snap; all other pages opt out
 useHead({
@@ -98,7 +113,7 @@ function toggleMenu() {
   menuOpen.value = !menuOpen.value
 }
 function onNavClick(e: MouseEvent) {
-  if ((e.target as HTMLElement).closest('a')) menuOpen.value = false
+  if ((e.target as HTMLElement).closest('a, button')) menuOpen.value = false
 }
 watch(menuOpen, (open) => {
   if (import.meta.client) document.body.classList.toggle('menu-open', open)
@@ -157,4 +172,20 @@ onUnmounted(() => {
 }
 .lock-btn:hover { color: var(--fg, #0a0a0a); }
 .lock-btn svg { width: 14px; height: 14px; }
+button.nav-cta {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.footer-submit-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+}
 </style>

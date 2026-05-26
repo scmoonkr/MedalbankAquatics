@@ -127,7 +127,7 @@
         <!-- Submit CTA -->
         <div class="aside-submit">
           <div class="small">Contribute</div>
-          <button class="cta" type="button" @click="submitOpen = true">
+          <button class="cta" type="button" @click="openSubmitModal">
             직접 기록 추가하기 <span class="arrow">→</span>
           </button>
           <div class="note">새로운 기록이나 누락된 기록 제보하기</div>
@@ -150,7 +150,6 @@
     </div>
   </div>
 
-  <SubmitModal :open="submitOpen" @close="submitOpen = false" />
 </template>
 
 <script setup lang="ts">
@@ -428,7 +427,7 @@ function emptyRowHtml(i: number, isFirst: boolean): string {
 }
 
 // ── submit modal ───────────────────────────────────────────────
-const submitOpen = ref(false)
+const openSubmitModal = inject<(data?: Record<string, any>) => void>('submitModal')!
 
 // ── filter setter ──────────────────────────────────────────────
 function setFilter(key: string, val: string | number) {
@@ -504,7 +503,7 @@ function handleResultsClick(e: MouseEvent) {
     e.stopPropagation()
     const d = (timeTrigger as HTMLElement).dataset
     router.push({
-      path: '/timeView',
+      path: '/time',
       query: {
         gender:   d.gender,
         stroke:   d.stroke,
@@ -526,6 +525,15 @@ function handleResultsClick(e: MouseEvent) {
     if (name) router.push({ path: '/search', query: { name } })
   }
 }
+
+// ── pending report from time.vue ───────────────────────────────
+onMounted(() => {
+  const raw = sessionStorage.getItem('medalbank_pending_report')
+  if (raw) {
+    sessionStorage.removeItem('medalbank_pending_report')
+    try { openSubmitModal(JSON.parse(raw)) } catch {}
+  }
+})
 
 // ── auto-scroll past hero on first load (matches MVP behavior) ─
 onMounted(() => {

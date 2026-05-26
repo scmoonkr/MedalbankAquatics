@@ -263,7 +263,7 @@ const router = useRouter()
 
 function goTimeView(doc: any) {
   router.push({
-    path: '/timeView',
+    path: '/time',
     query: {
       gender:   doc.rawGender,
       stroke:   doc.rawStroke,

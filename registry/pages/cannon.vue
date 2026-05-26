@@ -206,7 +206,7 @@ function goTimeView(gender: string, stroke: string, distance: number, type: stri
   const r = rec(gender, stroke, distance, type)
   if (!r?.time) return
   router.push({
-    path: '/timeView',
+    path: '/time',
     query: {
       gender,
       stroke,

@@ -1,4 +1,4 @@
-/* KSR · Scoring engine
+/* 메달뱅크 · Scoring engine
  *
  * World Aquatics Points 계산 + 연령 보정 + 종목 환산 데이터 / 공식.
  *

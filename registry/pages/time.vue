@@ -1,28 +1,28 @@
 <template>
   <div>
     <div class="stub-shell">
-      <div class="eyebrow">00 · TIME ANALYSIS · 기록 분석</div>
-      <h1><span v-if="h1Parts.prefix" class="em">{{ h1Parts.prefix }}</span>{{ h1Parts.suffix }}</h1>
-      <p class="lede">{{ ledeText }}</p>
-      <div class="stub-foot tv-disclaimer">고지사항 · Disclaimer · 본 기록분석지는 World Aquatics(WA)가 공시하는 공식 산정 기준 및 환산 공식에 근거하여 산출된 결과를 제공합니다. 산정 방식은 WA가 공식 발간하는 포인트 테이블(Points Table)과 동일한 알고리즘을 적용하였으나, 본 문서는 World Aquatics의 공식 등재 자료 또는 공인 인증서가 아니며, 어디까지나 참고용 환산 자료로서의 효력만을 가집니다. 본 분석지에 표기된 모든 수치는 공식 기록·순위·인증 등 일체의 효력을 갖지 아니하며, 이를 근거로 한 공식 절차나 권리 주장에는 사용될 수 없습니다. 기준 베이스타임(Base Time)은 본 문서 작성일인 {{ todayKo }}자 World Aquatics 세계기록을 기준으로 하며, 향후 세계기록 경신 등 기준치의 변동이 발생할 경우 산출 포인트는 상대적으로 변동(하락)될 수 있음을 알려드립니다.</div>
-      <div class="tv-actions">
-        <button class="tv-action-btn" type="button" @click="openInputs">
-          <span class="tv-action-icon">⊕</span> 기록 분석
-        </button>
-        <button class="tv-action-btn" type="button" @click="copyUrl">
-          <span class="tv-action-icon">↗</span> URL 공유
-        </button>
-        <button class="tv-action-btn" type="button" @click="downloadPdf">
-          <span class="tv-action-icon">↓</span> PDF 다운로드
-        </button>
-        <button class="tv-action-btn" type="button" @click="submitOpen = true">
-          <span class="tv-action-icon">!</span> 오류 제보
-        </button>
+      <div class="tv-shell-inner">
+        <div class="eyebrow">00 · TIME ANALYSIS · 기록 분석</div>
+        <h1><span v-if="h1Parts.prefix" class="em">{{ h1Parts.prefix }}</span>{{ h1Parts.suffix }}</h1>
+        <p class="lede">{{ ledeText }}</p>
+        <div class="stub-foot tv-disclaimer">고지사항 · Disclaimer · 본 기록분석지는 World Aquatics(WA)가 공시하는 공식 산정 기준 및 환산 공식에 근거하여 산출된 결과를 제공합니다. 산정 방식은 WA가 공식 발간하는 포인트 테이블(Points Table)과 동일한 알고리즘을 적용하였으나, 본 문서는 World Aquatics의 공식 등재 자료 또는 공인 인증서가 아니며, 어디까지나 참고용 환산 자료로서의 효력만을 가집니다. 본 분석지에 표기된 모든 수치는 공식 기록·순위·인증 등 일체의 효력을 갖지 아니하며, 이를 근거로 한 공식 절차나 권리 주장에는 사용될 수 없습니다. 기준 베이스타임(Base Time)은 본 문서 작성일인 {{ todayKo }}자 World Aquatics 세계기록을 기준으로 하며, 향후 세계기록 경신 등 기준치의 변동이 발생할 경우 산출 포인트는 상대적으로 변동(하락)될 수 있음을 알려드립니다.</div>
+        <div class="tv-actions">
+          <button class="tv-action-btn" type="button" @click="openInputs">
+            <span class="tv-action-icon">⊕</span> 기록 분석
+          </button>
+          <button class="tv-action-btn" type="button" @click="copyUrl">
+            <span class="tv-action-icon">↗</span> URL 공유
+          </button>
+          <button class="tv-action-btn" type="button" @click="downloadPdf">
+            <span class="tv-action-icon">↓</span> PDF 다운로드
+          </button>
+          <button class="tv-action-btn" type="button" @click="goReport">
+            <span class="tv-action-icon">!</span> 오류 제보
+          </button>
+        </div>
+        <div v-if="copyMsg" class="tv-copy-toast">{{ copyMsg }}</div>
       </div>
-      <div v-if="copyMsg" class="tv-copy-toast">{{ copyMsg }}</div>
     </div>
-
-    <SubmitModal :open="submitOpen" :initial-data="submitInitialData" @close="submitOpen = false" />
 
     <div class="page-body">
 
@@ -82,7 +82,7 @@
       <!-- ── 권위 기록 비교 ───────────────────── -->
       <section class="modal-block">
         <div class="modal-block-head">
-          <h3>권위 기록 비교 · CANON COMPARISON</h3>
+          <h3>기록 비교 · RECORDS COMPARISON</h3>
         </div>
         <p v-if="!scoringReady" class="modal-emptynote">로딩 중…</p>
         <div v-else-if="compareRecords" class="modal-compare">
@@ -345,7 +345,6 @@ const _now    = new Date()
 const today   = _now.toISOString().slice(0, 10)
 const todayKo = `${_now.getFullYear()}년 ${_now.getMonth() + 1}월 ${_now.getDate()}일`
 
-const submitOpen  = ref(false)
 const copyMsg     = ref('')
 const showInputs  = ref(false)
 const timeInputEl = ref<HTMLInputElement | null>(null)
@@ -353,6 +352,12 @@ const timeInputEl = ref<HTMLInputElement | null>(null)
 function openInputs() {
   showInputs.value = !showInputs.value
   if (showInputs.value) nextTick(() => timeInputEl.value?.focus())
+}
+
+const openSubmitModal = inject<(data?: Record<string, any>) => void>('submitModal')
+
+function goReport() {
+  openSubmitModal?.(submitInitialData.value)
 }
 
 const submitInitialData = computed(() => ({
@@ -374,7 +379,7 @@ async function copyUrl() {
   if (state.timeSec && scoringReady.value) q.time = S().formatTime(state.timeSec)
   if (state.dob) q.dob = state.dob
   const qs = new URLSearchParams(q).toString()
-  const url = `${location.origin}/timeView?${qs}`
+  const url = `${location.origin}/time?${qs}`
   try {
     await navigator.clipboard.writeText(url)
     copyMsg.value = 'URL이 복사됐습니다.'
@@ -738,7 +743,7 @@ async function injectCanonOverlay() {
     S().injectOverlay(overlay)
     canonLoaded.value++
   } catch (e) {
-    console.error('[timeView] canon inject failed', e)
+    console.error('[time] canon inject failed', e)
   }
 }
 
@@ -751,6 +756,18 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.page-body {
+  max-width: 1200px;
+}
+.stub-shell {
+  padding-left: 0;
+  padding-right: 0;
+}
+.tv-shell-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--pad-x);
+}
 .tv-disclaimer {
   font-family: var(--serif-ko);
   font-size: 12px;

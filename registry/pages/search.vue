@@ -457,7 +457,7 @@ function handleResultsClick(e: MouseEvent) {
   e.stopPropagation()
   const d = (trigger as HTMLElement).dataset
   router.push({
-    path: '/timeView',
+    path: '/time',
     query: {
       gender:   d.gender,
       stroke:   d.stroke,

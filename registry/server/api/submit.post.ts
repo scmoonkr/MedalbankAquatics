@@ -86,5 +86,15 @@ export default defineEventHandler(async (event) => {
     status: 'pending',
   })
 
+  await writeLog('submit', {
+    userId: session.user.id,
+    name,
+    category,
+    timeID: tid,
+    discipline,
+    distance,
+    course,
+  })
+
   return { ok: true }
 })

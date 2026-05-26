@@ -92,5 +92,7 @@ export default defineEventHandler(async (event) => {
     user: { id, name, email, nickname, avatar: profile_image, gender, birthyear, birthday, provider: 'naver' },
   })
 
+  await writeLog('login', { userId: id, name })
+
   return sendRedirect(event, '/user')
 })

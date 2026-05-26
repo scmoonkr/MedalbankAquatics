@@ -3,7 +3,7 @@
     <header class="be-bar">
       <div class="be-bar-inner">
         <div class="be-brand">
-          <span class="be-label">KSR</span>
+          <span class="be-label">메달뱅크</span>
           <span class="be-sep">/</span>
           <span class="be-title">Backend</span>
         </div>
@@ -12,6 +12,7 @@
           <NuxtLink to="/backend/times"       :class="{ active: route.path === '/backend/times'       }">Times</NuxtLink>
           <NuxtLink to="/backend/leaderboard" :class="{ active: route.path === '/backend/leaderboard' }">Leaderboard</NuxtLink>
           <NuxtLink to="/backend/errata"      :class="{ active: route.path === '/backend/errata'      }">Errata</NuxtLink>
+          <NuxtLink to="/backend/logs"        :class="{ active: route.path === '/backend/logs'        }">Logs</NuxtLink>
           <a href="/" class="be-home">← Site</a>
           <div class="be-user" v-if="user">
             <img v-if="user.avatar" :src="user.avatar" class="be-avatar" />

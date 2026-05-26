@@ -1,4 +1,4 @@
-/* KSR · Record Modal (sitewide)
+/* 메달뱅크 · Record Modal (sitewide)
  *
  * Trigger:  `.time-trigger` (시간 텍스트 노드). 호버 시 밑줄, 클릭 시 모달 오픈.
  * Data on trigger element:
@@ -42,8 +42,6 @@
     eventId:     null,
     attribution: null   // { athlete, nation, year, date, meet, venue } — 원본 클릭 시에만 설정
   };
-
-  const REPORT_URL = 'https://naver.me/xeFYWn8m';
 
   let modalEl = null;
   let lastFocus = null;
@@ -114,7 +112,7 @@
 
     <section class="modal-block">
       <div class="modal-block-head">
-        <h3>권위 기록 비교 · CANON COMPARISON</h3>
+        <h3>기록 비교 · RECORDS COMPARISON</h3>
         <button class="section-info" type="button" aria-label="설명" aria-controls="info-canon-compare">i</button>
         <div class="section-info-popover" id="info-canon-compare" hidden>
           <p>세계(WR) · 올림픽(OR) · 아시아(AR) · 한국(KR) · 한국마스터즈(KMR)
@@ -163,7 +161,7 @@
         <div class="section-info-popover" id="info-similar" hidden>
           <p>World Aquatics 포인트가 가장 가까운 다른 기록 20건을 큐레이션합니다.
           같은 영법의 인접 기록 10건과 타 영법의 비슷한 점수대 기록 10건으로 구성됩니다.</p>
-          <p>운영 중에는 <strong>KSR 데이터베이스의 검증된 등재 기록</strong>을 참조합니다.
+          <p>운영 중에는 <strong>메달뱅크 데이터베이스의 검증된 등재 기록</strong>을 참조합니다.
           (본 페이지의 데이터는 담당자 검수를 위한 가상 시드입니다.)</p>
         </div>
       </div>
@@ -216,7 +214,7 @@
     </section>
 
     <div class="modal-pdf-credit" style="display:none; padding: 18px 0 0; border-top: 1px solid var(--line); font-family: var(--sans); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-faint);">
-      Korean Swimming Registry · medalbankaquatics.com
+      메달뱅크 · medalbankaquatics.com
     </div>
 
     <div class="modal-date-line" id="modalDateLine"></div>
@@ -790,7 +788,7 @@
     const gKo  = genderKo(state.gender);
     const sKo  = strokeKo(state.stroke);
     const tStr = fmt(state.time) || '';
-    const title = 'KSR · ' + gKo + ' ' + sKo + ' ' + state.distance + 'm ' + state.course
+    const title = '메달뱅크 · ' + gKo + ' ' + sKo + ' ' + state.distance + 'm ' + state.course
       + (tStr ? ' · ' + tStr : '');
 
     const win = window.open('', '_blank');
