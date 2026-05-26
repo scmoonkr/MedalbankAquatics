@@ -28,16 +28,14 @@
               <th class="c-type">Type</th>
               <th class="c-detail">Detail</th>
               <th class="c-user">User</th>
-              <th class="c-email">Email</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="r in rows" :key="r.id">
-              <td class="mono dim small">{{ fmtTime(r.time) }}</td>
+              <td class="mono dim small nowrap">{{ fmtTime(r.time) }}</td>
               <td><span class="log-tag" :class="`log-${r.type}`">{{ r.type }}</span></td>
               <td class="small">{{ detail(r) }}</td>
               <td class="dim small">{{ r.name ?? '—' }}</td>
-              <td class="dim small">{{ r.email ?? '—' }}</td>
             </tr>
           </tbody>
         </table>
@@ -87,7 +85,7 @@ function detail(r: any): string {
   if (r.type === 'pageview') return r.path ?? '—'
   if (r.type === 'search')   return Array.isArray(r.query) ? r.query.join(', ') : (r.query ?? '—')
   if (r.type === 'submit')   return [r.name, r.category, r.discipline, r.distance, r.course].filter(Boolean).join(' · ')
-  if (r.type === 'login')    return r.userId ?? '—'
+  if (r.type === 'login')    return r.email ?? r.userId ?? '—'
   if (r.type === 'logout')   return r.userId ?? '—'
   return '—'
 }
@@ -132,10 +130,10 @@ td.dim   { color: #888; }
 td.mono  { font-family: var(--mono); font-size: 12.5px; }
 td.small { font-size: 12px; }
 
-.c-time  { width: 130px; white-space: nowrap; }
+.c-time  { width: 130px; }
 .c-type  { width: 90px; }
-.c-user  { width: 100px; }
-.c-email { width: 180px; word-break: break-all; }
+.c-user  { width: 120px; }
+td.nowrap { white-space: nowrap; }
 
 .log-tag {
   display: inline-block; padding: 1px 7px; border-radius: 3px;
