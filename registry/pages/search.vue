@@ -259,7 +259,7 @@ const filterGender = ref('M')
 const filterDisc   = ref('BR')
 const filterDist   = ref('50M')
 const filterCourse = ref('LCM')
-const sortMode     = ref<'recent' | 'time'>('recent')
+const sortMode     = ref<'recent' | 'time'>(names.value.length > 1 ? 'time' : 'recent')
 
 // ── 데이터 ────────────────────────────────────────────────────
 interface SearchRow {
