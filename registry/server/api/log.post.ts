@@ -5,8 +5,9 @@ export default defineEventHandler(async (event) => {
   if (!type || typeof type !== 'string') return { ok: false }
 
   const session = await getUserSession(event).catch(() => null)
-  const userId = (session as any)?.user?.id
+  const u = (session as any)?.user
+  const userFields = u?.id ? { userId: u.id, name: u.name ?? null } : {}
 
-  await writeLog(type, { ...data, ...(userId ? { userId } : {}) })
+  await writeLog(type, { ...data, ...userFields })
   return { ok: true }
 })

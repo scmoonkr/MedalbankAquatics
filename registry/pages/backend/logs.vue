@@ -25,17 +25,17 @@
           <thead>
             <tr>
               <th class="c-time">Time</th>
+              <th class="c-user">User</th>
               <th class="c-type">Type</th>
               <th class="c-detail">Detail</th>
-              <th class="c-user">User</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="r in rows" :key="r.id">
               <td class="mono dim small nowrap">{{ fmtTime(r.time) }}</td>
+              <td class="dim small">{{ r.name ?? '—' }}</td>
               <td><span class="log-tag" :class="`log-${r.type}`">{{ r.type }}</span></td>
               <td class="small">{{ detail(r) }}</td>
-              <td class="dim small">{{ r.name ?? '—' }}</td>
             </tr>
           </tbody>
         </table>
@@ -54,11 +54,9 @@
 definePageMeta({ layout: 'backend' })
 
 const TYPES = [
-  { value: 'pageview', label: 'pageview' },
-  { value: 'search',   label: 'search' },
-  { value: 'submit',   label: 'submit' },
-  { value: 'login',    label: 'login' },
-  { value: 'logout',   label: 'logout' },
+  { value: 'login',  label: 'login' },
+  { value: 'view',   label: 'view' },
+  { value: 'search', label: 'search' },
 ]
 
 const typeFilter = ref('')
@@ -76,18 +74,15 @@ function reset() { typeFilter.value = ''; page.value = 1 }
 function fmtTime(iso: string) {
   if (!iso) return '—'
   const d = new Date(iso)
-  const date = d.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })
-  const time = d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-  return `${date} ${time}`
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
 function detail(r: any): string {
-  if (r.type === 'pageview') return r.path ?? '—'
-  if (r.type === 'search')   return Array.isArray(r.query) ? r.query.join(', ') : (r.query ?? '—')
-  if (r.type === 'submit')   return [r.name, r.category, r.discipline, r.distance, r.course].filter(Boolean).join(' · ')
-  if (r.type === 'login')    return r.email ?? r.userId ?? '—'
-  if (r.type === 'logout')   return r.userId ?? '—'
-  return '—'
+  if (r.type === 'view')   return r.path ?? '—'
+  if (r.type === 'search') return Array.isArray(r.query) ? r.query.join(', ') : (r.query ?? '—')
+  if (r.type === 'login')  return r.email ?? r.userId ?? '—'
+  return r.path ?? r.userId ?? '—'
 }
 </script>
 
@@ -140,11 +135,9 @@ td.nowrap { white-space: nowrap; }
   font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
   background: #e8e8e8; color: #444;
 }
-.log-pageview { background: #e8f0fb; color: #2a5cbf; }
-.log-search   { background: #e8f8ee; color: #1a7a3e; }
-.log-submit   { background: #fff4e0; color: #a05f00; }
-.log-login    { background: #f0e8ff; color: #6020b0; }
-.log-logout   { background: #f5f5f5; color: #666; }
+.log-login  { background: #f0e8ff; color: #6020b0; }
+.log-view   { background: #e8f0fb; color: #2a5cbf; }
+.log-search { background: #e8f8ee; color: #1a7a3e; }
 
 .be-pagination {
   display: flex; align-items: center; gap: 12px; justify-content: center;

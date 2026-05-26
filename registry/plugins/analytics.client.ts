@@ -1,12 +1,13 @@
-export default defineNuxtPlugin((nuxtApp) => {
+export default defineNuxtPlugin(() => {
   const router = useRouter()
+  const { user } = useUserSession()
   router.afterEach((to) => {
     const key = `pv:${to.path}`
     if (sessionStorage.getItem(key)) return
     sessionStorage.setItem(key, '1')
     $fetch('/api/log', {
       method: 'POST',
-      body: { type: 'pageview', path: to.path },
+      body: { type: 'view', path: to.path },
     }).catch(() => {})
   })
 })
