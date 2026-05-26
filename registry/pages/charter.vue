@@ -19,7 +19,7 @@
             <div class="head"><span class="num">01</span>운영 주체</div>
             <div class="body">
               <h3>누가 이 등재부를 운영하는가</h3>
-              <p>Korean Swimming Registry(KSR)는 대한민국 유일의 수영 전문지이자 정기간행물인 <strong>메달뱅크 아쿠아틱스 매거진</strong>의 자매 프로젝트로 운영됩니다. 매월 인쇄본과 함께 출판되며, 모든 등재·정정·발굴 기록은 인쇄본과 온라인 등재부에 동시에 반영됩니다.</p>
+              <p>메달뱅크는 대한민국 유일의 수영 전문지이자 정기간행물인 <strong>메달뱅크 아쿠아틱스 매거진</strong>의 자매 프로젝트로 운영됩니다. 매월 인쇄본과 함께 출판되며, 모든 등재·정정·발굴 기록은 인쇄본과 온라인 등재부에 동시에 반영됩니다.</p>
               <p>등재부의 모든 결정은 매거진 편집위원회와 자원봉사 검증 위원의 합의로 이루어지며, 위원의 신원은 헌장 부속서에 명시됩니다.</p>
             </div>
           </article>
@@ -115,5 +115,5 @@
 </template>
 
 <script setup lang="ts">
-useHead({ title: 'The Charter — KSR · Korean Swimming Registry' })
+useHead({ title: 'The Charter — 메달뱅크 · Medalbank' })
 </script>
