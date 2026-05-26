@@ -30,6 +30,7 @@ export default defineEventHandler(async (event) => {
       query:  r.query  ?? null,
       userId: r.userId ?? null,
       name:   r.name   ?? null,
+      email:  r.email  ?? null,
       category:   r.category   ?? null,
       discipline: r.discipline ?? null,
       distance:   r.distance   ?? null,
