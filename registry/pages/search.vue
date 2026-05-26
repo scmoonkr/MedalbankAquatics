@@ -136,9 +136,7 @@
           <!-- 타이틀: 현재 선택 종목 / ctx-meta: 검색 선수명 -->
           <div class="results-header">
             <h2 v-html="titleHtml"></h2>
-            <div class="right">
-              <span class="ctx-meta">{{ names.join(' · ') }}</span>
-            </div>
+            <div class="ctx-meta">{{ names.join(' · ') }}</div>
           </div>
           <!-- index-table 스타일 -->
           <div v-html="tableHtml"></div>
