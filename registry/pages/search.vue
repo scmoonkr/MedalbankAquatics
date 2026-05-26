@@ -149,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-useHead({ title: '선수 검색 — KSR · Korean Swimming Registry' })
+useHead({ title: '선수 검색 — 메달뱅크 · Medalbank' })
 
 const route  = useRoute()
 const router = useRouter()
@@ -247,12 +247,12 @@ function esc(s: unknown): string {
 const nameQuery = computed(() => String(route.query.name || '').trim())
 const names     = computed(() =>
   nameQuery.value
-    ? nameQuery.value.split(/[,\s]+/).map(n => n.trim()).filter(Boolean)
+    ? [...new Set(nameQuery.value.split(/[,\s]+/).map(n => n.trim()).filter(Boolean))]
     : []
 )
 const isPbMode    = computed(() => names.value.length > 1)
-const searchInput = ref(nameQuery.value)
-watch(nameQuery, v => { searchInput.value = v })
+const searchInput = ref(names.value.join(', '))
+watch(names, v => { searchInput.value = v.join(', ') })
 
 // ── 필터 상태 (기본: BR · 50M · LCM) ──────────────────────────
 const filterGender = ref('M')
@@ -281,7 +281,7 @@ watch(nameQuery, () => {
   filterDisc.value   = 'BR'
   filterDist.value   = '50M'
   filterCourse.value = 'LCM'
-  sortMode.value     = 'recent'
+  sortMode.value     = names.value.length > 1 ? 'time' : 'recent'
   filterGender.value = 'M'
 })
 
@@ -378,6 +378,15 @@ const displayRows = computed(() => {
       ? (b.datetime ?? '').localeCompare(a.datetime ?? '')
       : (a.timeStamp ?? Infinity) - (b.timeStamp ?? Infinity)
   )
+  // 복수 선수 모드: 이름 기준 최종 dedup (정렬 후 첫 번째 = best)
+  if (isPbMode.value) {
+    const seen = new Set<string>()
+    rows = rows.filter(r => {
+      if (seen.has(r.name)) return false
+      seen.add(r.name)
+      return true
+    })
+  }
   return rows.map((r, i) => ({ ...r, no: i + 1 }))
 })
 
@@ -491,7 +500,7 @@ function doSearch() {
 }
 .sr-form {
   display: flex;
-  max-width: 640px;
+  width: 100%;
 }
 .sr-input {
   flex: 1;

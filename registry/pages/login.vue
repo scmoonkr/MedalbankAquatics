@@ -3,9 +3,9 @@
     <div class="login-card">
 
       <div class="login-logo">
-        <img src="/images/logo.png" alt="KSR" class="login-logo-img" />
+        <img src="/images/logo.png" alt="메달뱅크" class="login-logo-img" />
         <div class="login-logo-text">
-          <span class="login-site">Korean Swimming Registry</span>
+          <span class="login-site">메달뱅크</span>
           <span class="login-sub">로그인</span>
         </div>
       </div>
@@ -35,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-useHead({ title: '로그인 — KSR · Korean Swimming Registry' })
+useHead({ title: '로그인 — 메달뱅크 · Medalbank' })
 
 const route = useRoute()
 const errorMsg = computed(() => {
@@ -44,6 +44,7 @@ const errorMsg = computed(() => {
   if (e === 'access_denied') return '로그인이 취소되었습니다.'
   if (e === 'token_failed') return '인증 토큰 발급에 실패했습니다.'
   if (e === 'profile_failed') return '사용자 정보를 가져올 수 없습니다.'
+  if (e === 'not_allowed') return '입력하신 아이디로 로그인할 수 없습니다.\n현재 Medalbank은 개발 중 상태입니다.\n개발 중 상태에서는 등록된 아이디만 로그인할 수 있습니다.\n자세한 사항은 Medalbank 관리자에게 문의 바랍니다.'
   return '로그인 중 오류가 발생했습니다.'
 })
 </script>
@@ -114,6 +115,8 @@ const errorMsg = computed(() => {
   width: 100%;
   text-align: center;
   margin: 0;
+  white-space: pre-line;
+  line-height: 1.75;
 }
 .btn-naver {
   display: flex;

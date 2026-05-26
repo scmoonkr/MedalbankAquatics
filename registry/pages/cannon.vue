@@ -127,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-useHead({ title: 'The Canon — KSR · Korean Swimming Registry' })
+useHead({ title: 'The Canon — 메달뱅크 · Medalbank' })
 
 const STROKE_ORDER = ['FR', 'BK', 'BR', 'FL', 'IM'] as const
 

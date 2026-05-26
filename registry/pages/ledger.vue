@@ -74,7 +74,7 @@
           <span class="meta">ABOUT</span>
         </div>
         <p style="font-family:var(--serif-ko);font-size:16px;line-height:1.85;color:var(--fg-dim);max-width:760px;">
-          The Ledger는 Korean Swimming Registry에 가장 최근에 등재된 기록들을 시간순으로 보여주는 페이지입니다. 새로 발굴되거나 정정을 통해 새롭게 반영된 기록들이 이곳에 순차적으로 기록됩니다. 제보를 통해 이 등재부에 처음으로 이름을 올려보세요.
+          The Ledger는 메달뱅크에 가장 최근에 등재된 기록들을 시간순으로 보여주는 페이지입니다. 새로 발굴되거나 정정을 통해 새롭게 반영된 기록들이 이곳에 순차적으로 기록됩니다. 제보를 통해 이 등재부에 처음으로 이름을 올려보세요.
         </p>
       </section>
     </div>
@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-useHead({ title: 'The Ledger — KSR · Korean Swimming Registry' })
+useHead({ title: 'The Ledger — 메달뱅크 · Medalbank' })
 
 const PER_PAGE = 25
 const page = ref(1)

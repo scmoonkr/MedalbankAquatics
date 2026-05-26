@@ -323,7 +323,7 @@
 
 <script setup lang="ts">
 definePageMeta({ ssr: false })
-useHead({ title: 'Time Analysis — KSR · Korean Swimming Registry' })
+useHead({ title: 'Time Analysis — 메달뱅크 · Medalbank' })
 
 const route = useRoute()
 
@@ -628,7 +628,7 @@ function downloadPdf() {
   const gKo  = genderKo(state.gender)
   const sKo  = strokeKo(state.stroke)
   const tStr = state.timeSec && scoringReady.value ? S().formatTime(state.timeSec) : ''
-  const title = `KSR · ${gKo} ${sKo} ${state.distance}m ${state.course}${tStr ? ' · ' + tStr : ''}`
+  const title = `메달뱅크 · ${gKo} ${sKo} ${state.distance}m ${state.course}${tStr ? ' · ' + tStr : ''}`
 
   const win = window.open('', '_blank')
   if (!win) return
@@ -677,7 +677,7 @@ function downloadPdf() {
   <div class="tv-pdf-shell">
     ${shellClone ? shellClone.outerHTML : ''}
     ${clone.outerHTML}
-    <div class="tv-pdf-credit">Korean Swimming Registry · medalbankaquatics.com · ${new Date().toISOString().slice(0, 10)}</div>
+    <div class="tv-pdf-credit">메달뱅크 · medalbankaquatics.com · ${new Date().toISOString().slice(0, 10)}</div>
   </div>
 </body>
 </html>`)

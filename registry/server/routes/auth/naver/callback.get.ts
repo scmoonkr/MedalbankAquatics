@@ -62,6 +62,13 @@ export default defineEventHandler(async (event) => {
 
   const { id, name, email, nickname, profile_image, gender, birthyear, birthday, mobile } = profileRes.response
 
+  // 개발 중: 허용된 아이디만 로그인 가능 (ALLOWED_NAVER_IDS 미설정 시 제한 없음)
+  const config2 = useRuntimeConfig()
+  const allowedIds = (config2.allowedNaverIds as string || '').split(',').map(s => s.trim()).filter(Boolean)
+  if (allowedIds.length > 0 && !allowedIds.includes(id)) {
+    return sendRedirect(event, '/login?error=not_allowed')
+  }
+
   const db = await getDb()
   const now = new Date()
   await db.collection('users').updateOne(

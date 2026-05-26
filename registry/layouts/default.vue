@@ -5,8 +5,8 @@
         <!-- brand + lock: gap matches .brand's internal gap (14px) -->
         <div class="brand-group">
           <NuxtLink class="brand" to="/">
-            <img class="logo-img" src="/images/logo.png" alt="KSR · Korean Swimming Registry" />
-            <span class="full">Korean Swimming Registry</span>
+            <img class="logo-img" src="/images/logo.png" alt="메달뱅크 · Medalbank" />
+            <span class="full"><span class="full-default">The Medallion Banca</span><span class="full-hover">Medalbank</span></span>
           </NuxtLink>
           <NuxtLink :to="loggedIn ? '/user' : '/login'" class="lock-btn" :title="loggedIn ? '로그인됨' : '로그인 필요'">
             <!-- closed lock: logged in -->
@@ -70,12 +70,12 @@
         </div>
         <div class="col">
           <h4>Principles</h4>
-          <p>KSR은 실명 인증과 위키식 검증 절차로 운영됩니다. 한 줄의 정정이 다음 호의 진실이 되며, 기여자는 모두 명예 등재자로 영구히 기록됩니다.</p>
+          <p>메달뱅크는 실명 인증과 위키식 검증 절차로 운영됩니다. 한 줄의 정정이 다음 호의 진실이 되며, 기여자는 모두 명예 등재자로 영구히 기록됩니다.</p>
           <NuxtLink to="/charter">헌장 열람하기 →</NuxtLink>
         </div>
       </div>
       <div class="imprint">
-        <span>© 2026 Korean Swimming Registry by Medalbank · Unofficial · Continuously revised · Powered by
+        <span>© 2026 메달뱅크 by Medalbank · Unofficial · Continuously revised · Powered by
           <a href="https://www.instagram.com/medalbankaquatics" target="_blank" rel="noopener">@medalbankaquatics</a>
         </span>
       </div>

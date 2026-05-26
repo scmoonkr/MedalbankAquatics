@@ -1,5 +1,5 @@
 /* ──────────────────────────────────────────────────────────────────
-   KSR · Korean Swimming Registry by Medalbank
+   메달뱅크 by Medalbank
    Layout reference: Oliver Wyman Forum — Industry 5.0 Index Ranking
    Light/editorial inversion of the same architecture.
    ────────────────────────────────────────────────────────────────── */
@@ -154,7 +154,12 @@ body.scrolled-past-hero .brand-scrolled { opacity: 1; }
   text-transform: uppercase;
   color: var(--fg-faint);
   white-space: nowrap;
+  position: relative;
 }
+.brand .full-default { transition: opacity 0.18s; }
+.brand .full-hover { position: absolute; left: 0; top: 0; opacity: 0; transition: opacity 0.18s; }
+.brand:hover .full-default { opacity: 0; }
+.brand:hover .full-hover  { opacity: 1; }
 @media (max-width: 880px) {
   .brand .logo-img { height: 22px; }
 }
@@ -1105,7 +1110,6 @@ footer.site .imprint {
   max-width: var(--content-max);
   margin: 0 auto;
   padding: 0 var(--pad-x);
-  border-top: 1px solid var(--line);
 }
 .page-body section.block {
   padding: 80px 0;

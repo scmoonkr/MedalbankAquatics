@@ -18,6 +18,7 @@ export default defineNuxtConfig({
     naverClientId:     process.env.NAVER_CLIENT_ID     || '',
     naverClientSecret: process.env.NAVER_CLIENT_SECRET  || '',
     siteUrl:           process.env.NUXT_SITE_URL        || '',
+    allowedNaverIds:   process.env.ALLOWED_NAVER_IDS   || '',
     // nuxt-auth-utils: NUXT_SESSION_PASSWORD는 런타임에서만 읽히므로 빌드 시 bake
     // HTTP 배포 환경에서는 Secure 쿠키 비활성화 (HTTPS 전환 시 제거)
     session: {
@@ -38,7 +39,7 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: 'ko' },
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
-        { name: 'description', content: '대한민국 경영 전 종목 종합순위표. Korean Swimming Registry.' },
+        { name: 'description', content: '대한민국 경영 전 종목 종합순위표. 메달뱅크.' },
       ],
       link: [
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
