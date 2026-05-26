@@ -390,7 +390,7 @@ function rowHtml(r: EventRank, isFirst: boolean): string {
   const mGender   = MODAL_GENDER[state.gender] ?? 'M'
   const mStroke   = MODAL_STROKE[state.stroke]  ?? 'FR'
   const mCourse   = state.course.toUpperCase()
-  const year      = r.date ? r.date.slice(0, 4) : ''
+  const datetime  = r.date || ''
   const timeTd    = hasTime
     ? `<td class="time"><span
         class="time-trigger"
@@ -401,7 +401,7 @@ function rowHtml(r: EventRank, isFirst: boolean): string {
         data-time="${esc(r.time)}"
         data-athlete="${esc(r.name)}"
         data-nation="${esc(r.team)}"
-        data-year="${esc(year)}"
+        data-datetime="${esc(datetime)}"
         data-venue="${esc(r.meet_full || r.meet)}"
         role="button"
         tabindex="0"
@@ -511,7 +511,7 @@ function handleResultsClick(e: MouseEvent) {
         course:   d.course,
         time:     d.time,
         athlete:  d.athlete  || undefined,
-        year:     d.year     || undefined,
+        datetime: d.datetime  || undefined,
         meet:     d.venue    || undefined,
       },
     })

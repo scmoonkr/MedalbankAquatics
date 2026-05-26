@@ -214,7 +214,7 @@ function goTimeView(gender: string, stroke: string, distance: number, type: stri
       course:    'LCM',
       time:      r.time,
       athlete:   r.athlete  || undefined,
-      year:      r.year     ? String(r.year)  : undefined,
+      datetime:  r.year     ? String(r.year)  : undefined,
       meet:      r.venue    || undefined,
     },
   })

@@ -411,7 +411,7 @@ function rowHtml(r: SearchRow & { no: number }): string {
   const hasTime   = r.time && r.time !== '—'
   const gender    = normalizeGender(r.gender)
   const distNum   = parseInt(r.distance) || 0
-  const year      = r.datetime ? r.datetime.slice(0, 4) : ''
+  const datetime  = r.datetime || ''
   const meetFull  = r.competitionName || r.pool || '—'
   const meetShort = r.pool || r.competitionName || '—'
   const isMasters = r.isMasters === true
@@ -427,7 +427,7 @@ function rowHtml(r: SearchRow & { no: number }): string {
         data-time="${esc(r.time)}"
         data-athlete="${esc(r.name)}"
         data-nation="${esc(r.team)}"
-        data-year="${esc(year)}"
+        data-datetime="${esc(datetime)}"
         data-venue="${esc(meetFull)}"
         role="button"
         tabindex="0"
@@ -465,7 +465,7 @@ function handleResultsClick(e: MouseEvent) {
       course:   d.course,
       time:     d.time,
       athlete:  d.athlete || undefined,
-      year:     d.year    || undefined,
+      datetime: d.datetime || undefined,
       meet:     d.venue   || undefined,
     },
   })

@@ -408,20 +408,14 @@ const state = reactive({
 })
 
 const attribution = reactive({
-  athlete: (route.query.athlete as string) || '',
-  year:    (route.query.year    as string) || '',
-  meet:    (route.query.meet    as string) || '',
+  athlete:  (route.query.athlete  as string) || '',
+  datetime: (route.query.datetime as string) || '',
+  meet:     (route.query.meet     as string) || '',
 })
 
-const hasAttribution = computed(() => !!attribution.athlete || !!attribution.meet)
+const isDirty = ref(false)
 
-const attrMeta = computed(() => {
-  const parts: string[] = []
-  if (state.gender) parts.push(genderKo(state.gender))
-  if (attribution.year) parts.push(attribution.year)
-  if (attribution.meet) parts.push(attribution.meet)
-  return parts.join(' · ')
-})
+const hasAttribution = computed(() => !isDirty.value && (!!attribution.athlete || !!attribution.meet))
 
 const h1Parts = computed(() => {
   if (!state.timeSec || !scoringReady.value) return { prefix: '00:', suffix: '00.00' }
@@ -435,9 +429,9 @@ const h1Parts = computed(() => {
 
 const ledeText = computed(() => {
   const parts: string[] = [`${genderKo(state.gender)} ${strokeKo(state.stroke)} ${state.distance}M ${state.course}`]
-  if (attribution.year) parts.push(attribution.year)
-  if (attribution.athlete) parts.push(attribution.athlete)
-  if (attribution.meet) parts.push(attribution.meet)
+  if (attribution.datetime) parts.push(attribution.datetime)
+  if (!isDirty.value && attribution.athlete) parts.push(attribution.athlete)
+  if (!isDirty.value && attribution.meet)    parts.push(attribution.meet)
   return parts.join(' · ')
 })
 
@@ -461,6 +455,7 @@ const availableDistances = computed<number[]>(() => {
 function setParam(key: string, val: any) {
   if (key === 'distance') val = Number(val)
   ;(state as any)[key] = val
+  isDirty.value = true
   if (key === 'gender' || key === 'stroke') {
     const valid = availableDistances.value
     if (!valid.includes(state.distance)) state.distance = valid[0]
@@ -476,6 +471,7 @@ function onTimeChange(e: Event) {
   } else {
     state.timeSec = null
   }
+  isDirty.value = true
 }
 
 const headerSub = computed(() => {

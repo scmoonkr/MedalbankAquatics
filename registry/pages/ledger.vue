@@ -263,7 +263,7 @@ function goTimeView(doc: any) {
       time:     doc.time,
       athlete:  doc.name   || undefined,
       meet:     doc.meet   || undefined,
-      year:     doc.date   ? String(doc.date).slice(0, 4) : undefined,
+      datetime: doc.date   || undefined,
     },
   })
 }
