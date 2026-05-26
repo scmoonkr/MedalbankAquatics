@@ -1,4 +1,4 @@
-/* KSR · The Index — single event renderer (one event = one table) */
+/* 메달뱅크 · The Index — single event renderer (one event = one table) */
 (() => {
   'use strict';
 

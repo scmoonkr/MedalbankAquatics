@@ -2,7 +2,7 @@
 
 ## 프로젝트 개요
 
-**Korean Swimming Registry (KSR)** — 대한민국 경영 종목 순위 등재부.  
+**메달뱅크 (Medalbank)** — 대한민국 경영 종목 순위 등재부.  
 `registry/MVP/` 에 정적 HTML+JS MVP가 있으며, MongoDB `mergedTimes` 컬렉션을 데이터 소스로 사용한다.
 
 ---
