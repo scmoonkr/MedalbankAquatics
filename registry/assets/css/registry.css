@@ -1246,7 +1246,7 @@ footer.site .imprint {
 .ledger-feed { display: grid; gap: 0; }
 .ledger-entry {
   display: grid;
-  grid-template-columns: 160px 1fr 180px;
+  grid-template-columns: 1fr 180px;
   gap: 36px;
   padding: 36px 0;
   border-bottom: 1px solid var(--line);

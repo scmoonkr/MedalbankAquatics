@@ -18,17 +18,12 @@
         <div v-else-if="!ledgerList.length" class="empty-state">데이터를 불러올 수 없습니다.</div>
         <div v-else class="ledger-feed">
           <article v-for="(doc, i) in pagedRows" :key="i" class="ledger-entry kind-record">
-            <div class="tag">
-              {{ doc.event }}
-              <span class="label-ko">{{ doc.group }}</span>
-            </div>
             <div class="body">
-              <h3 class="name-link" role="button" tabindex="0" @click="router.push({ path: '/search', query: { name: doc.name } })">{{ doc.name }}</h3>
-              <div class="athlete">
-                <span class="rank">·</span>
-                {{ doc.city }} · {{ doc.team }}
-              </div>
-              <p>{{ doc.meet }}</p>
+              <h3 class="name-link">{{ doc.event }}</h3>
+              <div class="athlete">{{ [doc.name, doc.city, doc.meet, doc.pool].filter(v => v && v !== '—').join(' · ') }}</div>
+              <template v-if="doc.note">
+                <p v-for="(line, li) in doc.note.split('\n').filter(Boolean)" :key="li">{{ line }}</p>
+              </template>
               <div v-if="compareRows(doc).length" class="compare">
                 <span v-for="row in compareRows(doc)" :key="row.type" class="row">
                   <span class="lbl">{{ row.type }}</span>
@@ -104,17 +99,18 @@ interface ErrataDoc {
   reporter:    string
   report_date: string
   magazine:    string
+  status:      string
 }
 
 interface LedgerDoc {
   event:       string
-  group:       string
   name:        string
   city:        string
-  team:        string
+  meet:        string
+  pool:        string
+  note:        string
   time:        string
   date:        string
-  meet:        string
   report_date: string | null
   rawGender:   string
   rawStroke:   string
@@ -188,12 +184,7 @@ function toRawGender(g: string | undefined): string {
 }
 
 function toEventLabel(t: TimeData): string {
-  return [GENDER_LABEL[t.gender ?? ''] ?? t.gender, DISC_LABEL[t.discipline ?? ''] ?? t.discipline, t.distance, t.course].filter(Boolean).join(' ')
-}
-
-function toGroupLabel(t: TimeData): string {
-  if (!t.isMasters) return ''
-  return t.group ? `M${t.group}` : 'Masters'
+  return [GENDER_LABEL[t.gender ?? ''] ?? t.gender, DISC_LABEL[t.discipline ?? ''] ?? t.discipline, t.distance, t.course].filter(Boolean).join(' · ')
 }
 
 function toDoc(d: ErrataDoc): LedgerDoc {
@@ -204,14 +195,14 @@ function toDoc(d: ErrataDoc): LedgerDoc {
   const rawCourse   = t.course ?? 'LCM'
   return {
     event:       toEventLabel(t),
-    group:       toGroupLabel(t),
-    name:        t.name        ?? '—',
-    city:        t.sido        ?? '—',
-    team:        t.team        ?? '—',
-    time:        t.time        ?? '—',
-    date:        t.datetime    ?? '—',
-    meet:        t.competitionName ?? t.pool ?? '—',
-    report_date: d.report_date ?? null,
+    name:        t.name             ?? '—',
+    city:        t.sido             ?? '',
+    meet:        t.competitionName  ?? '',
+    pool:        t.pool             ?? '',
+    note:        d.note             ?? '',
+    time:        t.time             ?? '—',
+    date:        t.datetime         ?? '—',
+    report_date: d.report_date      ?? null,
     rawGender,
     rawStroke,
     rawDistance,
