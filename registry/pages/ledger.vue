@@ -18,12 +18,17 @@
         <div v-else-if="!ledgerList.length" class="empty-state">데이터를 불러올 수 없습니다.</div>
         <div v-else class="ledger-feed">
           <article v-for="(doc, i) in pagedRows" :key="i" class="ledger-entry kind-record">
+            <div class="tag">
+              {{ doc.event }}
+              <span class="label-ko">{{ doc.group }}</span>
+            </div>
             <div class="body">
-              <h3 class="name-link" role="button" tabindex="0" @click="goTimeView(doc)">{{ [doc.time, doc.date, GENDER_LABEL[doc.rawGender] || doc.rawGender, DISC_LABEL[doc.rawStroke] || doc.rawStroke, doc.rawDistance ? doc.rawDistance + 'M' : '', doc.rawCourse].filter(v => v && v !== '—').join(' · ') }}</h3>
+              <h3 class="name-link" role="button" tabindex="0" @click="router.push({ path: '/search', query: { name: doc.name } })">{{ doc.name }}</h3>
               <div class="athlete">
                 <span class="rank">·</span>
-                {{ [doc.city, doc.meet, doc.pool].filter(v => v && v !== '—').join(' · ') }}
+                {{ doc.city }} · {{ doc.team }}
               </div>
+              <p>{{ doc.meet }}</p>
               <div v-if="compareRows(doc).length" class="compare">
                 <span v-for="row in compareRows(doc)" :key="row.type" class="row">
                   <span class="lbl">{{ row.type }}</span>
@@ -110,7 +115,6 @@ interface LedgerDoc {
   time:        string
   date:        string
   meet:        string
-  pool:        string
   report_date: string | null
   rawGender:   string
   rawStroke:   string
@@ -206,8 +210,7 @@ function toDoc(d: ErrataDoc): LedgerDoc {
     team:        t.team        ?? '—',
     time:        t.time        ?? '—',
     date:        t.datetime    ?? '—',
-    meet:        t.competitionName ?? '—',
-    pool:        t.pool           ?? '—',
+    meet:        t.competitionName ?? t.pool ?? '—',
     report_date: d.report_date ?? null,
     rawGender,
     rawStroke,

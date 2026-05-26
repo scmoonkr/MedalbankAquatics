@@ -37,7 +37,6 @@ export default defineCachedEventHandler(async () => {
       time:        d.time         || '—',
       date:        d.datetime     ? String(d.datetime).slice(0, 10) : '—',
       meet:        d.competitionName || '—',
-      pool:        d.pool            || '—',
       report_date: d.report_date  ? String(d.report_date).slice(0, 10) : null,
       // modal trigger용
       rawGender,
