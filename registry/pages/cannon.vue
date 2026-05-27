@@ -244,15 +244,27 @@ function injectCompareOverlay() {
   scoring.injectOverlay(overlay)
 }
 
-// hash-based active class for jump nav
-const activeHash = ref('')
+// scroll-based active class for jump nav (default: 자유형)
+const activeHash = ref('#sec-fr')
 
 onMounted(() => {
-  const setHash = () => { activeHash.value = window.location.hash }
-  setHash()
-  window.addEventListener('hashchange', setHash)
+  // 스크롤 시 현재 섹션 감지
+  function updateActive() {
+    const topbarH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--topbar-h')) || 68
+    const navEl   = document.querySelector('.canon-jumps') as HTMLElement | null
+    const offset  = topbarH + (navEl ? navEl.offsetHeight : 60) + 8
+    let active    = '#sec-fr'
+    for (const s of STROKE_ORDER) {
+      const el = document.getElementById(`sec-${s.toLowerCase()}`)
+      if (!el) continue
+      if (el.getBoundingClientRect().top <= offset) active = `#sec-${s.toLowerCase()}`
+    }
+    activeHash.value = active
+  }
+  window.addEventListener('scroll', updateActive, { passive: true })
+  onUnmounted(() => window.removeEventListener('scroll', updateActive))
 
-  // Load scoring engine then modal (order matters)
+  // Load scoring engine
   function loadScript(src: string): Promise<void> {
     return new Promise((resolve, reject) => {
       if (document.querySelector(`script[src="${src}"]`)) { resolve(); return }
@@ -267,10 +279,6 @@ onMounted(() => {
   loadScript('/cannon/js/scoring.js')
     .then(() => injectCompareOverlay())
     .catch(err => console.error('[cannon] script load error', err))
-})
-
-onUnmounted(() => {
-  window.removeEventListener('hashchange', () => {})
 })
 </script>
 
