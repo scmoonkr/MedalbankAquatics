@@ -29,10 +29,14 @@ export default defineEventHandler(async (event) => {
 
   // ── 파일 저장 ──────────────────────────────────────────────
   const filename  = `${randomUUID()}${ext}`
-  const base      = useRuntimeConfig().uploadDir || join(process.cwd(), 'data', 'uploads')
+  const base      = useRuntimeConfig(event).uploadDir || join(process.cwd(), 'data', 'uploads')
   const uploadDir = join(base, 'sheets')
-  await mkdir(uploadDir, { recursive: true })
-  await writeFile(join(uploadDir, filename), part.data)
+  try {
+    await mkdir(uploadDir, { recursive: true })
+    await writeFile(join(uploadDir, filename), part.data)
+  } catch (fsErr: any) {
+    throw createError({ statusCode: 500, statusMessage: `파일 저장 실패: ${fsErr?.message ?? fsErr}` })
+  }
 
   const filePath = `uploads/sheets/${filename}`
 
