@@ -75,7 +75,7 @@
         </div>
         <div class="col">
           <h4>Principles</h4>
-          <p>메달뱅크는 실명 인증과 위키식 검증 절차로 운영됩니다. 한 줄의 정정이 다음 호의 진실이 되며, 기여자는 모두 명예 등재자로 영구히 기록됩니다.</p>
+          <p>메달뱅크는 네이버 로그인을 통한 검증 절차로 운영됩니다. 여러분이 가장 편리하게 제보하실 수 있도록 준비하였고, 여러분께서 적어주신 한 줄의 정정이 다음 호의 진실이 됩니다. 기여자는 모두 명예 등재자로 영구히 기록됩니다.</p>
           <NuxtLink to="/charter">헌장 열람하기 →</NuxtLink>
         </div>
       </div>
@@ -86,7 +86,8 @@
       </div>
     </footer>
 
-    <SubmitModal :open="submitOpen" :initial-data="submitData" @close="closeSubmit" />
+    <SubmitModal     :open="submitOpen"     :initial-data="submitData" @close="closeSubmit" />
+    <SubmitFileModal :open="submitFileOpen"                            @close="closeSubmitFile" />
   </div>
 </template>
 
@@ -95,6 +96,7 @@ const route = useRoute()
 const menuOpen = ref(false)
 const brandHovered = ref(false)
 const { loggedIn } = useUserSession()
+
 const submitOpen = ref(false)
 const submitData = ref<Record<string, any> | undefined>(undefined)
 
@@ -109,6 +111,18 @@ function closeSubmit() {
 }
 
 provide('submitModal', openSubmit)
+
+const submitFileOpen = ref(false)
+
+function openSubmitFile() {
+  menuOpen.value = false
+  submitFileOpen.value = true
+}
+function closeSubmitFile() {
+  submitFileOpen.value = false
+}
+
+provide('submitFileModal', openSubmitFile)
 
 // Index page uses scroll snap; all other pages opt out
 useHead({
