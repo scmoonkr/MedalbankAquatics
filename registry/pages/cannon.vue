@@ -171,7 +171,7 @@ const EVENTS = [
 
 const { data: dbRecords } = await useFetch('/api/canon')
 
-type RecEntry = { time: string; athlete: string; nation: string; year: string | number; venue: string }
+type RecEntry = { time: string; athlete: string; nation: string; year: string | number; datetime: string; venue: string }
 
 function rec(gender: string, stroke: string, distance: number, type: string): RecEntry | null {
   return (dbRecords.value as any)?.[`${gender}-${stroke}-${distance}-${type}`] ?? null
@@ -214,7 +214,7 @@ function goTimeView(gender: string, stroke: string, distance: number, type: stri
       course:    'LCM',
       time:      r.time,
       athlete:   r.athlete  || undefined,
-      datetime:  r.year     ? String(r.year)  : undefined,
+      datetime:  r.datetime || (r.year ? String(r.year) : undefined),
       meet:      r.venue    || undefined,
     },
   })

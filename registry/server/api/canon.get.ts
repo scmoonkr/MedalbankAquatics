@@ -21,8 +21,20 @@ export default defineEventHandler(async () => {
 
   const GENDER: Record<string, string> = { men: 'M', women: 'W' }
 
-  type RecEntry = { time: string; athlete: string; nation: string; year: string | number; venue: string }
+  type RecEntry = { time: string; athlete: string; nation: string; year: string | number; datetime: string; venue: string }
   const result: Record<string, RecEntry> = {}
+
+  function toEntry(d: any): RecEntry {
+    const datetimeRaw = d.datetime ? String(d.datetime) : ''
+    return {
+      time:     d.time     || '',
+      athlete:  d.name     || '',
+      nation:   d.team     || '',
+      year:     datetimeRaw ? datetimeRaw.slice(0, 4) : (d.year ?? ''),
+      datetime: datetimeRaw.slice(0, 10),
+      venue:    d.location || '',
+    }
+  }
 
   for (const d of nonMasters) {
     if (!d.type || !d.gender || !d.distance) continue
@@ -30,18 +42,10 @@ export default defineEventHandler(async () => {
     const g        = GENDER[d.gender]
     const stroke   = d.discipline || ''
     const distance = parseInt(String(d.distance))
-    const year     = d.datetime ? String(d.datetime).slice(0, 4) : (d.year ?? '')
 
     if (!g || !stroke || !distance) continue
 
-    const key = `${g}-${stroke}-${distance}-${d.type}`
-    result[key] = {
-      time:    d.time     || '',
-      athlete: d.name     || '',
-      nation:  d.team     || '',
-      year,
-      venue:   d.location || '',
-    }
+    result[`${g}-${stroke}-${distance}-${d.type}`] = toEntry(d)
   }
 
   // KMR: 종목별 전 연령부 중 가장 빠른 기록 하나만 선택
@@ -51,25 +55,14 @@ export default defineEventHandler(async () => {
     const g        = GENDER[d.gender]
     const stroke   = d.discipline || ''
     const distance = parseInt(String(d.distance))
-    const year     = d.datetime ? String(d.datetime).slice(0, 4) : (d.year ?? '')
 
     if (!g || !stroke || !distance) continue
 
-    const key  = `${g}-${stroke}-${distance}-KMR`
-    const time = parseTimeSec(String(d.time || ''))
+    const key          = `${g}-${stroke}-${distance}-KMR`
+    const time         = parseTimeSec(String(d.time || ''))
+    const existingTime = result[key] ? parseTimeSec(String(result[key].time || '')) : Infinity
 
-    const existing = result[key]
-    const existingTime = existing ? parseTimeSec(String(existing.time || '')) : Infinity
-
-    if (time < existingTime) {
-      result[key] = {
-        time:    d.time     || '',
-        athlete: d.name     || '',
-        nation:  d.team     || '',
-        year,
-        venue:   d.location || '',
-      }
-    }
+    if (time < existingTime) result[key] = toEntry(d)
   }
 
   // WMR: 종목별 전 연령부 중 가장 빠른 기록 하나만 선택
@@ -79,25 +72,14 @@ export default defineEventHandler(async () => {
     const g        = GENDER[d.gender]
     const stroke   = d.discipline || ''
     const distance = parseInt(String(d.distance))
-    const year     = d.datetime ? String(d.datetime).slice(0, 4) : (d.year ?? '')
 
     if (!g || !stroke || !distance) continue
 
-    const key  = `${g}-${stroke}-${distance}-WMR`
-    const time = parseTimeSec(String(d.time || ''))
+    const key          = `${g}-${stroke}-${distance}-WMR`
+    const time         = parseTimeSec(String(d.time || ''))
+    const existingTime = result[key] ? parseTimeSec(String(result[key].time || '')) : Infinity
 
-    const existing     = result[key]
-    const existingTime = existing ? parseTimeSec(String(existing.time || '')) : Infinity
-
-    if (time < existingTime) {
-      result[key] = {
-        time:    d.time     || '',
-        athlete: d.name     || '',
-        nation:  d.team     || '',
-        year,
-        venue:   d.location || '',
-      }
-    }
+    if (time < existingTime) result[key] = toEntry(d)
   }
 
   return result
