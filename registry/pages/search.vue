@@ -1,22 +1,6 @@
 <template>
   <div>
-    <!-- ① 검색 헤더: Hero 대신, 전체 너비 검색 폼 영역 -->
-    <div class="sr-header">
-      <div class="sr-eyebrow">02 · The Search · 선수 검색</div>
-      <form class="sr-form" @submit.prevent="doSearch">
-        <input
-          v-model="searchInput"
-          class="sr-input"
-          type="text"
-          placeholder="선수명 입력 · 여러 명은 쉼표 또는 공백으로 구분"
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <button class="sr-btn" type="submit">검색 →</button>
-      </form>
-    </div>
-
-    <!-- ② Shell: 사이드바 필터 + 메인 결과 -->
+    <!-- Shell: 사이드바 필터 + 메인 결과 -->
     <div class="shell">
       <aside class="filters">
         <div class="filters-head">
@@ -128,19 +112,24 @@
       </aside>
 
       <main class="results" @click="handleResultsClick">
+        <div class="results-header">
+          <h2 v-html="titleHtml"></h2>
+        </div>
+        <form class="sr-form" style="margin-bottom:22px;" @submit.prevent="doSearch">
+          <input
+            v-model="searchInput"
+            class="sr-input"
+            type="text"
+            placeholder="선수명 입력 · 여러 명은 쉼표 또는 공백으로 구분"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button class="sr-btn" type="submit">검색 →</button>
+        </form>
         <div v-if="!names.length" class="empty-state">선수명을 입력하고 검색하세요.</div>
         <div v-else-if="pending" class="empty-state">검색 중…</div>
         <div v-else-if="!displayRows.length" class="empty-state">결과가 없습니다.</div>
-
-        <template v-else>
-          <!-- 타이틀: 현재 선택 종목 / ctx-meta: 검색 선수명 -->
-          <div class="results-header">
-            <h2 v-html="titleHtml"></h2>
-            <div class="ctx-meta">{{ names.join(' · ') }}</div>
-          </div>
-          <!-- index-table 스타일 -->
-          <div v-html="tableHtml"></div>
-        </template>
+        <div v-else v-html="tableHtml"></div>
       </main>
     </div>
   </div>
