@@ -353,9 +353,9 @@ const resultsMeta = computed(() => {
 
 // ── table builder ──────────────────────────────────────────────
 const THEAD = `<thead><tr>
-  <th class="c-rank">Rank · 순위</th><th class="c-name">Name · 성명</th>
-  <th class="c-city">City · 도시</th><th class="c-date">Date · 일자</th>
-  <th class="c-meet">Meet · 대회</th><th class="c-time">Time · 기록</th>
+  <th class="c-rank">Rank · 순위</th><th class="c-time">Time · 기록</th>
+  <th class="c-date">Date · 일자</th><th class="c-name">Name · 성명</th>
+  <th class="c-city">City · 도시</th><th class="c-meet">Meet · 대회</th>
 </tr></thead>`
 
 const tableHtml = computed(() => {
@@ -412,17 +412,18 @@ function rowHtml(r: EventRank, isFirst: boolean): string {
     : ''
   return `<tr${isFirst ? ' class="first"' : ''}>
     <td class="rank">${r.rank}</td>
+    ${timeTd}
+    <td class="date">${esc(r.date||'—')}</td>
     <td class="name"><span class="name-link" data-name="${esc(r.name||'')}">${esc(r.name||'—')}</span>${regBadge}</td>
     <td class="city">${esc(r.city||'—')}</td>
-    <td class="date">${esc(r.date||'—')}</td>
     <td class="meet"><span class="meet-full">${esc(r.meet_full||r.meet||'—')}</span><span class="meet-short">${esc(r.meet||r.meet_full||'—')}</span></td>
-    ${timeTd}
   </tr>`
 }
 function emptyRowHtml(i: number, isFirst: boolean): string {
   return `<tr class="empty${isFirst?' first':''}">
-    <td class="rank">${i}</td><td class="name">등재 대기중</td>
-    <td class="city">—</td><td class="date">—</td><td class="meet">—</td><td class="time">—</td>
+    <td class="rank">${i}</td><td class="time">—</td>
+    <td class="date">—</td><td class="name">등재 대기중</td>
+    <td class="city">—</td><td class="meet">—</td>
   </tr>`
 }
 
