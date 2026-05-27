@@ -130,6 +130,9 @@
           <button class="cta" type="button" @click="openSubmitModal">
             직접 기록 추가하기 <span class="arrow">→</span>
           </button>
+          <button class="cta cta-file" type="button" @click="openSubmitFileModal">
+            기록지 업로드하기 <span class="arrow">↑</span>
+          </button>
           <div class="note">새로운 기록이나 누락된 기록 제보하기</div>
         </div>
       </aside>
@@ -427,8 +430,9 @@ function emptyRowHtml(i: number, isFirst: boolean): string {
   </tr>`
 }
 
-// ── submit modal ───────────────────────────────────────────────
-const openSubmitModal = inject<(data?: Record<string, any>) => void>('submitModal')!
+// ── submit modals ──────────────────────────────────────────────
+const openSubmitModal     = inject<(data?: Record<string, any>) => void>('submitModal')!
+const openSubmitFileModal = inject<() => void>('submitFileModal')!
 
 // ── filter setter ──────────────────────────────────────────────
 function setFilter(key: string, val: string | number) {

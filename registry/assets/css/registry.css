@@ -669,6 +669,18 @@ aside.filters {
   color: var(--bg);
   opacity: 1;
 }
+.aside-submit button.cta-file {
+  margin-top: 8px;
+  background: transparent;
+  color: var(--fg-dim);
+  border: 1px solid var(--line);
+  font-weight: 500;
+}
+.aside-submit button.cta-file:hover {
+  background: var(--bg-soft);
+  color: var(--fg);
+  border-color: var(--fg-mute);
+}
 .aside-submit .note {
   font-family: var(--serif-ko);
   font-size: 12.5px;
