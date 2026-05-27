@@ -400,11 +400,11 @@ const titleHtml = computed(() => {
 // ── 테이블 HTML (index-table 스타일) ──────────────────────────
 const THEAD = `<thead><tr>
   <th class="c-rank">No.</th>
+  <th class="c-time">Time · 기록</th>
+  <th class="c-date">Date · 일자</th>
   <th class="c-name">Name · 성명</th>
   <th class="c-city">City · 도시</th>
-  <th class="c-date">Date · 일자</th>
   <th class="c-meet">Meet · 대회</th>
-  <th class="c-time">Time · 기록</th>
 </tr></thead>`
 
 function rowHtml(r: SearchRow & { no: number }): string {
@@ -436,11 +436,11 @@ function rowHtml(r: SearchRow & { no: number }): string {
 
   return `<tr>
     <td class="rank">${r.no}</td>
+    ${timeTd}
+    <td class="date">${esc(r.datetime?.slice(0, 10) || '—')}</td>
     <td class="name">${esc(r.name)}${badge}</td>
     <td class="city">${esc(r.sido || '—')}</td>
-    <td class="date">${esc(r.datetime?.slice(0, 10) || '—')}</td>
     <td class="meet"><span class="meet-full">${esc(meetFull)}</span><span class="meet-short">${esc(meetShort)}</span></td>
-    ${timeTd}
   </tr>`
 }
 
