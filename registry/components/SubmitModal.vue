@@ -42,8 +42,16 @@
               <!-- 기록 -->
               <div class="sm-field">
                 <label>기록 <span class="req">*</span></label>
-                <input v-model="form.time" type="text" placeholder="00:00.00" required />
-                <span class="sm-hint">mm:ss.00 또는 ss.00</span>
+                <input
+                  v-model="form.time"
+                  type="text"
+                  placeholder="00:00.00"
+                  :class="{ 'input-error': timeError }"
+                  required
+                  @change="onTimeChange"
+                />
+                <span v-if="timeError" class="sm-field-error">{{ timeError }}</span>
+                <span v-else class="sm-hint">숫자만 입력해도 mm:ss.tt 형식으로 정리돼요</span>
               </div>
 
               <!-- 순위 -->
@@ -244,7 +252,47 @@ function onEvPhoto(key: keyof typeof evPhoto, file: File | null) {
 
 const submitting = ref(false)
 const error      = ref('')
+const timeError  = ref('')
 const done       = ref(false)
+
+function normalizeTimeInput(raw: string): string {
+  const t = raw.trim()
+  if (!t) return ''
+  if (/^\d+$/.test(t)) {
+    const d = t.padStart(6, '0').slice(-6)
+    return `${d.slice(0,2)}:${d.slice(2,4)}.${d.slice(4,6)}`
+  }
+  if (t.includes(':')) {
+    const [mRaw, rest = ''] = t.split(':', 2)
+    const mm = mRaw.padStart(2, '0').slice(-2)
+    if (rest.includes('.')) {
+      const [sRaw, tRaw = ''] = rest.split('.', 2)
+      return `${mm}:${sRaw.padStart(2,'0').slice(-2)}.${(tRaw+'00').slice(0,2)}`
+    }
+    return `${mm}:${rest.padStart(2,'0').slice(-2)}.00`
+  }
+  if (t.includes('.')) {
+    const [sRaw, tRaw = ''] = t.split('.', 2)
+    return `00:${sRaw.padStart(2,'0').slice(-2)}.${(tRaw+'00').slice(0,2)}`
+  }
+  return t
+}
+function isValidTime(n: string): boolean {
+  const m = n.match(/^(\d{2}):(\d{2})\.\d{2}$/)
+  if (!m) return false
+  return +m[1] <= 59 && +m[2] <= 59
+}
+function onTimeChange(e: Event) {
+  const raw = (e.target as HTMLInputElement).value
+  if (!raw.trim()) { timeError.value = ''; return }
+  const normalized = normalizeTimeInput(raw)
+  if (!isValidTime(normalized)) {
+    timeError.value = '올바른 기록 형식이 아닙니다 (예: 01:23.45)'
+    return
+  }
+  timeError.value = ''
+  form.time = normalized
+}
 
 const availableGroups     = computed(() => form.isMasters ? MASTERS_GROUPS : ELITE_GROUPS)
 const availableDistances  = computed(() => form.course === 'SCM' ? SCM_DISTS : LCM_DISTS)
@@ -284,6 +332,7 @@ watch(() => props.open, (v) => {
     if (props.initialData) Object.assign(form, props.initialData)
     evPhoto.board = evPhoto.sheet = evPhoto.article = evPhoto.other = null
     error.value      = ''
+    timeError.value  = ''
     done.value       = false
     submitting.value = false
   }
@@ -297,6 +346,16 @@ async function uploadFile(file: File): Promise<string> {
 }
 
 async function submit() {
+  // 기록 형식 최종 검증
+  if (form.time) {
+    const normalized = normalizeTimeInput(form.time)
+    if (!isValidTime(normalized)) {
+      timeError.value = '올바른 기록 형식이 아닙니다 (예: 01:23.45)'
+      return
+    }
+    form.time = normalized
+  }
+
   // 즉시 완료 상태 전환 + 자동 닫기
   done.value = true
   setTimeout(() => close(), 3000)
@@ -409,6 +468,14 @@ async function submit() {
 .sm-hint {
   font-family: var(--sans); font-size: 11px; color: var(--fg-faint);
   margin-top: -2px;
+}
+.sm-field-error {
+  font-family: var(--sans); font-size: 11px; color: #c00;
+  margin-top: -2px;
+}
+.sm-field input.input-error {
+  border-color: #c00;
+  outline-color: #c00;
 }
 
 /* 증빙자료 */
