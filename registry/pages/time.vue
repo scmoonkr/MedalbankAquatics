@@ -165,37 +165,42 @@
         </div>
         <p class="modal-block-note">World Aquatics 포인트가 가장 가까운 기록 모아보기.</p>
         <div v-if="similarPending" class="empty-state">불러오는 중…</div>
-        <p v-else-if="!waPoints" class="modal-emptynote">기록을 입력하면 유사한 점수의 기록 20건이 표시됩니다.</p>
-        <p v-else-if="!similarData?.same?.length && !similarData?.other?.length" class="modal-emptynote">유사한 기록이 없습니다.</p>
-        <table v-else class="modal-similar-table">
-          <thead>
-            <tr>
-              <th class="c-event">종목</th>
-              <th class="c-athlete">선수</th>
-              <th class="c-time">기록</th>
-              <th class="c-date">일자</th>
-              <th class="c-pts">점수</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="group-head"><td colspan="5">{{ strokeKo(state.stroke) }} ({{ similarData?.same?.length ?? 0 }}건)</td></tr>
-            <tr v-for="(r, i) in similarData?.same" :key="'s' + i">
-              <td class="event">{{ genderKo(r.gender) }} {{ strokeKo(r.stroke) }} {{ r.distance }}m · {{ r.course }}</td>
-              <td class="athlete">{{ r.athlete }}</td>
-              <td class="time">{{ normTime(r.time) }}</td>
-              <td class="date">{{ r.date }}</td>
-              <td class="pts">{{ r.points.toLocaleString() }}점<span class="pts-diff">{{ ptsDiff(r.points) }}</span></td>
-            </tr>
-            <tr class="group-head"><td colspan="5">타 영법 ({{ similarData?.other?.length ?? 0 }}건)</td></tr>
-            <tr v-for="(r, i) in similarData?.other" :key="'o' + i">
-              <td class="event">{{ genderKo(r.gender) }} {{ strokeKo(r.stroke) }} {{ r.distance }}m · {{ r.course }}</td>
-              <td class="athlete">{{ r.athlete }}</td>
-              <td class="time">{{ normTime(r.time) }}</td>
-              <td class="date">{{ r.date }}</td>
-              <td class="pts">{{ r.points.toLocaleString() }}점<span class="pts-diff">{{ ptsDiff(r.points) }}</span></td>
-            </tr>
-          </tbody>
-        </table>
+        <p v-else-if="!waPoints" class="modal-emptynote">기록을 입력하면 유사한 점수의 기록이 표시됩니다.</p>
+        <template v-else>
+          <template v-for="set in similarSets" :key="set.key">
+            <div class="sim-set-head">{{ set.title }}</div>
+            <table class="modal-similar-table">
+              <thead>
+                <tr>
+                  <th class="c-event">종목</th>
+                  <th class="c-athlete">선수</th>
+                  <th class="c-time">기록</th>
+                  <th class="c-date">일자</th>
+                  <th class="c-pts">점수</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="group-head"><td colspan="5">{{ strokeKo(state.stroke) }} ({{ set.data?.same?.length ?? 0 }}건)</td></tr>
+                <tr v-for="(r, i) in set.data?.same" :key="'s' + i">
+                  <td class="event">{{ genderKo(r.gender) }} {{ strokeKo(r.stroke) }} {{ r.distance }}m · {{ r.course }}</td>
+                  <td class="athlete">{{ r.athlete }}</td>
+                  <td class="time">{{ normTime(r.time) }}</td>
+                  <td class="date">{{ r.date }}</td>
+                  <td class="pts">{{ r.points.toLocaleString() }}점<span class="pts-diff">{{ ptsDiff(r.points) }}</span></td>
+                </tr>
+                <tr class="group-head"><td colspan="5">타 영법 ({{ set.data?.other?.length ?? 0 }}건)</td></tr>
+                <tr v-for="(r, i) in set.data?.other" :key="'o' + i">
+                  <td class="event">{{ genderKo(r.gender) }} {{ strokeKo(r.stroke) }} {{ r.distance }}m · {{ r.course }}</td>
+                  <td class="athlete">{{ r.athlete }}</td>
+                  <td class="time">{{ normTime(r.time) }}</td>
+                  <td class="date">{{ r.date }}</td>
+                  <td class="pts">{{ r.points.toLocaleString() }}점<span class="pts-diff">{{ ptsDiff(r.points) }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </template>
+          <p v-if="!similarSets.some(s => s.data?.same?.length || s.data?.other?.length)" class="modal-emptynote">유사한 기록이 없습니다.</p>
+        </template>
       </section>
 
       <!-- ── 연령 보정 ────────────────────────── -->
@@ -641,7 +646,12 @@ interface SimilarRecord {
   gender: string; stroke: string; distance: number; course: string
   athlete: string; time: string; date: string; points: number
 }
-interface SimilarResponse { same: SimilarRecord[]; other: SimilarRecord[] }
+interface SimilarPair    { same: SimilarRecord[]; other: SimilarRecord[] }
+interface SimilarResponse {
+  oldest:   SimilarPair
+  recent:   SimilarPair
+  sameYear: SimilarPair
+}
 
 const similarData    = ref<SimilarResponse | null>(null)
 const similarPending = ref(false)
@@ -650,9 +660,29 @@ async function fetchSimilar() {
   if (!waPoints.value || !scoringReady.value) { similarData.value = null; return }
   similarPending.value = true
   try {
-    similarData.value = await $fetch<SimilarResponse>(
-      `/api/similar?gender=${state.gender}&stroke=${state.stroke}&distance=${state.distance}&course=${state.course}&pts=${waPoints.value}`
-    )
+    const year = attribution.datetime?.slice(0, 4) || ''
+    const params = new URLSearchParams({
+      gender:   state.gender,
+      stroke:   state.stroke,
+      distance: String(state.distance),
+      course:   state.course,
+      pts:      String(waPoints.value),
+    })
+    if (attribution.athlete) params.set('athlete', attribution.athlete)
+    if (year)                params.set('year',    year)
+    const raw = await $fetch<any>(`/api/similar?${params}`)
+    // Handle both new format { oldest, recent, sameYear } and legacy { same, other }
+    if (raw?.oldest) {
+      similarData.value = raw as SimilarResponse
+    } else if (raw?.same) {
+      similarData.value = {
+        oldest:   { same: raw.same,  other: raw.other  },
+        recent:   { same: raw.same,  other: raw.other  },
+        sameYear: { same: [],        other: []         },
+      }
+    } else {
+      similarData.value = null
+    }
   } catch {
     similarData.value = null
   } finally {
@@ -661,9 +691,20 @@ async function fetchSimilar() {
 }
 
 watch(
-  [() => state.gender, () => state.stroke, () => state.distance, () => state.timeSec, scoringReady],
+  [() => state.gender, () => state.stroke, () => state.distance, () => state.timeSec, scoringReady,
+   () => attribution.datetime, () => attribution.athlete],
   fetchSimilar
 )
+
+const similarSets = computed(() => {
+  if (!similarData.value) return []
+  const year = attribution.datetime?.slice(0, 4) || ''
+  return [
+    { key: 'oldest',   title: '가장 오래된 기록 모아보기',     data: similarData.value.oldest   },
+    { key: 'recent',   title: '가장 최근 작성된 기록 모아보기', data: similarData.value.recent   },
+    ...(year ? [{ key: 'sameYear', title: `${year}년 기록만 모아보기`, data: similarData.value.sameYear }] : []),
+  ]
+})
 
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -879,6 +920,22 @@ onMounted(async () => {
   color: var(--fg-mute);
   letter-spacing: 0;
   margin-top: 1px;
+}
+.sim-set-head {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+  padding: 20px 0 8px;
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+}
+.sim-set-head:first-child {
+  margin-top: 0;
+  border-top: none;
+  padding-top: 0;
 }
 .tv-footnote-body {
   font-family: var(--serif-ko);

@@ -671,15 +671,15 @@ aside.filters {
 }
 .aside-submit button.cta-file {
   margin-top: 8px;
-  background: transparent;
-  color: var(--fg-dim);
-  border: 1px solid var(--line);
+  background: #000;
+  color: #fff;
+  border: 1px solid #000;
   font-weight: 500;
 }
 .aside-submit button.cta-file:hover {
-  background: var(--bg-soft);
-  color: var(--fg);
-  border-color: var(--fg-mute);
+  background: #222;
+  color: #fff;
+  border-color: #222;
 }
 .aside-submit .note {
   font-family: var(--serif-ko);
