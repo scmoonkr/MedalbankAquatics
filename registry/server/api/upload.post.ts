@@ -31,7 +31,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const filename  = `${randomUUID()}${ext}`
-  const uploadDir = join(process.cwd(), 'public', 'uploads', 'errata')
+  const base      = process.env.UPLOAD_DIR || join(process.cwd(), 'data', 'uploads')
+  const uploadDir = join(base, 'errata')
   await mkdir(uploadDir, { recursive: true })
   await writeFile(join(uploadDir, filename), part.data)
 

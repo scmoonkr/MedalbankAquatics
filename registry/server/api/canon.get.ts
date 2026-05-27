@@ -13,10 +13,11 @@ function parseTimeSec(str: string): number {
 export default defineEventHandler(async () => {
   const db = await getDb()
 
-  const [nonMasters, kmrRecords, wmrRecords] = await Promise.all([
+  const [nonMasters, kmrRecords, wmrRecords, erRecords] = await Promise.all([
     db.collection('records').find({ course: 'LCM', isMasters: false }).toArray(),
     db.collection('records').find({ course: 'LCM', type: 'KMR' }).toArray(),
     db.collection('records').find({ course: 'LCM', type: 'WMR' }).toArray(),
+    db.collection('records').find({ course: 'LCM', type: 'ER'  }).toArray(),
   ])
 
   const GENDER: Record<string, string> = { men: 'M', women: 'W' }
@@ -76,6 +77,23 @@ export default defineEventHandler(async () => {
     if (!g || !stroke || !distance) continue
 
     const key          = `${g}-${stroke}-${distance}-WMR`
+    const time         = parseTimeSec(String(d.time || ''))
+    const existingTime = result[key] ? parseTimeSec(String(result[key].time || '')) : Infinity
+
+    if (time < existingTime) result[key] = toEntry(d)
+  }
+
+  // ER: 종목별 전 연령부 중 가장 빠른 기록 하나만 선택
+  for (const d of erRecords) {
+    if (!d.gender || !d.distance) continue
+
+    const g        = GENDER[d.gender]
+    const stroke   = d.discipline || ''
+    const distance = parseInt(String(d.distance))
+
+    if (!g || !stroke || !distance) continue
+
+    const key          = `${g}-${stroke}-${distance}-ER`
     const time         = parseTimeSec(String(d.time || ''))
     const existingTime = result[key] ? parseTimeSec(String(result[key].time || '')) : Infinity
 

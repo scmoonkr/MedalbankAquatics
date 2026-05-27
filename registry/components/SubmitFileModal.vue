@@ -102,7 +102,7 @@ async function onFileChange(e: Event) {
   try {
     const fd = new FormData()
     fd.append('file', file)
-    await $fetch('/api/upload', { method: 'POST', body: fd })
+    await $fetch('/api/upload-sheet', { method: 'POST', body: fd })
 
     // 즉시 완료 상태 + 자동 닫기
     done.value = true
