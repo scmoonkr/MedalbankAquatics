@@ -246,6 +246,35 @@
               <input v-model="panel.form.report_date" class="ep-inp mono" placeholder="YYYY-MM-DD" />
             </div>
           </div>
+
+          <!-- 첨부 파일 -->
+          <template v-if="panel.evidenceUrls.length || panel.file">
+            <div class="ep-divider"></div>
+            <div class="ep-attach-label">첨부 파일 · ATTACHMENTS</div>
+            <div class="ep-attach-list">
+              <a
+                v-for="(url, i) in panel.evidenceUrls"
+                :key="'ev' + i"
+                :href="url"
+                target="_blank"
+                rel="noopener"
+                class="ep-attach-item"
+              >
+                <span class="ep-attach-icon">{{ attachIcon(url) }}</span>
+                <span class="ep-attach-name">{{ attachName(url) }}</span>
+              </a>
+              <a
+                v-if="panel.file"
+                :href="'/' + panel.file.path"
+                target="_blank"
+                rel="noopener"
+                class="ep-attach-item"
+              >
+                <span class="ep-attach-icon">{{ attachIcon(panel.file.originalName) }}</span>
+                <span class="ep-attach-name">{{ panel.file.originalName }}</span>
+              </a>
+            </div>
+          </template>
         </div>
 
         <div class="ep-actions">
@@ -325,6 +354,8 @@ interface ErrataDoc {
   time: TimeBlock; before: TimeBlock | null; note: string;
   reporter: string; report_date: string; magazine: string; status: string;
   confirmed_at?: string; confirmed_target?: string; confirmed_action?: string;
+  evidenceUrls?: string[];
+  file?: { path: string; originalName: string } | null;
 }
 
 const f = reactive({ category: '', gender: '', discipline: '', name: '' })
@@ -431,10 +462,14 @@ const panel = reactive({
   open: false,
   id:   '',
   form: emptyForm() as PanelForm,
+  evidenceUrls: [] as string[],
+  file: null as { path: string; originalName: string } | null,
 })
 function openPanel(r: ErrataDoc) {
-  panel.open = true
-  panel.id   = r.id
+  panel.open         = true
+  panel.id           = r.id
+  panel.evidenceUrls = r.evidenceUrls ?? []
+  panel.file         = r.file ?? null
   panel.form = {
     no:          r.no ?? null,
     category:    r.category   || '',
@@ -484,6 +519,17 @@ function openNew() {
   const maxNo = rows.value.reduce((m, r) => Math.max(m, r.no ?? 0), 0)
   panel.form.no = maxNo + 1
 }
+function attachIcon(nameOrUrl: string): string {
+  const ext = nameOrUrl.split('.').pop()?.toLowerCase() ?? ''
+  if (['png','jpg','jpeg','gif','webp'].includes(ext)) return '🖼'
+  if (ext === 'pdf') return '📄'
+  if (['xlsx','xls'].includes(ext)) return '📊'
+  return '📎'
+}
+function attachName(url: string): string {
+  return url.split('/').pop() ?? url
+}
+
 function closePanel() {
   panel.open = false
   panel.id   = ''
@@ -767,6 +813,24 @@ td.chk input, th .c-chk input { cursor: pointer; }
 .ep-tail  { color: #aaa; font-size: 11.5px; }
 .ep-note  { color: #888; font-style: italic; font-size: 12px; }
 td.entry  { max-width: 420px; line-height: 1.5; }
+
+.ep-attach-label {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em;
+  text-transform: uppercase; color: #888; margin-bottom: 10px;
+}
+.ep-attach-list { display: flex; flex-direction: column; gap: 6px; }
+.ep-attach-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border: 1px solid #e0e0e0; border-radius: 3px;
+  background: #fafafa; text-decoration: none; color: #222;
+  font-size: 12.5px; transition: background 0.12s, border-color 0.12s;
+}
+.ep-attach-item:hover { background: #f0f4ff; border-color: #a0b4e0; }
+.ep-attach-icon { font-size: 15px; flex-shrink: 0; }
+.ep-attach-name {
+  font-family: var(--mono); font-size: 12px; color: #0a1d3a;
+  word-break: break-all; text-decoration: underline; text-underline-offset: 2px;
+}
 
 .ep-actions {
   display: flex; justify-content: space-between; align-items: center;

@@ -117,6 +117,8 @@ export default defineEventHandler(async (event) => {
       confirmed_at:    d.confirmed_at   ?? '',
       confirmed_target:d.confirmed_target ?? '',
       confirmed_action:d.confirmed_action ?? '',
+      evidenceUrls:    Array.isArray(d.evidenceUrls) ? d.evidenceUrls : [],
+      file:            d.file ?? null,
     }
   })
 })
