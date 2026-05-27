@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
 
   // ── 파일 저장 ──────────────────────────────────────────────
   const filename  = `${randomUUID()}${ext}`
-  const base      = process.env.UPLOAD_DIR || join(process.cwd(), 'data', 'uploads')
+  const base      = useRuntimeConfig().uploadDir || join(process.cwd(), 'data', 'uploads')
   const uploadDir = join(base, 'sheets')
   await mkdir(uploadDir, { recursive: true })
   await writeFile(join(uploadDir, filename), part.data)

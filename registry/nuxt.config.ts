@@ -19,6 +19,7 @@ export default defineNuxtConfig({
     naverClientSecret: process.env.NAVER_CLIENT_SECRET  || '',
     siteUrl:           process.env.NUXT_SITE_URL        || '',
     allowedNaverIds:   process.env.ALLOWED_NAVER_IDS   || '',
+    uploadDir:         process.env.UPLOAD_DIR          || '',
     // nuxt-auth-utils: NUXT_SESSION_PASSWORD는 런타임에서만 읽히므로 빌드 시 bake
     // HTTP 배포 환경에서는 Secure 쿠키 비활성화 (HTTPS 전환 시 제거)
     session: {

@@ -19,7 +19,7 @@ export default defineEventHandler((event) => {
   const paramPath = (event.context.params as any)?.path ?? ''
   // path traversal 방지: normalize 후 절대 경로 이탈 차단
   const safe = normalize(paramPath).replace(/^(\.\.(\/|\\|$))+/, '')
-  const base     = process.env.UPLOAD_DIR || join(process.cwd(), 'data', 'uploads')
+  const base     = useRuntimeConfig().uploadDir || join(process.cwd(), 'data', 'uploads')
   const filePath = join(base, safe)
 
   if (!existsSync(filePath)) {
