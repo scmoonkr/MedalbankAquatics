@@ -88,8 +88,12 @@ export default defineEventHandler(async (event) => {
     { upsert: true },
   )
 
+  // role을 DB에서 읽어 세션에 포함 (admin 여부 클라이언트 체크용)
+  const userDoc = await db.collection('users').findOne({ naverId: id }, { projection: { role: 1 } })
+  const role = (userDoc?.role as string) || 'user'
+
   await setUserSession(event, {
-    user: { id, name, email, nickname, avatar: profile_image, gender, birthyear, birthday, provider: 'naver' },
+    user: { id, name, email, nickname, avatar: profile_image, gender, birthyear, birthday, provider: 'naver', role },
   })
 
   await writeLog('login', { userId: id, name, email })
