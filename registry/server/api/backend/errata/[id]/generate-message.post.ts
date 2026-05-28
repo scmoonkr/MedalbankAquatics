@@ -121,15 +121,23 @@ export default defineEventHandler(async (event) => {
   const cfg = useRuntimeConfig(event)
   if (!cfg.nvidiaApiKey) throw createError({ statusCode: 500, statusMessage: 'NVIDIA_API_KEY 미설정' })
 
-  // ── 1. errata 문서 로드 ──────────────────────────────────────────
-  const db  = await getDb()
-  let oid: ObjectId
-  try { oid = new ObjectId(id) } catch { throw createError({ statusCode: 400, statusMessage: '잘못된 id' }) }
+  const db = await getDb()
 
-  const doc = await db.collection('errata').findOne({ _id: oid })
-  if (!doc) throw createError({ statusCode: 404, statusMessage: '문서 없음' })
+  // ── 1. time 데이터 로드 (신규: body / 기존: DB) ───────────────────
+  let t: Record<string, any>
 
-  const t           = (doc.time ?? {}) as Record<string, any>
+  if (id === 'new') {
+    // 신규 입력: body에서 직접 받음
+    const body = await readBody(event)
+    if (!body || typeof body !== 'object') throw createError({ statusCode: 400, statusMessage: 'body required for new' })
+    t = body as Record<string, any>
+  } else {
+    let oid: ObjectId
+    try { oid = new ObjectId(id) } catch { throw createError({ statusCode: 400, statusMessage: '잘못된 id' }) }
+    const doc = await db.collection('errata').findOne({ _id: oid })
+    if (!doc) throw createError({ statusCode: 404, statusMessage: '문서 없음' })
+    t = (doc.time ?? {}) as Record<string, any>
+  }
   const athlete     = t.name            || ''
   const timeStr     = t.time            || ''
   const gender      = t.gender          || 'men'   // 'men' | 'women'
@@ -172,7 +180,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // ── 4. DB 조회: PB, 첫 등재, 시즌 첫, 복귀, 전국 순위 ──────────
-  const coll  = db.collection('mergedTimes')
+  const coll = db.collection('mergedTimes')
   const dbGender = (gender === 'men' || gender === 'M') ? 'men' : 'women'
 
   // 같은 종목 선수 기록 (PB + 첫 등재 판별)

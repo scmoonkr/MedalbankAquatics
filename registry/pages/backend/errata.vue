@@ -301,7 +301,7 @@
         <div class="ep-actions">
           <div class="ep-actions-left">
             <button v-if="panel.id" class="btn-delete" @click="deleteRow">삭제</button>
-            <button v-if="panel.id" class="btn-gen" :disabled="panel.msgLoading" @click="generateMessage">
+            <button class="btn-gen" :disabled="panel.msgLoading" @click="generateMessage">
               {{ panel.msgLoading ? '생성 중…' : 'AI 메시지' }}
             </button>
             <span v-if="panel.msgError" class="ep-msg-error-inline">{{ panel.msgError }}</span>
@@ -547,8 +547,14 @@ function openPanel(r: ErrataDoc) {
   }
 }
 function openNew() {
-  panel.open = true
-  panel.id   = ''
+  panel.open          = true
+  panel.id            = ''
+  panel.evidenceUrls  = []
+  panel.file          = null
+  panel.msgLoading    = false
+  panel.msgError      = ''
+  panel.compSearching = false
+  panel.compError     = ''
   panel.form = emptyForm()
   // Suggest next `no` = max + 1
   const maxNo = rows.value.reduce((m, r) => Math.max(m, r.no ?? 0), 0)
@@ -603,13 +609,17 @@ async function confirmRow() {
 }
 
 async function generateMessage() {
-  if (!panel.id || panel.msgLoading) return
+  if (panel.msgLoading) return
   panel.msgLoading = true
   panel.msgError   = ''
   try {
+    const isNew = !panel.id
+    const url   = isNew
+      ? '/api/backend/errata/new/generate-message'
+      : `/api/backend/errata/${panel.id}/generate-message`
     const res = await $fetch<{ message: string; facts: any }>(
-      `/api/backend/errata/${panel.id}/generate-message`,
-      { method: 'POST' }
+      url,
+      { method: 'POST', body: isNew ? panel.form.time : undefined }
     )
     panel.form.note = res.message
   } catch (e: any) {
