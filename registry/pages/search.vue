@@ -115,7 +115,7 @@
         <div class="results-header">
           <h2 v-html="titleHtml"></h2>
         </div>
-        <form class="sr-form" style="margin-bottom:22px;" @submit.prevent="doSearch">
+        <form class="sr-form" @submit.prevent="doSearch">
           <input
             v-model="searchInput"
             class="sr-input"
@@ -470,23 +470,10 @@ function doSearch() {
 </script>
 
 <style scoped>
-/* ── 검색 헤더: Hero 대체 전체 너비 영역 ────────────────────── */
-.sr-header {
-  padding: 36px var(--pad-x) 32px;
-  border-bottom: 1px solid var(--line);
-  scroll-snap-align: start;
-}
-.sr-eyebrow {
-  font-family: var(--sans);
-  font-size: 11px;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: var(--fg-faint);
-  margin-bottom: 18px;
-}
 .sr-form {
   display: flex;
   width: 100%;
+  margin-bottom: 22px;
 }
 .sr-input {
   flex: 1;
@@ -526,7 +513,6 @@ function doSearch() {
 
 /* ── 모바일 ─────────────────────────────────────────────────── */
 @media (max-width: 880px) {
-  .sr-header { padding: 28px var(--pad-x) 24px; }
   .sr-form { max-width: 100%; }
   .sr-input { font-size: 14px; }
 }

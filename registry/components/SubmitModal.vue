@@ -388,7 +388,7 @@ async function submit() {
 .sm-overlay {
   position: fixed; inset: 0; z-index: 900;
   background: rgba(0,0,0,0.55);
-  display: flex; align-items: flex-start; justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   padding: 24px 16px 40px; overflow-y: auto;
 }
 .sm-modal {

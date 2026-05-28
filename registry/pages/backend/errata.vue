@@ -224,7 +224,28 @@
             <!-- 대회명 -->
             <div class="ep-field ep-field-wide">
               <label>대회명 <span class="ep-req">*</span></label>
-              <input v-model="panel.form.time.competitionName" :class="['ep-inp', { 'ep-inp-changed': mf.has('competitionName') }]" placeholder="2024 전국체육대회" />
+              <div class="ep-inp-wrap">
+                <input
+                  v-model="panel.form.time.competitionName"
+                  :class="['ep-inp ep-inp-search', { 'ep-inp-changed': mf.has('competitionName') }]"
+                  placeholder="2024 전국체육대회"
+                  @keydown.enter.prevent="searchCompetition"
+                />
+                <button
+                  class="ep-search-btn"
+                  :class="{ loading: panel.compSearching }"
+                  :disabled="panel.compSearching || !panel.form.time.competitionName"
+                  title="대회 검색 (LLM)"
+                  @click="searchCompetition"
+                >
+                  <svg v-if="!panel.compSearching" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <span v-else class="ep-spin">⟳</span>
+                </button>
+              </div>
+              <span v-if="panel.compError" class="ep-comp-error">{{ panel.compError }}</span>
+              <span v-else-if="panel.form.time.competitionID" class="ep-comp-ok">competitionID: {{ panel.form.time.competitionID }}</span>
               <span v-if="panel.form.before && mf.has('competitionName')" class="ep-orig">원본: {{ (panel.form.before as any).competitionName || '—' }}</span>
             </div>
 
@@ -278,8 +299,13 @@
         </div>
 
         <div class="ep-actions">
-          <button v-if="panel.id" class="btn-delete" @click="deleteRow">삭제</button>
-          <span v-else></span>
+          <div class="ep-actions-left">
+            <button v-if="panel.id" class="btn-delete" @click="deleteRow">삭제</button>
+            <button v-if="panel.id" class="btn-gen" :disabled="panel.msgLoading" @click="generateMessage">
+              {{ panel.msgLoading ? '생성 중…' : 'AI 메시지' }}
+            </button>
+            <span v-if="panel.msgError" class="ep-msg-error-inline">{{ panel.msgError }}</span>
+          </div>
           <div class="ep-actions-right">
             <button class="btn-cancel" @click="closePanel">취소</button>
             <button v-if="panel.id" class="btn-confirm" @click="confirmRow">Confirm</button>
@@ -346,7 +372,7 @@ const mf = computed(() => {
 interface TimeBlock {
   gender?: string; discipline?: string; distance?: string; course?: string;
   rank?: number | null; name?: string; time?: string;
-  datetime?: string; competitionName?: string; pool?: string;
+  datetime?: string; competitionName?: string; competitionID?: number | null; pool?: string;
   team?: string; sido?: string; group?: string; isMasters?: boolean;
 }
 interface ErrataDoc {
@@ -452,7 +478,7 @@ function emptyForm(): PanelForm {
     reporter: '', report_date: '', magazine: '', note: '',
     time: {
       gender: '', discipline: '', distance: '', course: '', rank: null,
-      name: '', time: '', datetime: '', competitionName: '', pool: '',
+      name: '', time: '', datetime: '', competitionName: '', competitionID: null, pool: '',
       team: '', sido: '', group: '', isMasters: false,
     },
     before: null,
@@ -464,12 +490,20 @@ const panel = reactive({
   form: emptyForm() as PanelForm,
   evidenceUrls: [] as string[],
   file: null as { path: string; originalName: string } | null,
+  msgLoading:    false,
+  msgError:      '',
+  compSearching: false,
+  compError:     '',
 })
 function openPanel(r: ErrataDoc) {
   panel.open         = true
   panel.id           = r.id
   panel.evidenceUrls = r.evidenceUrls ?? []
   panel.file         = r.file ?? null
+  panel.msgLoading    = false
+  panel.msgError      = ''
+  panel.compSearching = false
+  panel.compError     = ''
   panel.form = {
     no:          r.no ?? null,
     category:    r.category   || '',
@@ -489,6 +523,7 @@ function openPanel(r: ErrataDoc) {
       time:            r.time?.time            ?? '',
       datetime:        (r.time as any)?.datetime        ?? '',
       competitionName: (r.time as any)?.competitionName ?? '',
+      competitionID:   (r.time as any)?.competitionID  ?? null,
       pool:            (r.time as any)?.pool            ?? '',
       team:            r.time?.team            ?? '',
       sido:            r.time?.sido            ?? '',
@@ -565,6 +600,52 @@ async function confirmRow() {
   }
   closePanel()
   await refresh()
+}
+
+async function generateMessage() {
+  if (!panel.id || panel.msgLoading) return
+  panel.msgLoading = true
+  panel.msgError   = ''
+  try {
+    const res = await $fetch<{ message: string; facts: any }>(
+      `/api/backend/errata/${panel.id}/generate-message`,
+      { method: 'POST' }
+    )
+    panel.form.note = res.message
+  } catch (e: any) {
+    panel.msgError = e?.statusMessage || e?.message || '메시지 생성 실패'
+  } finally {
+    panel.msgLoading = false
+  }
+}
+
+async function searchCompetition() {
+  const query = (panel.form.time as any).competitionName?.trim()
+  if (!query || panel.compSearching) return
+  panel.compSearching = true
+  panel.compError     = ''
+  try {
+    const res = await $fetch<{ competition: any; candidates: number; rawLlm: string }>(
+      '/api/backend/competition-search',
+      { method: 'POST', body: { query } }
+    )
+    console.log('[competition-search] response:', res)
+    const c = res.competition
+    if (!c) throw new Error('competition 데이터가 없습니다.')
+    ;(panel.form.time as any).competitionID   = c.competitionID   ?? null
+    ;(panel.form.time as any).competitionName = c.competitionName ?? query
+    ;(panel.form.time as any).datetime        = c.datetime        ?? ''
+    ;(panel.form.time as any).pool            = c.pool            ?? ''
+    ;(panel.form.time as any).sido            = c.sido            ?? ''
+    ;(panel.form.time as any).course          = c.course          ?? (panel.form.time as any).course
+    if (c.isMasters !== undefined) panel.form.time.isMasters = !!c.isMasters
+    console.log('[competition-search] form updated:', panel.form.time)
+  } catch (e: any) {
+    console.error('[competition-search] error:', e)
+    panel.compError = e?.data?.statusMessage || e?.statusMessage || e?.message || '대회 검색 실패'
+  } finally {
+    panel.compSearching = false
+  }
 }
 
 // ── checkbox selection + bulk confirm ───────────────────────────
@@ -813,6 +894,41 @@ td.chk input, th .c-chk input { cursor: pointer; }
 .ep-tail  { color: #aaa; font-size: 11.5px; }
 .ep-note  { color: #888; font-style: italic; font-size: 12px; }
 td.entry  { max-width: 420px; line-height: 1.5; }
+
+/* 대회명 검색 */
+.ep-inp-wrap {
+  position: relative; display: flex; align-items: center;
+}
+.ep-inp-search {
+  flex: 1; padding-right: 36px;
+}
+.ep-search-btn {
+  position: absolute; right: 1px; top: 1px; bottom: 1px;
+  width: 32px; border: none; background: transparent;
+  color: #888; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; border-radius: 0 2px 2px 0;
+  transition: background 0.12s, color 0.12s;
+}
+.ep-search-btn:hover:not(:disabled) { background: #f0f4ff; color: #0a1d3a; }
+.ep-search-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ep-spin {
+  display: inline-block; font-size: 14px; line-height: 1;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.ep-comp-error { font-size: 11px; color: #b91c1c; margin-top: -2px; }
+.ep-comp-ok    { font-size: 11px; color: #166534; margin-top: -2px; font-family: var(--mono); }
+
+/* AI 메시지 버튼 */
+.btn-gen {
+  height: 34px; padding: 0 14px; font-size: 12px; cursor: pointer;
+  border: 1px solid #4a5568; background: #4a5568; color: #fff;
+  border-radius: 3px; transition: background 0.15s; white-space: nowrap;
+}
+.btn-gen:hover:not(:disabled) { background: #2d3748; }
+.btn-gen:disabled { opacity: 0.5; cursor: not-allowed; }
+.ep-actions-left { display: flex; align-items: center; gap: 8px; }
+.ep-msg-error-inline { font-size: 11.5px; color: #b91c1c; }
 
 .ep-attach-label {
   font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em;

@@ -141,7 +141,6 @@
         <div class="results-header">
           <h2 ref="resultsTitleEl" v-html="titleHtml"></h2>
           <div class="right">
-            <span class="ctx-meta">{{ resultsMeta }}</span>
           </div>
         </div>
         <div v-if="pending && !allRanks.length" class="empty-state">데이터를 불러오는 중입니다…</div>

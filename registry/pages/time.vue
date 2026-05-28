@@ -168,7 +168,12 @@
         <p v-else-if="!waPoints" class="modal-emptynote">기록을 입력하면 유사한 점수의 기록이 표시됩니다.</p>
         <template v-else>
           <template v-for="set in similarSets" :key="set.key">
-            <div class="sim-set-head">{{ set.title }}</div>
+            <!-- 같은 영법 -->
+            <div class="sim-set-head">
+              <span class="sim-set-group">가장 유사한 점수의 {{ strokeKo(state.stroke) }} 기록 ({{ set.data?.same?.length ?? 0 }}건)</span>
+              <span class="sim-set-sep"> | </span>
+              <span class="sim-set-label">{{ set.title }}</span>
+            </div>
             <table class="modal-similar-table">
               <thead>
                 <tr>
@@ -180,7 +185,9 @@
                 </tr>
               </thead>
               <tbody>
-                <tr class="group-head"><td colspan="5">{{ strokeKo(state.stroke) }} ({{ set.data?.same?.length ?? 0 }}건)</td></tr>
+                <tr v-if="!set.data?.same?.length">
+                  <td colspan="5" class="empty-row">데이터 없음</td>
+                </tr>
                 <tr v-for="(r, i) in set.data?.same" :key="'s' + i">
                   <td class="event">{{ genderKo(r.gender) }} {{ strokeKo(r.stroke) }} {{ r.distance }}m · {{ r.course }}</td>
                   <td class="athlete">{{ r.athlete }}</td>
@@ -188,7 +195,28 @@
                   <td class="date">{{ r.date }}</td>
                   <td class="pts">{{ r.points.toLocaleString() }}점<span class="pts-diff">{{ ptsDiff(r.points) }}</span></td>
                 </tr>
-                <tr class="group-head"><td colspan="5">타 영법 ({{ set.data?.other?.length ?? 0 }}건)</td></tr>
+              </tbody>
+            </table>
+            <!-- 타 영법 -->
+            <div class="sim-set-head">
+              <span class="sim-set-group">가장 유사한 점수의 타 영법 기록 ({{ set.data?.other?.length ?? 0 }}건)</span>
+              <span class="sim-set-sep"> | </span>
+              <span class="sim-set-label">{{ set.title }}</span>
+            </div>
+            <table class="modal-similar-table">
+              <thead>
+                <tr>
+                  <th class="c-event">종목</th>
+                  <th class="c-athlete">선수</th>
+                  <th class="c-time">기록</th>
+                  <th class="c-date">일자</th>
+                  <th class="c-pts">점수</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="!set.data?.other?.length">
+                  <td colspan="5" class="empty-row">데이터 없음</td>
+                </tr>
                 <tr v-for="(r, i) in set.data?.other" :key="'o' + i">
                   <td class="event">{{ genderKo(r.gender) }} {{ strokeKo(r.stroke) }} {{ r.distance }}m · {{ r.course }}</td>
                   <td class="athlete">{{ r.athlete }}</td>
@@ -700,9 +728,9 @@ const similarSets = computed(() => {
   if (!similarData.value) return []
   const year = attribution.datetime?.slice(0, 4) || ''
   return [
-    { key: 'oldest',   title: '가장 오래된 기록 모아보기',     data: similarData.value.oldest   },
+    { key: 'oldest',   title: '가장 오래된 기록 모아보기',      data: similarData.value.oldest   },
     { key: 'recent',   title: '가장 최근 작성된 기록 모아보기', data: similarData.value.recent   },
-    ...(year ? [{ key: 'sameYear', title: `${year}년 기록만 모아보기`, data: similarData.value.sameYear }] : []),
+    ...(year ? [{ key: 'sameYear', title: '같은 해 기록만 모아보기', data: similarData.value.sameYear }] : []),
   ]
 })
 
@@ -924,18 +952,40 @@ onMounted(async () => {
 .sim-set-head {
   font-family: var(--sans);
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--fg-mute);
   padding: 20px 0 8px;
   border-top: 1px solid var(--line);
   margin-top: 12px;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 4px;
 }
 .sim-set-head:first-child {
   margin-top: 0;
   border-top: none;
   padding-top: 0;
+}
+.sim-set-group {
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+.sim-set-sep {
+  color: var(--fg-faint);
+  font-weight: 400;
+}
+.sim-set-label {
+  font-weight: 400;
+  color: var(--fg-mute);
+}
+.empty-row td {
+  color: var(--fg-faint);
+  font-size: 12px;
+  padding: 10px 0;
+  text-align: center;
 }
 .tv-footnote-body {
   font-family: var(--serif-ko);

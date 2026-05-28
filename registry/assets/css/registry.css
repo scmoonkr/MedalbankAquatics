@@ -723,13 +723,7 @@ main.results {
   align-items: center;
   gap: 18px;
 }
-.results-header .ctx-meta {
-  font-family: var(--sans);
-  font-size: 10.5px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--fg-faint);
-}
+
 .toggle-100 {
   background: transparent;
   border: 1px solid var(--rule);
