@@ -121,14 +121,15 @@ async function onFileChange(e: Event) {
 .sfm-overlay {
   position: fixed; inset: 0; z-index: 900;
   background: rgba(0,0,0,0.55);
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px 16px;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 24px 16px; overflow-y: auto;
 }
 .sfm-modal {
   position: relative; width: 100%; max-width: 480px;
   background: var(--bg); border: 1px solid var(--line);
   padding: 48px 40px 44px;
   animation: sfmIn 0.18s ease;
+  margin: auto;
 }
 @keyframes sfmIn {
   from { opacity: 0; transform: translateY(-10px); }

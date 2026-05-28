@@ -767,7 +767,7 @@ main.results {
 .index-table thead th.c-city { width: 12%; }
 .index-table thead th.c-date { width: 14%; }
 .index-table thead th.c-meet { width: 28%; }
-.index-table thead th.c-time { width: 14%; text-align: right; }
+.index-table thead th.c-time { width: 14%; }
 
 .index-table tbody tr {
   border-bottom: 1px solid var(--line);
@@ -831,7 +831,6 @@ main.results {
   font-size: 18px;
   font-weight: 500;
   color: var(--fg);
-  text-align: right;
   letter-spacing: -0.01em;
   font-feature-settings: "tnum";
   white-space: nowrap;
