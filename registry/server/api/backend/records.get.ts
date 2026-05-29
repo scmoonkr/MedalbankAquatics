@@ -19,5 +19,11 @@ export default defineEventHandler(async () => {
     sido:            d.sido            || '—',
     competitionName: d.competitionName || '—',
     pool:            d.pool            || '—',
+    // 추가 필드 (records 원본 스키마 + cannon 동기화용)
+    team:            d.team            || d.nationality || '',
+    location:        d.location        || d.pool        || '',
+    isMasters:       d.isMasters       ?? false,
+    discipline:      d.discipline      || d.style       || '',
+    updateTimes:     d.updateTimes     ? String(d.updateTimes).slice(0, 10) : null,
   }))
 })

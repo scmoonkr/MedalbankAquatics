@@ -18,8 +18,10 @@ export default defineEventHandler(async (event) => {
   const regexes = words.map(w => ({ competitionName: { $regex: w, $options: 'i' } }))
   const filter  = regexes.length > 1 ? { $and: regexes } : regexes[0] ?? {}
 
+  const FULL_PROJ = { _id: 0, competitionID: 1, competitionName: 1, datetime: 1, pool: 1, sido: 1, course: 1, isMasters: 1 }
+
   let candidates = await coll
-    .find(filter, { projection: { competitionID: 1, competitionName: 1, datetime: 1, _id: 0 } })
+    .find(filter, { projection: FULL_PROJ })
     .sort({ datetime: -1 })
     .limit(40)
     .toArray()
@@ -27,7 +29,7 @@ export default defineEventHandler(async (event) => {
   // AND 결과 없으면 OR 폴백
   if (candidates.length === 0 && regexes.length > 1) {
     candidates = await coll
-      .find({ $or: regexes }, { projection: { competitionID: 1, competitionName: 1, datetime: 1, _id: 0 } })
+      .find({ $or: regexes }, { projection: FULL_PROJ })
       .sort({ datetime: -1 })
       .limit(40)
       .toArray()
@@ -41,12 +43,8 @@ export default defineEventHandler(async (event) => {
 
   // 후보가 1개면 LLM 생략
   if (candidates.length === 1) {
-    const competition = await coll.findOne(
-      { competitionID: candidates[0].competitionID },
-      { projection: { _id: 0, competitionID: 1, competitionName: 1, datetime: 1, pool: 1, sido: 1, course: 1, isMasters: 1 } }
-    )
-    console.log(`[competition-search] single match → competitionID=${competition?.competitionID}`)
-    return { competition, candidates: 1, rawLlm: '(skipped)' }
+    console.log(`[competition-search] single match → competitionID=${candidates[0].competitionID}`)
+    return { competition: candidates[0], competitionList: candidates, candidates: 1, rawLlm: '(skipped)' }
   }
 
   // ── 2. NVIDIA API ─────────────────────────────────────────────────
@@ -124,11 +122,8 @@ Return JSON with the competitionID of the best match, or null if none match.`
     throw createError({ statusCode: 502, statusMessage: `LLM이 유효하지 않은 ID를 반환했습니다: ${rawText.slice(0, 80)}` })
   }
 
-  // ── 4. 선택된 대회 전체 정보 fetch ───────────────────────────────
-  const competition = await coll.findOne(
-    { competitionID },
-    { projection: { _id: 0, competitionID: 1, competitionName: 1, datetime: 1, pool: 1, sido: 1, course: 1, isMasters: 1 } }
-  )
+  // ── 4. LLM이 선택한 대회 (candidates에서 바로 추출)
+  const competition = candidates.find(c => c.competitionID === competitionID) ?? null
 
   console.log(`[competition-search] result → competitionID=${competition?.competitionID}, name="${competition?.competitionName}"`)
 
@@ -136,5 +131,11 @@ Return JSON with the competitionID of the best match, or null if none match.`
     throw createError({ statusCode: 404, statusMessage: `competitionID ${competitionID} 를 찾을 수 없습니다.` })
   }
 
-  return { competition, candidates: candidates.length, rawLlm: rawText }
+  // LLM 추천 항목을 목록 맨 앞으로
+  const competitionList = [
+    competition,
+    ...candidates.filter(c => c.competitionID !== competitionID),
+  ]
+
+  return { competition, competitionList, candidates: candidates.length, rawLlm: rawText }
 })

@@ -88,6 +88,13 @@
 
     <SubmitModal     :open="submitOpen"     :initial-data="submitData" @close="closeSubmit" />
     <SubmitFileModal :open="submitFileOpen"                            @close="closeSubmitFile" />
+
+    <Transition name="no-perm-toast">
+      <div v-if="noPermission" class="no-perm-toast">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        접근 권한이 없습니다
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -96,6 +103,11 @@ const route = useRoute()
 const menuOpen = ref(false)
 const brandHovered = ref(false)
 const { loggedIn } = useUserSession()
+
+const noPermission = useState('noPermission', () => false)
+watch(noPermission, (v) => {
+  if (v) setTimeout(() => { noPermission.value = false }, 2800)
+})
 
 const submitOpen = ref(false)
 const submitData = ref<Record<string, any> | undefined>(undefined)
@@ -214,4 +226,33 @@ button.nav-cta {
   color: inherit;
   text-decoration: none;
 }
+
+.no-perm-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  z-index: 9999;
+  white-space: nowrap;
+}
+.no-perm-toast svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: #f87171;
+}
+.no-perm-toast-enter-active { transition: opacity 0.2s, transform 0.2s; }
+.no-perm-toast-leave-active { transition: opacity 0.35s, transform 0.35s; }
+.no-perm-toast-enter-from   { opacity: 0; transform: translateX(-50%) translateY(8px); }
+.no-perm-toast-leave-to     { opacity: 0; transform: translateX(-50%) translateY(8px); }
 </style>

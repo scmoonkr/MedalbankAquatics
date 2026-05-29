@@ -1,24 +1,17 @@
 // POST /api/backend/errata/:id/confirm
-// Push the errata's time block into mergedTimes:
-//   - "누락건 신규 등재" → insert a new mergedTimes doc
-//   - "기록오류 정정"   → match an existing doc and $set the fields
-// Marks the errata with confirmed_at on success.
+// mergedTimes 중복 체크 { name, gender, isMasters, discipline, course, distance, time }
+// 없으면 mergedTimes insert
+// errata.status = "confirmed" (insert 여부와 무관)
+
 import { ObjectId } from 'mongodb'
 import { nextTid } from '~/server/utils/tid'
+import { getBasetime, calcWAPoints } from '~/server/utils/wapoints'
 
-// Fields copied from errata.time → mergedTimes.
+// errata.time → mergedTimes 복사 필드
 const COPY_FIELDS = [
   'gender', 'name', 'group', 'team', 'sido',
   'discipline', 'course', 'distance', 'time', 'rank',
-  'competitionName', 'datetime', 'isMasters',
-] as const
-
-// Fields used to LOCATE the existing mergedTimes doc when updating.
-// Identity-stable fields only — not `time` / `rank` / `team` / `sido` which the
-// errata may be specifically correcting.
-const MATCH_FIELDS = [
-  'name', 'gender', 'discipline', 'distance', 'course',
-  'competitionName', 'datetime',
+  'competitionName', 'pool', 'datetime', 'isMasters',
 ] as const
 
 function buildPayload(time: Record<string, unknown>) {
@@ -38,6 +31,12 @@ function calcMagazine(from: Date = new Date()): string {
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월호`
 }
 
+function parseTimeSeconds(t: string): number | null {
+  const m = String(t).trim().match(/^(?:(\d+):)?(\d{1,2})\.(\d{2})$/)
+  if (!m) return null
+  return parseInt(m[1] || '0') * 60 + parseInt(m[2]) + parseInt(m[3]) / 100
+}
+
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
   const db = await getDb()
@@ -47,53 +46,96 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'errata not found' })
   }
 
-  const category = String(errata.category || '')
-  const time     = (errata.time || {}) as Record<string, unknown>
-  const payload  = buildPayload(time)
-
-  const now      = new Date()
+  const time    = (errata.time || {}) as Record<string, unknown>
+  const now     = new Date()
   const magazine = calcMagazine(now)
 
-  if (category.includes('누락건 신규 등재')) {
-    if (!payload.name || !payload.time) {
-      throw createError({ statusCode: 400, statusMessage: 'name and time required for insert' })
-    }
-    const tid = await nextTid(db)
-    const result = await db.collection('mergedTimes').insertOne({ ...payload, tid })
-    await db.collection('errata').updateOne(
-      { _id: new ObjectId(id) },
-      { $set: { confirmed_at: now.toISOString(), confirmed_target: String(result.insertedId), confirmed_action: 'insert', magazine } }
-    )
-    return { ok: true, action: 'insert', target: String(result.insertedId), magazine }
+  const name       = String(time.name       || '')
+  const gender     = String(time.gender     || '')
+  const isMasters  = !!(time.isMasters)
+  const discipline = String(time.discipline || '')
+  const course     = String(time.course     || 'LCM')
+  const distance   = String(time.distance   || '')
+  const timeStr    = String(time.time       || '')
+
+  if (!name || !timeStr) {
+    throw createError({ statusCode: 400, statusMessage: 'name과 time이 필요합니다.' })
   }
 
-  if (category.includes('기록오류 정정') || category.includes('오류 정정')) {
-    const match: Record<string, unknown> = {}
-    for (const k of MATCH_FIELDS) {
-      const v = time?.[k]
-      if (v !== undefined && v !== null && v !== '') match[k] = v
+  // ── 중복 체크 ─────────────────────────────────────────────────────
+  const exists = await db.collection('mergedTimes').findOne({
+    name, gender, isMasters, discipline, course, distance, time: timeStr,
+  })
+
+  let action: 'insert' | 'skipped' | 'updated' = 'skipped'
+  let targetId: string | null = null
+
+  if (!exists) {
+    // ── 신규 insert ─────────────────────────────────────────────────
+    const timeSec   = parseTimeSeconds(timeStr)
+    const basetime  = timeSec ? getBasetime(course, gender, discipline, distance) : null
+    const timeStamp = timeSec ? timeSec / 86400 : 0
+    const waPoints  = (basetime && timeStamp) ? calcWAPoints(basetime, timeStamp) : 0
+
+    const payload = buildPayload(time)
+    const timeID  = await nextTid(db)
+
+    const result = await db.collection('mergedTimes').insertOne({
+      ...payload,
+      timeID,
+      timeStamp,
+      waPoints,
+      competitionID: time.competitionID ?? 1,
+    })
+
+    action   = 'insert'
+    targetId = String(result.insertedId)
+
+  } else {
+    // ── 중복 — 대회 정보 보강 가능 여부 확인 ────────────────────────
+    const existingCompId = exists.competitionID
+    const isMissingComp  = existingCompId === undefined || existingCompId === null || existingCompId === 1
+
+    const erataCompId   = time.competitionID
+    const erataCompName = time.competitionName
+
+    if (isMissingComp && erataCompId && erataCompName) {
+      // competitionID / competitionName 은 필수 조건이 충족됐을 때만 갱신
+      const patch: Record<string, unknown> = {
+        competitionID:   erataCompId,
+        competitionName: erataCompName,
+      }
+
+      // 나머지 선택 필드: 값이 있을 때만 포함
+      const OPTIONAL = ['pool', 'poolID', 'datetime', 'sido', 'course', 'isMasters'] as const
+      for (const k of OPTIONAL) {
+        const v = time[k]
+        if (v !== undefined && v !== null && v !== '') patch[k] = v
+      }
+
+      await db.collection('mergedTimes').updateOne(
+        { _id: exists._id },
+        { $set: patch },
+      )
+
+      action   = 'updated'
+      targetId = String(exists._id)
     }
-    if (Object.keys(match).length < 3) {
-      throw createError({ statusCode: 400, statusMessage: 'not enough match fields (need at least 3 of: ' + MATCH_FIELDS.join(', ') + ')' })
-    }
-    const found = await db.collection('mergedTimes').find(match).limit(2).toArray()
-    if (found.length === 0) {
-      throw createError({ statusCode: 404, statusMessage: 'no matching mergedTimes doc' })
-    }
-    if (found.length > 1) {
-      throw createError({ statusCode: 409, statusMessage: 'multiple matching mergedTimes docs — narrow the criteria' })
-    }
-    const targetId = found[0]._id
-    await db.collection('mergedTimes').updateOne(
-      { _id: targetId },
-      { $set: payload }
-    )
-    await db.collection('errata').updateOne(
-      { _id: new ObjectId(id) },
-      { $set: { confirmed_at: now.toISOString(), confirmed_target: String(targetId), confirmed_action: 'update', magazine } }
-    )
-    return { ok: true, action: 'update', target: String(targetId), magazine }
   }
 
-  throw createError({ statusCode: 400, statusMessage: `unsupported category for confirm: ${category}` })
+  // ── errata 상태 업데이트 ───────────────────────────────────────────
+  await db.collection('errata').updateOne(
+    { _id: new ObjectId(id) },
+    {
+      $set: {
+        status:           'confirmed',
+        confirmed_at:     now.toISOString(),
+        confirmed_action: action,
+        confirmed_target: targetId,
+        magazine,
+      },
+    },
+  )
+
+  return { ok: true, action, targetId, magazine }
 })

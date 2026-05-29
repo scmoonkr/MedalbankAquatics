@@ -291,6 +291,15 @@ export default defineEventHandler(async (event) => {
   }
 
   // ── 7. NVIDIA API 호출 ───────────────────────────────────────────
+  const llmMessages = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    {
+      role: 'user',
+      content: `아래 facts를 바탕으로 기념문을 작성하세요.\n\n${JSON.stringify(facts, null, 2)}`,
+    },
+  ]
+  process.stdout.write('[generate-message] LLM messages:\n' + JSON.stringify(llmMessages, null, 2) + '\n')
+
   const apiRes = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -299,13 +308,7 @@ export default defineEventHandler(async (event) => {
     },
     body: JSON.stringify({
       model: cfg.nvidiaModelName || 'meta/llama-3.1-8b-instruct',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        {
-          role: 'user',
-          content: `아래 facts를 바탕으로 기념문을 작성하세요.\n\n${JSON.stringify(facts, null, 2)}`,
-        },
-      ],
+      messages: llmMessages,
       max_tokens: 512,
       temperature: 0.3,
     }),
@@ -319,5 +322,5 @@ export default defineEventHandler(async (event) => {
   const apiJson = await apiRes.json()
   const message = apiJson.choices?.[0]?.message?.content?.trim() ?? ''
 
-  return { message, facts }
+  return { message, facts, llmMessages }
 })

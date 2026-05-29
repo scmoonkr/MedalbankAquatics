@@ -244,8 +244,22 @@
                   <span v-else class="ep-spin">⟳</span>
                 </button>
               </div>
+              <!-- 후보 목록 -->
+              <div v-if="panel.compList.length > 0" class="comp-list">
+                <button
+                  v-for="c in panel.compList"
+                  :key="c.competitionID"
+                  class="comp-item"
+                  :class="{ 'comp-suggested': c.competitionID === panel.compSuggestedId }"
+                  @click="applyCompetition(c)"
+                >
+                  <span class="comp-name">{{ c.competitionName }}</span>
+                  <span class="comp-meta">{{ c.datetime?.slice(0, 10) }}{{ c.pool ? ' · ' + c.pool : '' }}</span>
+                  <span v-if="c.competitionID === panel.compSuggestedId" class="comp-tag">AI 추천</span>
+                </button>
+              </div>
               <span v-if="panel.compError" class="ep-comp-error">{{ panel.compError }}</span>
-              <span v-else-if="panel.form.time.competitionID" class="ep-comp-ok">competitionID: {{ panel.form.time.competitionID }}</span>
+              <span v-else-if="!panel.compList.length && panel.form.time.competitionID" class="ep-comp-ok">competitionID: {{ panel.form.time.competitionID }}</span>
               <span v-if="panel.form.before && mf.has('competitionName')" class="ep-orig">원본: {{ (panel.form.before as any).competitionName || '—' }}</span>
             </div>
 
@@ -314,6 +328,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirm result toast -->
+    <Transition name="ct">
+      <div v-if="confirmToast.show" class="ct-toast" :class="confirmToast.ok ? 'ct-ok' : 'ct-err'">
+        <p v-for="(line, i) in confirmToast.lines" :key="i">{{ line }}</p>
+      </div>
+    </Transition>
+
   </div>
 </template>
 
@@ -494,16 +516,20 @@ const panel = reactive({
   msgError:      '',
   compSearching: false,
   compError:     '',
+  compList:      [] as any[],
+  compSuggestedId: null as number | null,
 })
 function openPanel(r: ErrataDoc) {
   panel.open         = true
   panel.id           = r.id
   panel.evidenceUrls = r.evidenceUrls ?? []
   panel.file         = r.file ?? null
-  panel.msgLoading    = false
-  panel.msgError      = ''
-  panel.compSearching = false
-  panel.compError     = ''
+  panel.msgLoading      = false
+  panel.msgError        = ''
+  panel.compSearching   = false
+  panel.compError       = ''
+  panel.compList        = []
+  panel.compSuggestedId = null
   panel.form = {
     no:          r.no ?? null,
     category:    r.category   || '',
@@ -551,10 +577,12 @@ function openNew() {
   panel.id            = ''
   panel.evidenceUrls  = []
   panel.file          = null
-  panel.msgLoading    = false
-  panel.msgError      = ''
-  panel.compSearching = false
-  panel.compError     = ''
+  panel.msgLoading      = false
+  panel.msgError        = ''
+  panel.compSearching   = false
+  panel.compError       = ''
+  panel.compList        = []
+  panel.compSuggestedId = null
   panel.form = emptyForm()
   // Suggest next `no` = max + 1
   const maxNo = rows.value.reduce((m, r) => Math.max(m, r.no ?? 0), 0)
@@ -598,10 +626,18 @@ async function confirmRow() {
   // Save any unsaved edits first so the confirm payload reflects the latest form state.
   await $fetch(`/api/backend/errata/${panel.id}`, { method: 'PUT', body: JSON.parse(JSON.stringify(panel.form)) })
   try {
-    const res = await $fetch<{ action: string; target: string }>(`/api/backend/errata/${panel.id}/confirm`, { method: 'POST' })
-    alert(`Confirm 완료: ${res.action} → mergedTimes ${res.target}`)
+    const res = await $fetch<{ action: string; targetId: string | null }>(`/api/backend/errata/${panel.id}/confirm`, { method: 'POST' })
+    const msgMap: Record<string, string> = {
+      insert:  '✓ mergedTimes에 등재되었습니다',
+      updated: '✎ 중복 — 대회 정보를 업데이트했습니다',
+      skipped: '⊘ 중복 — 변경 사항 없음',
+    }
+    showConfirmToast(true, [
+      msgMap[res.action] ?? `✓ ${res.action}`,
+      res.targetId ? `ID: ${res.targetId}` : '',
+    ].filter(Boolean))
   } catch (e: any) {
-    alert(`Confirm 실패: ${e?.statusMessage || e?.message || e}`)
+    showConfirmToast(false, [`Confirm 실패: ${e?.statusMessage || e?.message || e}`])
     return
   }
   closePanel()
@@ -617,10 +653,11 @@ async function generateMessage() {
     const url   = isNew
       ? '/api/backend/errata/new/generate-message'
       : `/api/backend/errata/${panel.id}/generate-message`
-    const res = await $fetch<{ message: string; facts: any }>(
+    const res = await $fetch<{ message: string; facts: any; llmMessages: any[] }>(
       url,
       { method: 'POST', body: isNew ? panel.form.time : undefined }
     )
+    console.log('[generate-message] LLM messages:', res.llmMessages)
     panel.form.note = res.message
   } catch (e: any) {
     panel.msgError = e?.statusMessage || e?.message || '메시지 생성 실패'
@@ -629,33 +666,61 @@ async function generateMessage() {
   }
 }
 
+function applyCompetition(c: any) {
+  ;(panel.form.time as any).competitionID   = c.competitionID   ?? null
+  ;(panel.form.time as any).competitionName = c.competitionName ?? ''
+  ;(panel.form.time as any).datetime        = c.datetime        ?? ''
+  ;(panel.form.time as any).pool            = c.pool            ?? ''
+  ;(panel.form.time as any).sido            = c.sido            ?? ''
+  ;(panel.form.time as any).course          = c.course          ?? (panel.form.time as any).course
+  if (c.isMasters !== undefined) panel.form.time.isMasters = !!c.isMasters
+  panel.compList        = []
+  panel.compSuggestedId = null
+  panel.compError       = ''
+}
+
 async function searchCompetition() {
   const query = (panel.form.time as any).competitionName?.trim()
   if (!query || panel.compSearching) return
-  panel.compSearching = true
-  panel.compError     = ''
+  panel.compSearching   = true
+  panel.compError       = ''
+  panel.compList        = []
+  panel.compSuggestedId = null
   try {
-    const res = await $fetch<{ competition: any; candidates: number; rawLlm: string }>(
+    const res = await $fetch<{ competition: any; competitionList: any[]; candidates: number; rawLlm: string }>(
       '/api/backend/competition-search',
       { method: 'POST', body: { query } }
     )
     console.log('[competition-search] response:', res)
-    const c = res.competition
-    if (!c) throw new Error('competition 데이터가 없습니다.')
-    ;(panel.form.time as any).competitionID   = c.competitionID   ?? null
-    ;(panel.form.time as any).competitionName = c.competitionName ?? query
-    ;(panel.form.time as any).datetime        = c.datetime        ?? ''
-    ;(panel.form.time as any).pool            = c.pool            ?? ''
-    ;(panel.form.time as any).sido            = c.sido            ?? ''
-    ;(panel.form.time as any).course          = c.course          ?? (panel.form.time as any).course
-    if (c.isMasters !== undefined) panel.form.time.isMasters = !!c.isMasters
-    console.log('[competition-search] form updated:', panel.form.time)
+    if (!res.competition) throw new Error('competition 데이터가 없습니다.')
+
+    if (res.competitionList && res.competitionList.length > 1) {
+      // 여러 후보 → 목록 표시, LLM 추천 표시
+      panel.compList        = res.competitionList
+      panel.compSuggestedId = res.competition.competitionID ?? null
+    } else {
+      // 단일 결과 → 바로 적용
+      applyCompetition(res.competition)
+    }
   } catch (e: any) {
     console.error('[competition-search] error:', e)
     panel.compError = e?.data?.statusMessage || e?.statusMessage || e?.message || '대회 검색 실패'
   } finally {
     panel.compSearching = false
   }
+}
+
+// ── confirm toast ───────────────────────────────────────────────
+const confirmToast = reactive<{ show: boolean; ok: boolean; lines: string[] }>({
+  show: false, ok: true, lines: [],
+})
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+function showConfirmToast(ok: boolean, lines: string[]) {
+  if (toastTimer) clearTimeout(toastTimer)
+  confirmToast.ok = ok
+  confirmToast.lines = lines
+  confirmToast.show = true
+  toastTimer = setTimeout(() => { confirmToast.show = false }, 3500)
 }
 
 // ── checkbox selection + bulk confirm ───────────────────────────
@@ -677,22 +742,23 @@ watch(rows, () => { checkedIds.value = new Set() })
 async function bulkConfirm() {
   const ids = [...checkedIds.value]
   if (!ids.length) return
-  if (!confirm(`${ids.length}건을 confirm 하시겠습니까? (mergedTimes에 insert/update 됩니다)`)) return
-  let ok = 0; const fails: { id: string; msg: string }[] = []
+  let inserted = 0; let skipped = 0; const fails: { id: string; msg: string }[] = []
   for (const id of ids) {
     try {
-      await $fetch(`/api/backend/errata/${id}/confirm`, { method: 'POST' })
-      ok++
+      const res = await $fetch<{ action: string }>(`/api/backend/errata/${id}/confirm`, { method: 'POST' })
+      res.action === 'insert' ? inserted++ : skipped++
     } catch (e: any) {
       fails.push({ id, msg: e?.statusMessage || e?.message || String(e) })
     }
   }
   checkedIds.value = new Set()
   await refresh()
-  const failMsg = fails.length
-    ? '\n실패:\n' + fails.map(f => `  ${f.id.slice(-6)} — ${f.msg}`).join('\n')
-    : ''
-  alert(`Confirm 완료: ${ok}건 성공 / ${fails.length}건 실패${failMsg}`)
+  const lines = [
+    `✓ ${ids.length}건 처리 완료`,
+    `등재 ${inserted}건  ·  중복 skip ${skipped}건`,
+    ...fails.map(f => `✗ ${f.id.slice(-6)}: ${f.msg}`),
+  ]
+  showConfirmToast(fails.length === 0, lines)
 }
 
 // ── CSV load ────────────────────────────────────────────────────
@@ -975,4 +1041,45 @@ td.entry  { max-width: 420px; line-height: 1.5; }
 .btn-confirm:hover { background: #14532d; }
 .btn-save { border: 1px solid #0a1d3a; background: #0a1d3a; color: #fff; }
 .btn-save:hover { background: #1a3560; }
+
+/* ── Confirm result toast ── */
+.ct-toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  min-width: 260px; max-width: 420px;
+  padding: 14px 20px; border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.22);
+  z-index: 9999; pointer-events: none;
+}
+.ct-toast p { margin: 0; font-size: 13px; line-height: 1.7; white-space: nowrap; }
+.ct-toast p:first-child { font-weight: 600; }
+.ct-ok { background: #0f2d1a; color: #86efac; border: 1px solid #166534; }
+.ct-err { background: #2d0f0f; color: #fca5a5; border: 1px solid #991b1b; }
+.ct-enter-active { transition: opacity 0.18s, transform 0.18s; }
+.ct-leave-active { transition: opacity 0.3s,  transform 0.3s;  }
+.ct-enter-from, .ct-leave-to { opacity: 0; transform: translateX(-50%) translateY(8px); }
+
+/* ── Competition candidate list ── */
+.comp-list {
+  margin-top: 4px; border: 1px solid #d1e0f5; border-radius: 4px;
+  overflow: hidden; max-height: 220px; overflow-y: auto;
+  background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.comp-item {
+  display: flex; align-items: baseline; gap: 8px; width: 100%;
+  padding: 7px 10px; border: 0; background: transparent;
+  text-align: left; cursor: pointer; font-family: var(--sans);
+  border-bottom: 1px solid #f0f0f0; transition: background 0.1s;
+  flex-wrap: wrap;
+}
+.comp-item:last-child { border-bottom: 0; }
+.comp-item:hover { background: #eff6ff; }
+.comp-item.comp-suggested { background: #f0fdf4; }
+.comp-item.comp-suggested:hover { background: #dcfce7; }
+.comp-name { font-size: 12.5px; color: #0a0a0a; font-weight: 500; flex: 1; min-width: 0; }
+.comp-meta { font-size: 11px; color: #888; font-family: var(--mono); white-space: nowrap; }
+.comp-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  background: #166534; color: #fff; padding: 1px 6px; border-radius: 2px;
+  white-space: nowrap; flex-shrink: 0;
+}
 </style>
