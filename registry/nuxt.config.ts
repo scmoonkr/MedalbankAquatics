@@ -20,6 +20,7 @@ export default defineNuxtConfig({
     siteUrl:           process.env.NUXT_SITE_URL        || '',
     allowedNaverIds:   process.env.ALLOWED_NAVER_IDS   || '',
     uploadDir:         process.env.UPLOAD_DIR          || '',
+    downloadDir:       process.env.DOWNLOAD_DIR        || '',
     nvidiaApiKey:      process.env.NVIDIA_API_KEY       || '',
     nvidiaModelName:   process.env.NVIDIA_MODEL_NAME    || 'meta/llama-3.1-8b-instruct',
     // nuxt-auth-utils: NUXT_SESSION_PASSWORD는 런타임에서만 읽히므로 빌드 시 bake

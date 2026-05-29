@@ -12,7 +12,8 @@ const MIME: Record<string, string> = {
 export default defineEventHandler((event) => {
   const paramPath = (event.context.params as any)?.path ?? ''
   const safe = normalize(paramPath).replace(/^(\.\.(\/|\\|$))+/, '')
-  const base = join(process.cwd(), 'public', 'downloads')
+  const config = useRuntimeConfig(event)
+  const base = config.downloadDir || join(process.cwd(), 'public', 'downloads')
   const filePath = join(base, safe)
 
   if (!existsSync(filePath)) {
