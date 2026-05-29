@@ -20,13 +20,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
   }
 
-  // admin 권한 체크 — DB에서 재확인 (세션 위조 방지)
+  // 권한 체크 — DB에서 재확인 (세션 위조 방지)
   const db      = await getDb()
   const userDoc = await db.collection('users').findOne(
     { naverId: (session.user as any).id },
     { projection: { role: 1 } },
   )
-  if (userDoc?.role !== 'admin') {
-    throw createError({ statusCode: 403, statusMessage: 'Forbidden: admin only' })
+  if (!['manager', 'admin'].includes(userDoc?.role)) {
+    throw createError({ statusCode: 403, statusMessage: 'Forbidden: manager or admin only' })
   }
 })
