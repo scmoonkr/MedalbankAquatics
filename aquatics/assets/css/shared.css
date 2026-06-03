@@ -299,6 +299,15 @@ footer.ui {
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
 }
 .lightbox.open .lightbox-frame { transform: translateX(-50%) scale(1); opacity: 1; }
+.lightbox-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 8px 14px;
+  font-size: 11px; color: rgba(255,255,255,0.65);
+  background: linear-gradient(transparent, rgba(0,0,0,0.55));
+  word-break: break-all;
+  pointer-events: none;
+}
+.lightbox-caption:empty { display: none; }
 .lightbox-img {
   width: 100%; height: 100%; display: block;
   object-fit: cover; background-color: var(--tile-bg);

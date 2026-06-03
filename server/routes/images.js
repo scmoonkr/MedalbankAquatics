@@ -66,7 +66,7 @@ export default function (app) {
       const db = getDB()
       const [docs, athletes, meets] = await Promise.all([
         images()
-          .find({}, { projection: { image_id: 1, athlete_id: 1, meet_id: 1, date: 1, consent_date: 1, urls: 1, tags: 1, category: 1 } })
+          .find({}, { projection: { image_id: 1, athlete_id: 1, meet_id: 1, date: 1, consent_date: 1, urls: 1, tags: 1, category: 1, filename: 1 } })
           .sort({ image_id: -1 })
           .toArray(),
         db.collection('athletes').find({}, { projection: { _id: 0, athlete_id: 1, name: 1 } }).toArray(),
@@ -186,12 +186,18 @@ export default function (app) {
 
   app.get('/api/gallery', async (req, res) => {
     try {
-      const tag = req.query.tag ? String(req.query.tag) : '대표사진'
+      const filter = {}
+      if (req.query.meet_id !== undefined) {
+        filter.meet_id = parseInt(req.query.meet_id)
+      } else {
+        const tag = req.query.tag ? String(req.query.tag) : '대표사진'
+        filter.tags = tag
+      }
       const docs = await images()
-        .find({ tags: tag }, { projection: { _id: 0, image_id: 1, 'urls.thumb': 1, 'urls.preview': 1, 'urls.large': 1, 'urls.original': 1 } })
+        .find(filter, { projection: { _id: 0, image_id: 1, filename: 1, 'urls.thumb': 1, 'urls.preview': 1, 'urls.large': 1, 'urls.original': 1 } })
         .sort({ date: -1 })
         .toArray()
-      res.json(docs.map(d => ({ ...d, urls: resolveUrls(d.urls) })))
+      res.json(docs.map(d => ({ ...d, filename: d.filename ?? null, urls: resolveUrls(d.urls) })))
     } catch (e) {
       res.status(500).json({ error: e.message })
     }
@@ -223,6 +229,7 @@ export default function (app) {
       const consented = req.query.consented !== 'false'
       const filter = { consent_date: { $exists: consented } }
       if (meetId)     filter.meet_id  = meetId
+      else            filter.meet_id  = { $gt: 0 }  // 명예의전당(meet_id:0) 제외
       if (tag)        filter.tags     = tag
       if (category)   filter.category = category
       if (excludeTag) filter.tags     = { ...(filter.tags ?? {}), $ne: excludeTag }
@@ -242,6 +249,7 @@ export default function (app) {
           image_id: d.image_id,
           meet_id:  d.meet_id,
           date:     d.date,
+          filename: d.filename ?? null,
           urls:     resolveUrls(d.urls),
         })),
         total,

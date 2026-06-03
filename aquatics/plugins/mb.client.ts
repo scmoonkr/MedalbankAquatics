@@ -65,10 +65,11 @@ export default defineNuxtPlugin(() => {
     })
   }
 
-  const openLightbox = (thumbUrl: string, fullUrl: string, alt = '') => {
-    const lightbox    = document.getElementById('lightbox')
-    const lightboxImg = document.getElementById('lightboxImg') as HTMLImageElement | null
-    const lightboxBg  = document.getElementById('lightboxBg')
+  const openLightbox = (thumbUrl: string, fullUrl: string, alt = '', caption = '') => {
+    const lightbox        = document.getElementById('lightbox')
+    const lightboxImg     = document.getElementById('lightboxImg') as HTMLImageElement | null
+    const lightboxBg      = document.getElementById('lightboxBg')
+    const lightboxCaption = document.getElementById('lightboxCaption')
     if (!lightbox || !lightboxImg) return
 
     lightboxImg.src = thumbUrl
@@ -76,6 +77,7 @@ export default defineNuxtPlugin(() => {
     lightboxImg.dataset.currentUrl = thumbUrl
     lightbox.style.setProperty('--lb-img', `url("${thumbUrl}")`)
     if (lightboxBg) lightboxBg.style.backgroundImage = `url("${thumbUrl}")`
+    if (lightboxCaption) lightboxCaption.textContent = caption || fullUrl || ''
     lightbox.classList.add('open')
     lightbox.setAttribute('aria-hidden', 'false')
     document.body.classList.add('lb-open')
@@ -198,7 +200,7 @@ export default defineNuxtPlugin(() => {
 declare global {
   interface Window {
     MB: {
-      openLightbox: (thumb: string, full: string, alt?: string) => void
+      openLightbox: (thumb: string, full: string, alt?: string, caption?: string) => void
       closeLightbox: () => void
     }
   }

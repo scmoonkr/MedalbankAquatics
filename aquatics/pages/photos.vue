@@ -160,11 +160,11 @@ function goToPage(n: number) {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-function onTileClick(img: { image_id: number; urls: { thumb: string; original: string } }) {
+function onTileClick(img: { image_id: number; filename?: string | null; urls: { thumb: string; original: string } }) {
   clickedId.value = img.image_id
   setTimeout(() => { clickedId.value = null }, 500)
   if (window.MB?.openLightbox) {
-    window.MB.openLightbox(img.urls.thumb, img.urls.original, `Photo #${img.image_id}`)
+    window.MB.openLightbox(img.urls.thumb, img.urls.original, `Photo #${img.image_id}`, img.filename || img.urls.original || '')
   }
 }
 

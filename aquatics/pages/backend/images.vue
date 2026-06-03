@@ -99,7 +99,10 @@
             </td>
             <td class="col-id">{{ img.image_id }}</td>
             <td class="col-name">{{ img.athlete_name }}</td>
-            <td class="col-meet">{{ img.meet_label }}</td>
+            <td class="col-meet">
+              <div>{{ img.meet_label }}</div>
+              <div v-if="img.filename" class="cell-filename">{{ img.filename }}</div>
+            </td>
             <td class="col-consent">
               <span v-if="img.consent_date" class="badge approved">{{ fmtDate(img.consent_date) }}</span>
               <span v-else class="badge review">미동의</span>
@@ -446,6 +449,7 @@ td { padding: 8px 12px; vertical-align: middle; }
 .col-id   { width: 80px; font-variant-numeric: tabular-nums; }
 .col-name { width: 100px; }
 .col-meet { }
+.cell-filename { font-size: 11px; color: #8b949e; margin-top: 2px; }
 .col-consent { width: 110px; }
 .col-tags { width: 140px; color: #8b949e; font-size: 12px; }
 .col-category { width: 140px; color: #a371f7; font-size: 12px; }

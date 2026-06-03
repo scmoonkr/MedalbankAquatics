@@ -106,6 +106,7 @@ export default function (app) {
           athlete_id: 0,
           meet_id,
           date,
+          filename:   file.originalname,
           urls: { thumb: thumbUrl, preview: previewUrl, large: largeUrl, original: originalUrl },
           tags:     tagList,
           category: catList,

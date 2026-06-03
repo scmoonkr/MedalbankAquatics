@@ -3,17 +3,15 @@
     <header class="topbar">
       <div class="topbar-inner">
         <!-- brand + lock: gap matches .brand's internal gap (14px) -->
-        <div class="brand-group">
-          <NuxtLink class="brand" to="/" @mouseenter="brandHovered = true" @mouseleave="brandHovered = false">
+        <div class="brand-group" @mouseleave="brandHovered = false">
+          <NuxtLink class="brand" to="/">
             <img class="logo-img" src="/images/logo.png" alt="메달뱅크 · Medalbank" />
-            <span class="full">
-              <Transition name="brand-text">
-                <span v-if="!brandHovered" key="default" class="full-default">The Medallion Banca</span>
-                <span v-else key="hover" class="full-hover">Medalbank</span>
-              </Transition>
+            <span class="full" :class="{ hovered: brandHovered }" @mouseenter="brandHovered = true">
+              <span class="full-default">The Medallion Banca</span>
+              <span class="full-hover">Medalbank</span>
             </span>
           </NuxtLink>
-          <NuxtLink :to="loggedIn ? '/user' : '/login'" class="lock-btn" :title="loggedIn ? '로그인됨' : '로그인 필요'">
+          <NuxtLink :to="loggedIn ? '/user' : '/login'" class="lock-btn" :class="{ 'lock-hovered': brandHovered }" :title="loggedIn ? '로그인됨' : '로그인 필요'">
             <!-- closed lock: logged in -->
             <svg v-if="loggedIn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2"/>
@@ -171,6 +169,16 @@ function onTouchMove(e: TouchEvent) {
 function onTouchEnd() { touchStartY = null }
 
 onMounted(() => {
+  // brand text 너비 차이 측정 → lock icon translateX 값 설정
+  nextTick(() => {
+    const defEl  = document.querySelector<HTMLElement>('.full-default')
+    const hovEl  = document.querySelector<HTMLElement>('.full-hover')
+    if (defEl && hovEl) {
+      const diff = defEl.offsetWidth - hovEl.offsetWidth
+      if (diff > 0) document.documentElement.style.setProperty('--brand-text-diff', `${diff}px`)
+    }
+  })
+
   document.addEventListener('click', handleOutsideClick)
   const nav = document.querySelector('nav.nav')
   nav?.addEventListener('touchstart', onTouchStart as EventListener, { passive: true })
@@ -184,11 +192,17 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* brand text swap: leaving goes absolute so container shrinks to new text width immediately */
-.brand-text-leave-active { transition: opacity 0.15s; position: absolute; left: 0; top: 0; }
-.brand-text-enter-active { transition: opacity 0.2s; }
-.brand-text-leave-to    { opacity: 0; }
-.brand-text-enter-from  { opacity: 0; }
+/* brand text swap: Vue 상태 기반 (CSS :hover 미사용 → no flicker)
+   - @mouseenter on .full → brandHovered = true
+   - @mouseleave on .brand-group → brandHovered = false (그룹 밖으로 나갈 때만)
+   - lock transform은 Vue :class로 제어 → CSS hover 반짝거림 없음 */
+.full-default { transition: opacity 0.2s; white-space: nowrap; }
+.full-hover   { position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+                opacity: 0; transition: opacity 0.2s; white-space: nowrap; pointer-events: none; }
+.full.hovered .full-default { opacity: 0; }
+.full.hovered .full-hover   { opacity: 1; }
+.lock-btn { transition: transform 0.2s ease; }
+.lock-btn.lock-hovered { transform: translateX(calc(-1 * var(--brand-text-diff, 0px))); }
 
 /* brand-group: brand + lock을 묶어서 gap을 .brand 내부 gap(14px)과 동일하게 유지 */
 .brand-group {

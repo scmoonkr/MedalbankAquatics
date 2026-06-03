@@ -11,13 +11,13 @@ echo "=== [2/6] Express 패키지 설치 ==="
 cd "$PROJECT_DIR/server"
 npm install --omit=dev
 
-echo "=== [3/6] Nuxt 패키지 설치 & 빌드 ==="
-cd "$PROJECT_DIR/nuxt"
+echo "=== [3/6] Aquatics 패키지 설치 & 빌드 ==="
+cd "$PROJECT_DIR/aquatics"
 npm install
 npm run build
 
-echo "=== [4/6] Registry 패키지 설치 & 빌드 ==="
-cd "$PROJECT_DIR/registry"
+echo "=== [4/6] Medalbank 패키지 설치 & 빌드 ==="
+cd "$PROJECT_DIR/medalbank"
 npm install
 npm run build
 
@@ -38,15 +38,15 @@ fi
 if pm2 list | grep -q "medalbank-aquatics-nuxt"; then
   pm2 restart medalbank-aquatics-nuxt
 else
-  PORT=6631 pm2 start "$PROJECT_DIR/nuxt/.output/server/index.mjs" \
-    --name medalbank-aquatics-nuxt --env production
+  PORT=6631 pm2 start "$PROJECT_DIR/aquatics/.output/server/index.mjs" \
+    --name medalbank-aquatics-nuxt --cwd "$PROJECT_DIR/aquatics" --env production
 fi
 
 if pm2 list | grep -q "medalbank-aquatics-registry"; then
   pm2 restart medalbank-aquatics-registry
 else
-  PORT=6632 pm2 start "$PROJECT_DIR/registry/.output/server/index.mjs" \
-    --name medalbank-aquatics-registry --env production
+  PORT=6632 pm2 start "$PROJECT_DIR/medalbank/.output/server/index.mjs" \
+    --name medalbank-aquatics-registry --cwd "$PROJECT_DIR/medalbank" --env production
 fi
 
 if pm2 list | grep -q "medalbank-aquatics-sse"; then

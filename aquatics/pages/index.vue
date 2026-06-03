@@ -52,6 +52,7 @@
       <div class="lightbox-bg" id="lightboxBg"></div>
       <div class="lightbox-frame">
         <img class="lightbox-img" id="lightboxImg" alt="" />
+        <div class="lightbox-caption" id="lightboxCaption"></div>
         <button class="lightbox-close" id="lightboxClose" type="button" aria-label="닫기">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <line x1="6" y1="6" x2="18" y2="18"/>
@@ -75,10 +76,10 @@ useHead({
   bodyAttrs: { class: 'is-home' },
 })
 
-type GalleryImage = { image_id: number; urls: { thumb: string; original: string } }
+type GalleryImage = { image_id: number; filename?: string | null; urls: { thumb: string; original: string } }
 
 onMounted(async () => {
-  const galleryImages = await $fetch<GalleryImage[]>('/api/gallery', { query: { tag: '명예의전당' } }).catch(() => [] as GalleryImage[])
+  const galleryImages = await $fetch<GalleryImage[]>('/api/gallery', { query: { meet_id: 0 } }).catch(() => [] as GalleryImage[])
 
   ;(() => {
     'use strict'
@@ -256,13 +257,17 @@ onMounted(async () => {
     const lightboxBg    = document.getElementById('lightboxBg')!
     const lightboxClose = document.getElementById('lightboxClose')!
 
+    const lightboxCaption = document.getElementById('lightboxCaption')
+
     function openLightbox(imgIdx: number) {
       const thumbUrl = imgUrl(imgIdx), bigUrl = xlUrl(imgIdx)
+      const caption  = galleryImages[imgIdx]?.filename || bigUrl || ''
       lightboxImg.removeAttribute('src')
       lightboxImg.style.opacity = '0'
       lightboxImg.alt = `Photo #${imgIdx + 1}`
       lightboxImg.dataset.currentIdx = String(imgIdx)
       lightboxBg.style.backgroundImage = `url("${thumbUrl}")`
+      if (lightboxCaption) lightboxCaption.textContent = caption
       lightbox.classList.add('open')
       lightbox.setAttribute('aria-hidden', 'false')
       document.body.classList.add('lb-open')

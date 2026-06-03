@@ -53,6 +53,7 @@
       <div class="lightbox-bg" id="lightboxBg"></div>
       <div class="lightbox-frame">
         <img class="lightbox-img" id="lightboxImg" alt="" />
+        <div class="lightbox-caption" id="lightboxCaption"></div>
         <button class="lightbox-close" id="lightboxClose" type="button" aria-label="닫기">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <line x1="6" y1="6" x2="18" y2="18"/>
