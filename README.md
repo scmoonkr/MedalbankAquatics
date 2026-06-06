@@ -23,5 +23,5 @@ npm run dev      # 개발 (파일 변경 감지 자동 재시작)
 # 또는
 npm start        # 일반 실행
 
-cd C:\Develop\MedalbankAquatics\nuxt
+cd C:\Develop\MedalbankAquatics\aquatics
 npm run dev
