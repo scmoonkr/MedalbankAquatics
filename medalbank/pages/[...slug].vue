@@ -5,6 +5,11 @@
 const route = useRoute()
 const slug  = (route.params.slug as string[]) ?? []
 
+// /time/숫자 경로는 time/[[id]].vue가 처리 — 여기서 가로채지 않음
+if (slug[0] === 'time' && slug[1] && /^\d+$/.test(slug[1])) {
+  await navigateTo(`/time/${slug[1]}`, { replace: true })
+}
+
 const GENDER: Record<string, string> = {
   men: 'm', m: 'm', male: 'm',
   women: 'f', f: 'f', female: 'f', woman: 'f',

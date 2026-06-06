@@ -339,7 +339,7 @@
 definePageMeta({ ssr: false })
 
 const route  = useRoute()
-const timeID = (route.params.id as string) || ''
+const timeID = (route.params.id as string) || (/^\/time\/(\d+)$/.exec(route.path)?.[1]) || ''
 
 useHead({ title: timeID ? `Time #${timeID} — 메달뱅크 · Medalbank` : 'Time Analysis — 메달뱅크 · Medalbank' })
 
