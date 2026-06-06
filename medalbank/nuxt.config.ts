@@ -58,8 +58,6 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
-    '/backend/**':  { ssr: false },
-    '/racingcaps':  { redirect: '/racingcaps/index.html' },
-    '/racingcaps/': { redirect: '/racingcaps/index.html' },
+    '/backend/**': { ssr: false },
   },
 })
