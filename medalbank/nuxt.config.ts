@@ -60,4 +60,15 @@ export default defineNuxtConfig({
   routeRules: {
     '/backend/**': { ssr: false },
   },
+
+  hooks: {
+    'pages:extend'(pages) {
+      pages.push({
+        name:      'time-id',
+        path:      '/time/:id(\\d+)',
+        file:      '~/pages/time/[[id]].vue',
+        meta:      { ssr: false },
+      })
+    },
+  },
 })
