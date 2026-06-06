@@ -8,7 +8,7 @@ definePageMeta({
 
 <template>
   <iframe
-    src="/html/racingcaps/index.html"
+    src="/products/racingcaps/index.html"
     style="width: 100%;
     height: 100vh;
     border: none;
