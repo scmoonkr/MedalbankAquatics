@@ -6,7 +6,6 @@ export default defineEventHandler(async () => {
     id:              String(d._id),
     type:            d.type            || '—',
     gender:          d.gender          || '—',
-    style:           d.style           || '—',
     distance:        d.distance        || '—',
     course:          d.course          || '—',
     time:            d.time            || '—',
@@ -19,7 +18,7 @@ export default defineEventHandler(async () => {
     sido:            d.sido            || '—',
     competitionName: d.competitionName || '—',
     pool:            d.pool            || '—',
-    // 추가 필드 (records 원본 스키마 + cannon 동기화용)
+    // 추가 필드 (records 원본 스키마 + canon 동기화용)
     team:            d.team            || d.nationality || '',
     location:        d.location        || d.pool        || '',
     isMasters:       d.isMasters       ?? false,

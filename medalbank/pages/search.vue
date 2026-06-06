@@ -184,7 +184,7 @@ function injectCompareOverlay() {
 }
 
 onMounted(() => {
-  loadScript('/cannon/js/scoring.js')
+  loadScript('/canon/js/scoring.js')
     .then(() => injectCompareOverlay())
     .catch(err => console.error('[search] script load error', err))
 })
@@ -256,7 +256,7 @@ interface SearchRow {
   sido: string; team: string; datetime: string
   competitionName: string; pool: string
   isMasters: boolean; group: string
-  no?: number
+  waPoints?: number; timeID?: number | null; no?: number
 }
 
 const { data: rawData, pending } = await useFetch<SearchRow[]>('/api/search', {
@@ -388,13 +388,18 @@ const titleHtml = computed(() => {
 
 // ── 테이블 HTML (index-table 스타일) ──────────────────────────
 const THEAD = `<thead><tr>
-  <th class="c-rank">No.</th>
+  <th class="c-rank">Rank · 순위</th>
+  <th class="c-name">Name · 성명</th>
   <th class="c-time">Time · 기록</th>
   <th class="c-date">Date · 일자</th>
-  <th class="c-name">Name · 성명</th>
   <th class="c-city">City · 도시</th>
   <th class="c-meet">Meet · 대회</th>
 </tr></thead>`
+
+function fmtWP(wp: number | null | undefined): string {
+  if (!wp) return '000'
+  return String(Math.min(999, Math.max(0, wp))).padStart(3, '0')
+}
 
 function rowHtml(r: SearchRow & { no: number }): string {
   const hasTime   = r.time && r.time !== '—'
@@ -405,6 +410,7 @@ function rowHtml(r: SearchRow & { no: number }): string {
   const meetShort = r.pool || r.competitionName || '—'
   const isMasters = r.isMasters === true
   const badge     = `<span class="reg-badge">${isMasters ? '비등록' : '등록'}</span>`
+  const waBadge   = r.waPoints ? `<span class="wa-badge">${fmtWP(r.waPoints)}</span>` : ''
 
   const timeTd = hasTime
     ? `<td class="time"><span
@@ -418,16 +424,17 @@ function rowHtml(r: SearchRow & { no: number }): string {
         data-nation="${esc(r.team)}"
         data-datetime="${esc(datetime)}"
         data-venue="${esc(meetFull)}"
+        data-timeid="${r.timeID ?? ''}"
         role="button"
         tabindex="0"
-      >${esc(normTime(r.time))}</span></td>`
+      >${esc(normTime(r.time))}${waBadge}</span></td>`
     : `<td class="time">—</td>`
 
   return `<tr>
     <td class="rank">${r.no}</td>
+    <td class="name">${esc(r.name)}${badge}</td>
     ${timeTd}
     <td class="date">${esc(r.datetime?.slice(0, 10) || '—')}</td>
-    <td class="name">${esc(r.name)}${badge}</td>
     <td class="city">${esc(r.sido || '—')}</td>
     <td class="meet"><span class="meet-full">${esc(meetFull)}</span><span class="meet-short">${esc(meetShort)}</span></td>
   </tr>`
@@ -445,19 +452,23 @@ function handleResultsClick(e: MouseEvent) {
   e.preventDefault()
   e.stopPropagation()
   const d = (trigger as HTMLElement).dataset
-  router.push({
-    path: '/time',
-    query: {
-      gender:   d.gender,
-      stroke:   d.stroke,
-      distance: d.distance,
-      course:   d.course,
-      time:     d.time,
-      athlete:  d.athlete || undefined,
-      datetime: d.datetime || undefined,
-      meet:     d.venue   || undefined,
-    },
-  })
+  if (d.timeid) {
+    router.push(`/time/${d.timeid}`)
+  } else {
+    router.push({
+      path: '/time',
+      query: {
+        gender:   d.gender,
+        stroke:   d.stroke,
+        distance: d.distance,
+        course:   d.course,
+        time:     d.time,
+        athlete:  d.athlete || undefined,
+        datetime: d.datetime || undefined,
+        meet:     d.venue   || undefined,
+      },
+    })
+  }
 }
 
 // ── 검색 제출 ─────────────────────────────────────────────────

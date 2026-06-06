@@ -167,7 +167,8 @@ function compareRows(doc: LedgerDoc): CompareRow[] {
     if (type === 'OR' || type === 'ER') {
       credit = [rec.athlete, rec.nation, rec.venue].filter(Boolean).join(' · ')
     } else if (type === 'KR' || type === 'KMR') {
-      credit = [rec.athlete, rec.year].filter(Boolean).join(' · ')
+      const holder = rec.athlete && rec.athlete === doc.name ? '본인' : rec.athlete
+      credit = [holder, rec.year].filter(Boolean).join(' · ')
     } else {
       credit = [rec.athlete, rec.nation, rec.year].filter(Boolean).join(' · ')
     }
@@ -269,7 +270,7 @@ function goTimeView(doc: any) {
 }
 
 onMounted(() => {
-  loadScript('/cannon/js/scoring.js')
+  loadScript('/canon/js/scoring.js')
     .then(() => injectCompareOverlay())
     .catch(err => console.error('[ledger] script load error', err))
 })

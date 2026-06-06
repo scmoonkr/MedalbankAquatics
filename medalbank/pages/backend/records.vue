@@ -7,9 +7,11 @@
         <a v-for="s in STROKE_ORDER" :key="s" :href="`#sec-${s.toLowerCase()}`">{{ STROKE_LABELS[s].ko }}</a>
       </nav>
       <div class="rc-bar-right">
-        <button class="btn-csv-im" @click="importFileRef?.click()">CSV 불러오기</button>
-        <button class="btn-csv-ex" @click="exportCSV">CSV 내보내기</button>
-        <input ref="importFileRef" type="file" accept=".csv" style="display:none" @change="importCSV" />
+        <button class="btn-wapoints-recalc" @click="recalc.open = true">waPoints 재계산</button>
+        <button class="btn-wapoints" :disabled="wapoints.running" @click="calcWaPoints">
+          {{ wapoints.running ? `체크 중… (${wapoints.updated}건)` : 'waPoints 체크' }}
+        </button>
+        <span v-if="wapoints.done" class="wapoints-result">{{ wapoints.updated }}건 완료, {{ wapoints.skipped }}건 스킵</span>
       </div>
     </div>
 
@@ -194,6 +196,87 @@
 
     </div>
 
+    <!-- waPoints 재계산 drawer -->
+    <div class="wr-overlay" v-if="recalc.open" @click.self="recalc.open = false">
+      <div class="wr-drawer">
+        <div class="wr-head">
+          <span>waPoints 재계산</span>
+          <button @click="recalc.open = false">✕</button>
+        </div>
+        <div class="wr-body">
+          <div class="wr-field">
+            <label>성별</label>
+            <select v-model="recalc.gender" @change="recalcResetDist" class="wr-select">
+              <option value="men">남자</option>
+              <option value="women">여자</option>
+            </select>
+          </div>
+          <div class="wr-field">
+            <label>영법</label>
+            <select v-model="recalc.discipline" @change="recalcResetDist" class="wr-select">
+              <option v-for="s in STROKE_ORDER" :key="s" :value="s">{{ STROKE_LABELS[s].ko }} ({{ s }})</option>
+            </select>
+          </div>
+          <div class="wr-field">
+            <label>코스</label>
+            <select v-model="recalc.course" @change="recalcResetDist" class="wr-select">
+              <option value="LCM">LCM (장수영장)</option>
+              <option value="SCM">SCM (단수영장)</option>
+            </select>
+          </div>
+          <div class="wr-field">
+            <label>거리</label>
+            <select v-model="recalc.distance" class="wr-select">
+              <option v-for="d in recalcDistances" :key="d" :value="`${d}M`">{{ d }}m</option>
+            </select>
+          </div>
+
+          <div class="wr-divider"></div>
+
+          <div class="wr-section-label">세계기록 (WR)</div>
+          <div class="wr-field">
+            <label>기록</label>
+            <input v-model="recalcForm.time" class="wr-input wr-input-mono" placeholder="00:00.00" />
+          </div>
+          <div class="wr-field">
+            <label>선수명</label>
+            <input v-model="recalcForm.name" class="wr-input" placeholder="이름" />
+          </div>
+          <div class="wr-field">
+            <label>Team</label>
+            <input v-model="recalcForm.team" class="wr-input wr-input-mono" placeholder="KOR" />
+          </div>
+          <div class="wr-field">
+            <label>작성일</label>
+            <input v-model="recalcForm.datetime" class="wr-input wr-input-mono" placeholder="yyyy-mm-dd" />
+          </div>
+          <div class="wr-field">
+            <label>대회 / 장소</label>
+            <input v-model="recalcForm.location" class="wr-input" placeholder="대회명" />
+          </div>
+
+          <div v-if="recalc.result" class="wr-result">
+            {{ recalc.result.updated }}건 업데이트 완료
+          </div>
+        </div>
+        <div class="wr-foot">
+          <button class="wr-btn-save" :disabled="recalcSaving" @click="saveWR">
+            {{ recalcSaving ? '저장 중…' : '세계기록 저장' }}
+          </button>
+          <div class="wr-foot-sub">
+            <button class="wr-btn-run" :disabled="recalc.running" @click="doRecalc">
+              <template v-if="recalc.running">재계산 중…</template>
+              <template v-else>재계산
+                <span v-if="recalcCount !== null" class="wr-btn-count">({{ recalcCount.toLocaleString() }}건)</span>
+                <span v-else class="wr-btn-count">…</span>
+              </template>
+            </button>
+            <button class="wr-btn-cancel" @click="recalc.open = false">닫기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Country modal -->
     <div class="cm-overlay" v-if="ctry.open" @click.self="ctry.open = false">
       <div class="cm-box">
@@ -368,7 +451,162 @@ const mkEmpty = (): Entry => ({
 const activeTab    = ref('men-free')
 const eventMap     = ref<EventMap>({})
 const loaded       = ref(false)
-const importFileRef = ref<HTMLInputElement | null>(null)
+
+const wapoints = reactive({ running: false, done: false, updated: 0, skipped: 0 })
+
+// ── Data fetch (must precede recalc computeds) ────────────────────
+interface CanonRec { time: string; athlete: string; nation: string; year: string | number; venue: string }
+interface ApiRecord { id: string; type: string; gender: string; discipline: string; distance: string | number; time: string; name: string; datetime: string; team: string; location: string }
+
+const { data: canonData } = await useFetch<Record<string, CanonRec>>('/api/canon')
+const { data: backendRecs, refresh: refreshBackendRecs } = useFetch<ApiRecord[]>('/api/backend/records')
+
+// ── waPoints 재계산 drawer ─────────────────────────────────────────
+const recalc = reactive({
+  open:       false,
+  gender:     'men' as 'men' | 'women',
+  discipline: 'FR',
+  course:     'LCM' as 'LCM' | 'SCM',
+  distance:   '50M',
+  running:    false,
+  result:     null as { updated: number } | null,
+})
+
+const recalcDistances = computed<number[]>(() => {
+  if (recalc.discipline === 'FR') return [50, 100, 200, 400, 800, 1500]
+  if (recalc.discipline === 'IM') return recalc.course === 'SCM' ? [100, 200, 400] : [200, 400]
+  return [50, 100, 200]
+})
+
+const recalcWR = computed(() => {
+  const g    = recalc.gender === 'men' ? 'M' : 'W'
+  const dist = parseInt(recalc.distance)
+  const canon = canonData.value?.[`${g}-${recalc.discipline}-${dist}-WR`] ?? null
+  const rec   = backendRecs.value?.find(r =>
+    r.type === 'WR' && r.gender === recalc.gender &&
+    r.discipline === recalc.discipline &&
+    String(r.distance) === recalc.distance
+  ) ?? null
+  if (!canon && !rec) return null
+  return {
+    id:       rec?.id       ?? null,
+    time:     rec?.time     || canon?.time     || '',
+    athlete:  rec?.name     || canon?.athlete  || '',
+    nation:   rec?.team     || canon?.nation   || '',
+    year:     canon?.year   ?? '',
+    datetime: rec?.datetime || '',
+    location: rec?.location || canon?.venue    || '',
+  }
+})
+
+function recalcResetDist() {
+  nextTick(() => {
+    const dists = recalcDistances.value
+    if (!dists.includes(parseInt(recalc.distance))) {
+      recalc.distance = dists[0] + 'M'
+    }
+  })
+}
+
+const recalcForm    = reactive({ time: '', name: '', team: '', datetime: '', location: '' })
+const recalcSaving  = ref(false)
+
+const recalcRecordId = computed(() => recalcWR.value?.id ?? null)
+
+watch([recalcWR, backendRecs], ([wr]) => {
+  const w = wr as ReturnType<typeof recalcWR.value> | null
+  recalcForm.time     = w?.time     || ''
+  recalcForm.name     = w?.athlete  || ''
+  recalcForm.team     = w?.nation   || ''
+  recalcForm.datetime = w?.datetime || String(w?.year || '')
+  recalcForm.location = w?.location || ''
+}, { immediate: true })
+
+async function saveWR() {
+  if (recalcSaving.value) return
+  recalcSaving.value = true
+  const payload = {
+    type: 'WR', gender: recalc.gender, discipline: recalc.discipline,
+    distance: recalc.distance, course: recalc.course,
+    time: recalcForm.time, name: recalcForm.name,
+    team: recalcForm.team, location: recalcForm.location,
+    datetime: recalcForm.datetime,
+  }
+  try {
+    const id = recalcRecordId.value
+    if (id) {
+      await $fetch(`/api/backend/records/${id}`, { method: 'PUT', body: payload })
+    } else {
+      await $fetch('/api/backend/records', { method: 'POST', body: payload })
+    }
+    await refreshBackendRecs()
+  } catch {
+    alert('저장 실패')
+  } finally {
+    recalcSaving.value = false
+  }
+}
+
+const recalcCount = ref<number | null>(null)
+let recalcCountTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(
+  () => [recalc.gender, recalc.discipline, recalc.distance, recalc.course],
+  () => {
+    recalcCount.value = null
+    if (recalcCountTimer) clearTimeout(recalcCountTimer)
+    recalcCountTimer = setTimeout(async () => {
+      const res = await $fetch<{ count: number }>('/api/backend/recalc/wapoints-count', {
+        query: { gender: recalc.gender, discipline: recalc.discipline, distance: recalc.distance, course: recalc.course },
+      }).catch(() => null)
+      if (res) recalcCount.value = res.count
+    }, 200)
+  },
+  { immediate: false },
+)
+
+watch(() => recalc.open, (v) => { if (v) {
+  recalcCount.value = null
+  $fetch<{ count: number }>('/api/backend/recalc/wapoints-count', {
+    query: { gender: recalc.gender, discipline: recalc.discipline, distance: recalc.distance, course: recalc.course },
+  }).then(r => { recalcCount.value = r.count }).catch(() => {})
+}})
+
+async function doRecalc() {
+  if (recalc.running) return
+  recalc.running = true
+  recalc.result = null
+  try {
+    const res = await $fetch<{ updated: number }>('/api/backend/recalc/wapoints', {
+      method: 'POST',
+      body: {
+        gender:     recalc.gender,
+        discipline: recalc.discipline,
+        distance:   recalc.distance,
+        course:     recalc.course,
+      },
+    })
+    recalc.result = { updated: res.updated }
+  } catch {
+    alert('재계산 실패')
+  } finally {
+    recalc.running = false
+  }
+}
+async function calcWaPoints() {
+  if (wapoints.running) return
+  wapoints.running = true; wapoints.done = false; wapoints.updated = 0; wapoints.skipped = 0
+  try {
+    const res = await $fetch<{ updated: number; skipped: number }>('/api/backend/migrate/wapoints', { method: 'POST' })
+    wapoints.updated = res.updated
+    wapoints.skipped = res.skipped
+    wapoints.done = true
+  } catch {
+    alert('waPoints 계산 실패')
+  } finally {
+    wapoints.running = false
+  }
+}
 
 const ctry = reactive<{ open: boolean; q: string; cur: { gender:string; stroke:string; dist:number; rt:string } | null; fromPanel: boolean }>({
   open: false, q: '', cur: null, fromPanel: false,
@@ -416,12 +654,6 @@ function rowClass(gender: string, stroke: string, dist: number, rt: string) {
 }
 
 // ── Data load ─────────────────────────────────────────────────────
-interface CanonRec { time: string; athlete: string; nation: string; year: string | number; venue: string }
-interface ApiRecord { id: string; type: string; gender: string; distance: string | number; time: string }
-
-const { data: canonData } = await useFetch<Record<string, CanonRec>>('/api/canon')
-const { data: backendRecs } = useFetch<ApiRecord[]>('/api/backend/records')
-
 watchEffect(() => {
   if (!canonData.value) return
   const map: EventMap = {}
@@ -535,7 +767,7 @@ async function panelSave() {
   const k = mkKey(panel.gender, panel.stroke, panel.dist)
   const cur = eventMap.value[k][panel.rt]
   const payload = {
-    gender: panel.gender, style: STROKE_TO_STYLE[panel.stroke],
+    gender: panel.gender, discipline: STROKE_TO_STYLE[panel.stroke],
     distance: panel.dist + 'M', course: 'LCM', type: panel.rt,
     ...panel.form,
   }
@@ -594,24 +826,6 @@ function pickCtry(c: Country) {
   ctry.open = false
 }
 
-// ── CSV ───────────────────────────────────────────────────────────
-function exportCSV() {
-  const header = ['event_key','type','time','name','nationality','nation_code','year','datetime','age','sido','competitionName','pool']
-  const rows = [header]
-  for (const tab of TABS) {
-    for (const dist of STROKE_DISTS[tab.stroke]) {
-      for (const rt of rtList(tab.stroke, dist)) {
-        const e = entry(tab.gender, tab.stroke, dist, rt)
-        rows.push([mkKey(tab.gender, tab.stroke, dist), rt, e.time, e.name, e.nationality, e.nation_code, e.year, e.datetime, e.age, e.sido, e.competitionName, e.pool])
-      }
-    }
-  }
-  const csv = rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g,'""')}"`).join(',')).join('\n')
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a'); a.href = url; a.download = `ksr_records_all.csv`; a.click()
-  URL.revokeObjectURL(url)
-}
 
 // ── Modal (scoring + compare overlay) ────────────────────────────
 function loadScript(src: string): Promise<void> {
@@ -672,30 +886,12 @@ function openModal(e: MouseEvent, gender: string, stroke: string, dist: number, 
 }
 
 onMounted(() => {
-  loadScript('/cannon/js/scoring.js')
-    .then(() => loadScript('/cannon/js/modal.js'))
+  loadScript('/canon/js/scoring.js')
+    .then(() => loadScript('/canon/js/modal.js'))
     .then(() => injectCompareOverlay())
     .catch(err => console.error('[records] script load error', err))
 })
 
-async function importCSV(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  const text = await file.text()
-  const lines = text.replace(/^﻿/, '').trim().split('\n')
-  if (lines.length < 2) return
-  const header = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim())
-  for (let i = 1; i < lines.length; i++) {
-    const cells = lines[i].split(',').map(c => c.replace(/^"|"$/g, ''))
-    const row: Record<string, string> = {}
-    header.forEach((h, idx) => { row[h] = cells[idx] ?? '' })
-    const k = row.event_key; const rt = row.type
-    if (!k || !rt || !eventMap.value[k]?.[rt]) continue
-    const cur = eventMap.value[k][rt]
-    eventMap.value[k][rt] = { ...cur, time: row.time, name: row.name, nationality: row.nationality, nation_code: row.nation_code, year: row.year, datetime: row.datetime, age: row.age, sido: row.sido, competitionName: row.competitionName, pool: row.pool, _dirty: true }
-  }
-  if (importFileRef.value) importFileRef.value.value = ''
-}
 </script>
 
 <style scoped>
@@ -718,11 +914,97 @@ async function importCSV(e: Event) {
   padding: 12px 0; gap: 12px; flex-wrap: wrap;
 }
 .rc-bar-right { display: flex; gap: 8px; }
-.btn-csv-ex, .btn-csv-im {
-  height: 32px; padding: 0 14px; border: 1px solid #ddd; background: #fff;
-  font-size: 12px; color: #555; cursor: pointer; border-radius: 3px;
+.btn-wapoints-recalc {
+  height: 32px; padding: 0 14px; border: 1px solid #d97706; background: #fffbeb;
+  font-size: 12px; color: #b45309; cursor: pointer; border-radius: 3px; font-weight: 600;
 }
-.btn-csv-ex:hover, .btn-csv-im:hover { background: #f5f5f3; }
+.btn-wapoints-recalc:hover { background: #fef3c7; }
+.btn-wapoints {
+  height: 32px; padding: 0 14px; border: 1px solid #3b82f6; background: #eff6ff;
+  font-size: 12px; color: #1d4ed8; cursor: pointer; border-radius: 3px; font-weight: 600;
+}
+.btn-wapoints:hover:not(:disabled) { background: #dbeafe; }
+.btn-wapoints:disabled { opacity: 0.6; cursor: default; }
+.wapoints-result { font-size: 12px; color: #16a34a; white-space: nowrap; }
+
+/* ── waPoints 재계산 drawer ── */
+.wr-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 500;
+  display: flex; justify-content: flex-end;
+}
+.wr-drawer {
+  width: 320px; background: #fff; display: flex; flex-direction: column;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.15); animation: wr-slide-in 0.18s ease;
+}
+@keyframes wr-slide-in {
+  from { transform: translateX(40px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.wr-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 14px; border-bottom: 1px solid #eee;
+  background: #0a1d3a; flex-shrink: 0;
+}
+.wr-head span { font-size: 14px; font-weight: 700; color: #fff; }
+.wr-head button {
+  border: 0; background: transparent; color: #94a3b8;
+  font-size: 18px; cursor: pointer; padding: 0; line-height: 1;
+}
+.wr-head button:hover { color: #fff; }
+.wr-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.wr-field { display: flex; flex-direction: column; gap: 5px; }
+.wr-field label {
+  font-size: 10.5px; font-weight: 600; color: #888;
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.wr-select {
+  height: 36px; padding: 0 10px; border: 1px solid #e0e0e0; border-radius: 3px;
+  font-family: var(--sans); font-size: 13px; color: #0a0a0a;
+  background: #fff; outline: none; cursor: pointer;
+}
+.wr-select:focus { border-color: #3b82f6; }
+.wr-divider { border: 0; border-top: 1px solid #eee; margin: 4px 0; }
+.wr-section-label {
+  font-size: 10.5px; font-weight: 600; color: #888;
+  text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: -4px;
+}
+.wr-input {
+  width: 100%; height: 34px; padding: 0 10px;
+  border: 1px solid #e0e0e0; border-radius: 3px;
+  font-family: var(--sans); font-size: 13px; color: #0a0a0a;
+  background: #fff; outline: none; box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.wr-input:focus  { border-color: #3b82f6; }
+.wr-input-mono   { font-family: var(--mono); }
+.wr-result {
+  padding: 10px 12px; background: #f0fdf4; border: 1px solid #bbf7d0;
+  border-radius: 3px; font-size: 12.5px; color: #16a34a; font-weight: 600;
+}
+.wr-foot {
+  padding: 14px 20px; border-top: 1px solid #eee; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
+}
+.wr-foot-sub { display: flex; gap: 8px; }
+.wr-btn-save {
+  width: 100%; height: 38px; background: #1d4ed8; color: #fff; border: 0;
+  font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 3px;
+  transition: background 0.15s;
+}
+.wr-btn-save:hover:not(:disabled) { background: #1e40af; }
+.wr-btn-save:disabled { opacity: 0.6; cursor: default; }
+.wr-btn-run {
+  flex: 1; height: 38px; background: #0a1d3a; color: #fff; border: 0;
+  font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 3px;
+  transition: background 0.15s;
+}
+.wr-btn-run:hover:not(:disabled) { background: #1e3a5f; }
+.wr-btn-run:disabled { opacity: 0.6; cursor: default; }
+.wr-btn-count { font-size: 11px; font-weight: 400; opacity: 0.75; margin-left: 4px; }
+.wr-btn-cancel {
+  height: 38px; padding: 0 16px; border: 1px solid #ddd; background: #fff;
+  font-size: 13px; color: #555; cursor: pointer; border-radius: 3px;
+}
+.wr-btn-cancel:hover { background: #f5f5f3; }
 
 /* ── Info box ── */
 .rc-info {

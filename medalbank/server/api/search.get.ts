@@ -34,5 +34,7 @@ export default defineEventHandler(async (event) => {
     pool:            d.pool            ?? '',
     isMasters:       d.isMasters       === true,
     group:           d.group           ?? '',
+    waPoints:        d.waPoints        ?? 0,
+    timeID:          d.timeID          ?? d.tid ?? null,
   }))
 })

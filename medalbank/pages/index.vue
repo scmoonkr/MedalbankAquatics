@@ -250,7 +250,7 @@ const state = reactive({
 })
 
 // ── data ───────────────────────────────────────────────────────
-type EventRank     = { rank: number; name: string; city: string; team: string; date: string; time: string; meet: string; meet_full: string; isMasters?: boolean }
+type EventRank     = { rank: number; name: string; city: string; team: string; date: string; time: string; meet: string; meet_full: string; isMasters?: boolean; waPoints?: number; timeID?: number | null }
 type SheetResponse = { page: number; pageSize: number; total: number; ranks: EventRank[] }
 
 const allRanks    = ref<EventRank[]>([])
@@ -355,10 +355,15 @@ const resultsMeta = computed(() => {
 
 // ── table builder ──────────────────────────────────────────────
 const THEAD = `<thead><tr>
-  <th class="c-rank">Rank · 순위</th><th class="c-time">Time · 기록</th>
-  <th class="c-date">Date · 일자</th><th class="c-name">Name · 성명</th>
+  <th class="c-rank">Rank · 순위</th><th class="c-name">Name · 성명</th>
+  <th class="c-time">Time · 기록</th><th class="c-date">Date · 일자</th>
   <th class="c-city">City · 도시</th><th class="c-meet">Meet · 대회</th>
 </tr></thead>`
+
+function fmtWP(wp: number | null | undefined): string {
+  if (!wp) return '000'
+  return String(Math.min(999, Math.max(0, wp))).padStart(3, '0')
+}
 
 const tableHtml = computed(() => {
   if (!totalCount.value && !pending.value) {
@@ -393,6 +398,7 @@ function rowHtml(r: EventRank, isFirst: boolean): string {
   const mStroke   = MODAL_STROKE[state.stroke]  ?? 'FR'
   const mCourse   = state.course.toUpperCase()
   const datetime  = r.date || ''
+  const waBadge  = r.waPoints ? `<span class="wa-badge">${fmtWP(r.waPoints)}</span>` : ''
   const timeTd    = hasTime
     ? `<td class="time"><span
         class="time-trigger"
@@ -405,26 +411,27 @@ function rowHtml(r: EventRank, isFirst: boolean): string {
         data-nation="${esc(r.team)}"
         data-datetime="${esc(datetime)}"
         data-venue="${esc(r.meet_full || r.meet)}"
+        data-timeid="${r.timeID ?? ''}"
         role="button"
         tabindex="0"
-      >${esc(normTime(r.time))}</span></td>`
+      >${esc(normTime(r.time))}${waBadge}</span></td>`
     : `<td class="time">—</td>`
   const regBadge = state.division === 'all'
     ? ` <span class="reg-badge">${r.isMasters ? '비등록' : '등록'}</span>`
     : ''
   return `<tr${isFirst ? ' class="first"' : ''}>
     <td class="rank">${r.rank}</td>
+    <td class="name"><span class="name-link" data-name="${esc(r.name||'')}">${esc(r.name||'—')}</span>${regBadge}</td>
     ${timeTd}
     <td class="date">${esc(r.date||'—')}</td>
-    <td class="name"><span class="name-link" data-name="${esc(r.name||'')}">${esc(r.name||'—')}</span>${regBadge}</td>
     <td class="city">${esc(r.city||'—')}</td>
     <td class="meet"><span class="meet-full">${esc(r.meet_full||r.meet||'—')}</span><span class="meet-short">${esc(r.meet||r.meet_full||'—')}</span></td>
   </tr>`
 }
 function emptyRowHtml(i: number, isFirst: boolean): string {
   return `<tr class="empty${isFirst?' first':''}">
-    <td class="rank">${i}</td><td class="time">—</td>
-    <td class="date">—</td><td class="name">등재 대기중</td>
+    <td class="rank">${i}</td><td class="name">등재 대기중</td>
+    <td class="time">—</td><td class="date">—</td>
     <td class="city">—</td><td class="meet">—</td>
   </tr>`
 }
@@ -494,7 +501,7 @@ onMounted(() => {
 
 // ── scoring script ─────────────────────────────────────────────
 onMounted(() => {
-  loadScript('/cannon/js/scoring.js')
+  loadScript('/canon/js/scoring.js')
     .then(() => injectCompareOverlay())
     .catch(err => console.error('[index] script load error', err))
 })
@@ -506,19 +513,23 @@ function handleResultsClick(e: MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
     const d = (timeTrigger as HTMLElement).dataset
-    router.push({
-      path: '/time',
-      query: {
-        gender:   d.gender,
-        stroke:   d.stroke,
-        distance: d.distance,
-        course:   d.course,
-        time:     d.time,
-        athlete:  d.athlete  || undefined,
-        datetime: d.datetime  || undefined,
-        meet:     d.venue    || undefined,
-      },
-    })
+    if (d.timeid) {
+      router.push(`/time/${d.timeid}`)
+    } else {
+      router.push({
+        path: '/time',
+        query: {
+          gender:   d.gender,
+          stroke:   d.stroke,
+          distance: d.distance,
+          course:   d.course,
+          time:     d.time,
+          athlete:  d.athlete  || undefined,
+          datetime: d.datetime || undefined,
+          meet:     d.venue    || undefined,
+        },
+      })
+    }
     return
   }
   const nameTrigger = (e.target as Element).closest('.name-link')

@@ -852,6 +852,22 @@ main.results {
   line-height: 1.4;
 }
 
+/* WA 포인트 뱃지 */
+.wa-badge {
+  display: inline-block;
+  margin-left: 6px;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--fg-mute);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 1px 3px;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+
 /* Top-of-event row (rank 1) emphasis */
 .index-table tbody tr.first td {
   border-bottom: 1px solid var(--rule-thin);

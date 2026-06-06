@@ -46,6 +46,7 @@ type Row = {
   course?: string
   isMasters?: boolean
   round?: string
+  waPoints?: number
 }
 
 // Competition ranking (1224): ties share the lower rank, next rank skips slots consumed by the tie.
@@ -66,6 +67,8 @@ function shapeRanks(rows: Row[], offset: number) {
       team:      r.team || '—',
       date:      r.datetime ? String(r.datetime).slice(0, 10) : '—',
       time:      r.time || '—',
+      waPoints:  r.waPoints  ?? 0,
+      timeID:    (r as any).timeID ?? (r as any).tid ?? null,
       meet:      meetShort(r.competitionName),
       meet_full: r.competitionName || '—',
       // Full structural fields for editing.
