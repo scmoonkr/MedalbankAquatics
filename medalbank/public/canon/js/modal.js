@@ -3,7 +3,7 @@
  * Trigger:  `.time-trigger` (시간 텍스트 노드). 호버 시 밑줄, 클릭 시 모달 오픈.
  * Data on trigger element:
  *   data-gender   "M" | "W"
- *   data-stroke   "FR" | "BK" | "BR" | "FL" | "IM"
+ *   data-stroke   "FR" | "BA" | "BR" | "FL" | "IM"
  *   data-distance number (m)
  *   data-course   "LCM" | "SCM"
  *   data-time     "1:42.00" 또는 "20.91"
@@ -18,7 +18,7 @@
 
   const STROKES = [
     { code: 'FR', ko: '자유형'   },
-    { code: 'BK', ko: '배영'     },
+    { code: 'BA', ko: '배영'     },
     { code: 'BR', ko: '평영'     },
     { code: 'FL', ko: '접영'     },
     { code: 'IM', ko: '개인혼영' }
@@ -438,7 +438,7 @@
   }
 
   function strokeNameEn(code) {
-    return { FR:'Freestyle', BK:'Backstroke', BR:'Breaststroke',
+    return { FR:'Freestyle', BA:'Backstroke', BR:'Breaststroke',
              FL:'Butterfly', IM:'Individual Medley' }[code] || code;
   }
 

@@ -80,7 +80,7 @@ useHead({ title: 'Cannon Update — 메달뱅크 Backend' })
 // ── 영법 탭 ──────────────────────────────────────────────────────────
 const TABS = [
   { disc: 'FR', ko: '자유형' },
-  { disc: 'BK', ko: '배영'   },
+  { disc: 'BA', ko: '배영'   },
   { disc: 'BR', ko: '평영'   },
   { disc: 'FL', ko: '접영'   },
   { disc: 'IM', ko: '개인혼영' },
@@ -93,7 +93,7 @@ const activeDisc = ref<Disc>('FR')
 // style 필드 → disc 정규화 (records.style = 'FR' or 'freestyle')
 const STYLE_TO_DISC: Record<string, string> = {
   FR: 'FR', freestyle: 'FR',
-  BK: 'BK', backstroke: 'BK', back: 'BK',
+  BA: 'BA', backstroke: 'BA', back: 'BA',
   BR: 'BR', breaststroke: 'BR', breast: 'BR',
   FL: 'FL', butterfly: 'FL', fly: 'FL',
   IM: 'IM', medley: 'IM',
@@ -154,7 +154,7 @@ async function runUpdate() {
   result.value = null
   try {
     const res = await $fetch<{ inserted: number; skipped: number }>(
-      '/api/backend/cannon/update',
+      '/api/backend/canon/update',
       { method: 'POST' },
     )
     result.value = {

@@ -399,56 +399,35 @@ const timeInputError = ref('')
 // ── copyUrl ────────────────────────────────────────────────────────
 async function copyUrl() {
   let url = ''
-  url = `${location.origin}/time/${state.id}`
-  const qry: Record<string, string> = {
-    gender: state.gender, stroke: state.stroke,
-    distance: String(state.distance), course: state.course, time: h1Parts.value.prefix+h1Parts.value.suffix,
-    athlete: attribution.athlete, datetime: attribution.datetime, meet: attribution.meet,
+
+  if (timeID) {
+    url = `${location.origin}/time/${timeID}`
+  } else {
+    const timeStr = state.timeSec && scoringReady.value ? normTime(S().formatTime(state.timeSec)) : ''
+    const lookupAthlete = attribution.athlete || (route.query.athlete as string) || ''
+
+    if (!isDirty.value && lookupAthlete && timeStr) {
+      try {
+        const res = await $fetch<{ id: number | null }>('/api/time/lookup', {
+          query: { athlete: lookupAthlete, time: timeStr, discipline: state.stroke, distance: `${state.distance}M`, course: state.course },
+        })
+        if (res?.id) url = `${location.origin}/time/${res.id}`
+      } catch {}
+    }
+
+    if (!url) {
+      const q: Record<string, string> = { gender: state.gender, stroke: state.stroke, distance: String(state.distance), course: state.course }
+      if (timeStr) q.time = timeStr
+      const athlete  = attribution.athlete  || (route.query.athlete  as string) || ''
+      const datetime = attribution.datetime || (route.query.datetime as string) || ''
+      const meet     = attribution.meet     || (route.query.meet     as string) || ''
+      if (athlete)   q.athlete  = athlete
+      if (datetime)  q.datetime = datetime
+      if (meet)      q.meet     = meet
+      if (state.dob) q.dob = state.dob
+      url = `${location.origin}/time?${new URLSearchParams(q)}`
+    }
   }
-  url = `${location.origin}/time?${new URLSearchParams(qry)}`
-
-  // if (timeID) {
-  //   // ID 모드: 그대로 복사
-  //   url = `${location.origin}/time/${timeID}`
-  // } else {
-  //   // Query 모드: DB에서 ID 역조회 → 없으면 query param fallback
-  //   const timeStr = state.timeSec && scoringReady.value
-  //     ? normTime(S().formatTime(state.timeSec))
-  //     : ''
-  //   const lookupAthlete = attribution.athlete || (route.query.athlete as string) || ''
-
-  //   if (!isDirty.value && lookupAthlete && timeStr) {
-  //     try {
-  //       const res = await $fetch<{ id: number | null }>('/api/time/lookup', {
-  //         query: {
-  //           athlete:    lookupAthlete,
-  //           time:       timeStr,
-  //           discipline: state.stroke,
-  //           distance:   `${state.distance}M`,
-  //           course:     state.course,
-  //         },
-  //       })
-  //       if (res?.id) url = `${location.origin}/time/${res.id}`
-  //     } catch {}
-  //   }
-
-  //   if (!url) {
-  //     const q: Record<string, string> = {
-  //       gender: state.gender, stroke: state.stroke,
-  //       distance: String(state.distance), course: state.course,
-  //     }
-  //     const timeStr2 = state.timeSec && scoringReady.value ? normTime(S().formatTime(state.timeSec)) : ''
-  //     if (timeStr2) q.time = timeStr2
-  //     const athlete  = attribution.athlete  || (route.query.athlete  as string) || ''
-  //     const datetime = attribution.datetime || (route.query.datetime as string) || ''
-  //     const meet     = attribution.meet     || (route.query.meet     as string) || ''
-  //     if (athlete)   q.athlete  = athlete
-  //     if (datetime)  q.datetime = datetime
-  //     if (meet)      q.meet     = meet
-  //     if (state.dob) q.dob = state.dob
-  //     url = `${location.origin}/time?${new URLSearchParams(q)}`
-  //   }
-  // }
 
   try {
     await navigator.clipboard.writeText(url)
