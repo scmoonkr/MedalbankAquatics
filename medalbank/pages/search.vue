@@ -192,13 +192,13 @@ onMounted(() => {
 // ── 상수 ───────────────────────────────────────────────────────
 const STROKE_DISTS: Record<string, string[]> = {
   FR: ['25M', '50M', '100M', '200M', '400M', '800M', '1500M'],
-  BK: ['25M', '50M', '100M', '200M'],
+  BA: ['25M', '50M', '100M', '200M'],
   BR: ['25M', '50M', '100M', '200M'],
   FL: ['25M', '50M', '100M', '200M'],
   IM: ['100M', '200M', '400M'],
 }
 const GENDER_LABEL: Record<string, string> = { M: '남자', W: '여자' }
-const DISC_LABEL:   Record<string, string> = { FR: '자유형', BK: '배영', BR: '평영', FL: '접영', IM: '개인혼영' }
+const DISC_LABEL:   Record<string, string> = { FR: '자유형', BA: '배영', BR: '평영', FL: '접영', IM: '개인혼영' }
 
 const GENDERS = [
   { v: 'M', label: '남자', sub: 'MEN'   },
@@ -206,7 +206,7 @@ const GENDERS = [
 ]
 const DISCS = [
   { code: 'FR', ko: '자유형',   en: 'FREE'   },
-  { code: 'BK', ko: '배영',     en: 'BACK'   },
+  { code: 'BA', ko: '배영',     en: 'BACK'   },
   { code: 'BR', ko: '평영',     en: 'BREAST' },
   { code: 'FL', ko: '접영',     en: 'FLY'    },
   { code: 'IM', ko: '개인혼영', en: 'I.M.'   },
@@ -394,6 +394,7 @@ const THEAD = `<thead><tr>
   <th class="c-date">Date · 일자</th>
   <th class="c-city">City · 도시</th>
   <th class="c-meet">Meet · 대회</th>
+  <th class="c-pts">POINT · 포인트</th>
 </tr></thead>`
 
 function fmtWP(wp: number | null | undefined): string {
@@ -410,7 +411,6 @@ function rowHtml(r: SearchRow & { no: number }): string {
   const meetShort = r.pool || r.competitionName || '—'
   const isMasters = r.isMasters === true
   const badge     = `<span class="reg-badge">${isMasters ? '비등록' : '등록'}</span>`
-  const waBadge   = r.waPoints ? `<span class="wa-badge">${fmtWP(r.waPoints)}</span>` : ''
 
   const timeTd = hasTime
     ? `<td class="time"><span
@@ -427,8 +427,12 @@ function rowHtml(r: SearchRow & { no: number }): string {
         data-timeid="${r.timeID ?? ''}"
         role="button"
         tabindex="0"
-      >${esc(normTime(r.time))}${waBadge}</span></td>`
+      >${esc(normTime(r.time))}</span></td>`
     : `<td class="time">—</td>`
+
+  const ptsTd = r.waPoints
+    ? `<td class="pts">${fmtWP(r.waPoints)}</td>`
+    : `<td class="pts">—</td>`
 
   return `<tr>
     <td class="rank">${r.no}</td>
@@ -437,6 +441,7 @@ function rowHtml(r: SearchRow & { no: number }): string {
     <td class="date">${esc(r.datetime?.slice(0, 10) || '—')}</td>
     <td class="city">${esc(r.sido || '—')}</td>
     <td class="meet"><span class="meet-full">${esc(meetFull)}</span><span class="meet-short">${esc(meetShort)}</span></td>
+    ${ptsTd}
   </tr>`
 }
 

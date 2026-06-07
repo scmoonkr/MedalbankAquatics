@@ -179,13 +179,13 @@
                 <thead><tr><th class="c-event">종목</th><th class="c-athlete">선수</th><th class="c-time">기록</th><th class="c-date">일자</th><th class="c-pts">점수</th><th class="c-gap">차이</th></tr></thead>
                 <tbody>
                   <tr v-if="!set.data?.same?.length"><td colspan="6" class="empty-row">데이터 없음</td></tr>
-                  <tr v-for="(r, i) in set.data?.same" :key="i">
+                  <tr v-for="(r, i) in sortByDiff(set.data?.same)" :key="i">
                     <td class="event">{{ genderKo(r.gender) }} {{ strokeKo(r.stroke) }} {{ r.distance }}m · {{ r.course }}</td>
                     <td class="athlete">{{ r.athlete }}</td>
                     <td class="time">{{ normTime(r.time) }}</td>
                     <td class="date">{{ r.date }}</td>
                     <td class="pts">{{ r.points.toLocaleString() }}</td>
-                    <td class="gap">{{ 1000 - r.points }}</td>
+                    <td class="gap">{{ diffFromCurrent(r.points) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -203,13 +203,13 @@
                 <thead><tr><th class="c-event">종목</th><th class="c-athlete">선수</th><th class="c-time">기록</th><th class="c-date">일자</th><th class="c-pts">점수</th><th class="c-gap">차이</th></tr></thead>
                 <tbody>
                   <tr v-if="!set.data?.other?.length"><td colspan="6" class="empty-row">데이터 없음</td></tr>
-                  <tr v-for="(r, i) in set.data?.other" :key="i">
+                  <tr v-for="(r, i) in sortByDiff(set.data?.other)" :key="i">
                     <td class="event">{{ genderKo(r.gender) }} {{ strokeKo(r.stroke) }} {{ r.distance }}m · {{ r.course }}</td>
                     <td class="athlete">{{ r.athlete }}</td>
                     <td class="time">{{ normTime(r.time) }}</td>
                     <td class="date">{{ r.date }}</td>
                     <td class="pts">{{ r.points.toLocaleString() }}</td>
-                    <td class="gap">{{ 1000 - r.points }}</td>
+                    <td class="gap">{{ diffFromCurrent(r.points) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -345,7 +345,7 @@ useHead({ title: timeID ? `Time #${timeID} — 메달뱅크 · Medalbank` : 'Tim
 
 // ── 상수 ──────────────────────────────────────────────────────────
 const STROKES = [
-  { code: 'FR', ko: '자유형' }, { code: 'BK', ko: '배영' },
+  { code: 'FR', ko: '자유형' }, { code: 'BA', ko: '배영' },
   { code: 'BR', ko: '평영' },  { code: 'FL', ko: '접영' }, { code: 'IM', ko: '개인혼영' },
 ]
 const RECORD_TYPES = [
@@ -578,6 +578,14 @@ const wrRef = computed(() => {
   if (!wr?.time || !wr?.holder) return null
   return ['Printed on ' + today, 'WR', fmtTime(wr.time), wr.holder, wr.nation, wr.year, wr.venue].filter(Boolean).join(' | ')
 })
+
+function diffFromCurrent(pts: number): number {
+  return Math.abs((waPoints.value ?? 0) - pts)
+}
+function sortByDiff<T extends { points: number }>(arr: T[] | null | undefined): T[] {
+  if (!arr?.length) return []
+  return [...arr].sort((a, b) => diffFromCurrent(a.points) - diffFromCurrent(b.points))
+}
 
 function ptsDiff(pts: number): string {
   if (!waPoints.value) return ''

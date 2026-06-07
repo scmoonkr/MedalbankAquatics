@@ -57,7 +57,20 @@
               <!-- 순위 -->
               <div class="sm-field">
                 <label>순위</label>
-                <input v-model.number="form.rank" type="number" min="1" placeholder="1" />
+                <div class="sm-rank-row">
+                  <input
+                    v-model.number="form.rank"
+                    type="number" min="1" placeholder="1"
+                    :disabled="rankUnknown"
+                    @focus="rankUnknown = false"
+                  />
+                  <button
+                    type="button"
+                    class="sm-rank-unknown"
+                    :class="{ active: rankUnknown }"
+                    @click="rankUnknown = !rankUnknown; if(rankUnknown) form.rank = null"
+                  >모름</button>
+                </div>
               </div>
 
               <!-- 구분 -->
@@ -91,7 +104,7 @@
                 <label>영법 <span class="req">*</span></label>
                 <select v-model="form.discipline">
                   <option value="FR">자유형 (FR)</option>
-                  <option value="BK">배영 (BK)</option>
+                  <option value="BA">배영 (BA)</option>
                   <option value="BR">평영 (BR)</option>
                   <option value="FL">접영 (FL)</option>
                   <option value="IM">개인혼영 (IM)</option>
@@ -115,25 +128,37 @@
                 </select>
               </div>
 
-              <!-- 시도 -->
-              <div class="sm-field">
-                <label>시도</label>
-                <select v-model="form.sido">
-                  <option value="">선택</option>
-                  <option v-for="s in SIDOS" :key="s" :value="s">{{ s }}</option>
-                </select>
-              </div>
-
               <!-- 소속 -->
               <div class="sm-field">
                 <label>소속</label>
-                <input v-model="form.team" type="text" placeholder="소속팀·클럽" />
+                <div class="sm-rank-row">
+                  <input
+                    v-model="form.team"
+                    type="text" placeholder="소속팀·클럽"
+                    :disabled="teamUnknown"
+                    @focus="teamUnknown = false"
+                  />
+                  <button
+                    type="button"
+                    class="sm-rank-unknown"
+                    :class="{ active: teamUnknown }"
+                    @click="teamUnknown = !teamUnknown; if(teamUnknown) form.team = ''"
+                  >모름</button>
+                </div>
               </div>
 
               <!-- 대회일 -->
               <div class="sm-field">
                 <label>대회일 <span class="req">*</span></label>
-                <input v-model="form.datetime" type="date" required />
+                <input
+                  v-model="form.datetime"
+                  type="text"
+                  placeholder="YYYY-MM-DD"
+                  inputmode="numeric"
+                  maxlength="10"
+                  required
+                  @input="onDateInput"
+                />
               </div>
 
               <!-- 대회명 -->
@@ -160,7 +185,7 @@
             <div class="sm-evidence">
               <div class="sm-ev-head">
                 증빙자료
-                <span class="sm-hint">각 종류별 사진 1장씩 첨부 가능</span>
+                <span class="sm-hint">증빙사진은 여건이 닿는대로 최소 1장만 제출해주셔도 됩니다.</span>
               </div>
               <div class="sm-ev-btns">
                 <div v-for="slot in EV_SLOTS" :key="slot.key" class="sm-ev-slot">
@@ -212,7 +237,7 @@ const MASTERS_GROUPS = ['성인부','고등부','중등부','초등부','유년�
 const LCM_DISTS = ['50M','100M','200M','400M','800M','1500M']
 const SCM_DISTS = ['25M','50M','100M','200M','400M','800M','1500M']
 
-const DISC_KO: Record<string, string> = { FR:'자유형', BK:'배영', BR:'평영', FL:'접영', IM:'개인혼영' }
+const DISC_KO: Record<string, string> = { FR:'자유형', BA:'배영', BR:'평영', FL:'접영', IM:'개인혼영' }
 
 const EV_SLOTS = [
   { key: 'board'   as const, label: '전광판 사진' },
@@ -250,10 +275,12 @@ function onEvPhoto(key: keyof typeof evPhoto, file: File | null) {
   evPhoto[key] = file
 }
 
-const submitting = ref(false)
-const error      = ref('')
-const timeError  = ref('')
-const done       = ref(false)
+const submitting   = ref(false)
+const error        = ref('')
+const timeError    = ref('')
+const done         = ref(false)
+const rankUnknown  = ref(false)
+const teamUnknown  = ref(false)
 
 function normalizeTimeInput(raw: string): string {
   const t = raw.trim()
@@ -313,6 +340,14 @@ const modalTitle = computed(() => {
   return `${div} ${gen} ${disc} ${form.distance} ${form.course} | ${t} | ${dt} | ${nm} 기록 등재 요청하기`
 })
 
+function onDateInput(e: Event) {
+  const digits = (e.target as HTMLInputElement).value.replace(/\D/g, '').slice(0, 8)
+  let fmt = digits
+  if (digits.length > 6) fmt = `${digits.slice(0,4)}-${digits.slice(4,6)}-${digits.slice(6)}`
+  else if (digits.length > 4) fmt = `${digits.slice(0,4)}-${digits.slice(4)}`
+  form.datetime = fmt
+}
+
 function onDivisionChange() {
   form.group = form.isMasters ? '성인부' : '일반부'
 }
@@ -331,10 +366,12 @@ watch(() => props.open, (v) => {
     Object.assign(form, defaultForm())
     if (props.initialData) Object.assign(form, props.initialData)
     evPhoto.board = evPhoto.sheet = evPhoto.article = evPhoto.other = null
-    error.value      = ''
-    timeError.value  = ''
-    done.value       = false
-    submitting.value = false
+    error.value       = ''
+    timeError.value   = ''
+    done.value        = false
+    submitting.value  = false
+    rankUnknown.value = false
+    teamUnknown.value = false
   }
 })
 
@@ -459,13 +496,39 @@ async function submit() {
 .sm-field textarea {
   background: var(--bg-soft, #f8f8f8); border: 1px solid var(--line);
   color: var(--fg); font-family: var(--sans); font-size: 13px;
-  padding: 9px 11px; outline: none;
+  padding: 0 11px; height: 38px;
+  box-sizing: border-box; outline: none;
   transition: border-color 0.15s;
 }
 .sm-field input:focus,
 .sm-field select:focus,
 .sm-field textarea:focus { border-color: var(--fg-mute); }
-.sm-field textarea { resize: vertical; }
+.sm-field select {
+  appearance: none; -webkit-appearance: none;
+  padding-right: 28px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23888' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.sm-field input:disabled {
+  opacity: 0.4; cursor: not-allowed; background: var(--bg-soft);
+}
+.sm-field textarea { height: auto; padding: 9px 11px; resize: vertical; }
+
+/* 순위 모름 */
+.sm-rank-row { display: flex; }
+.sm-rank-row input { flex: 1; border-right: none; }
+.sm-rank-unknown {
+  height: 38px; padding: 0 13px; flex-shrink: 0;
+  border: 1px solid var(--line); background: var(--bg-soft);
+  font-family: var(--sans); font-size: 12px; font-weight: 500;
+  color: var(--fg-mute); cursor: pointer; white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.sm-rank-unknown:hover { color: var(--fg); border-color: var(--fg-mute); }
+.sm-rank-unknown.active {
+  background: var(--fg); color: var(--bg); border-color: var(--fg);
+}
 .sm-hint {
   font-family: var(--sans); font-size: 11px; color: var(--fg-faint);
   margin-top: -2px;

@@ -43,7 +43,7 @@
           <NuxtLink to="/ledger" :class="{ current: route.path === '/ledger' }">
             <span class="nav-en">The Ledger</span><span class="nav-ko">기록대장</span>
           </NuxtLink>
-          <NuxtLink to="/cannon" :class="{ current: route.path === '/cannon' }">
+          <NuxtLink to="/canon" :class="{ current: route.path === '/canon' }">
             <span class="nav-en">The Canon</span><span class="nav-ko">정전</span>
           </NuxtLink>
           <NuxtLink to="/charter" :class="{ current: route.path === '/charter' }">
@@ -64,7 +64,7 @@
         <div class="col">
           <h4>Contribute</h4>
           <p>흩어진 기록, 누락된 순위, 정정이 필요한 한 줄을 알고 계신다면 제보해 주세요. 모든 제보자는 실명으로 명예 등재됩니다. (익명 희망시 가능.)</p>
-          <button class="footer-submit-btn" type="button" @click="openSubmit">제보하기 →</button>
+          <button class="footer-submit-btn" type="button" @click="openSubmit">직접 기록 추가하기 →</button>
         </div>
         <div class="col">
           <h4>In Print</h4>
@@ -234,12 +234,17 @@ button.nav-cta {
 .footer-submit-btn {
   background: none;
   border: none;
-  padding: 0;
-  font: inherit;
+  border-bottom: 1px solid var(--rule);
+  padding: 0 0 1px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--fg);
   cursor: pointer;
-  color: inherit;
   text-decoration: none;
+  transition: opacity 0.15s;
 }
+.footer-submit-btn:hover { opacity: 0.6; }
 
 .no-perm-toast {
   position: fixed;

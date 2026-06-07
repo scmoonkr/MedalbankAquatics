@@ -11,7 +11,7 @@
 //
 // Response: { page, pageSize, total, ranks: [{ rank, name, city, team, date, time, meet, meet_full }] }
 
-const DISCIPLINE_REV: Record<string, string>  = { breast: 'BR', free: 'FR', back: 'BK', fly: 'FL', im: 'IM' }
+const DISCIPLINE_REV: Record<string, string>  = { breast: 'BR', free: 'FR', back: 'BA', fly: 'FL', im: 'IM' }
 // 'adult' covers both 일반부 (legacy elite) and 성인부 (masters / current naming).
 const GROUP_REV:      Record<string, unknown> = {
   adult: { $in: ['일반부', '성인부'] },

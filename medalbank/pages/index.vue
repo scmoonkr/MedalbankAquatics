@@ -235,7 +235,7 @@ const STROKE_LABEL: Record<string, string> = {
 // index state → modal data 속성 매핑
 const MODAL_GENDER: Record<string, string> = { m: 'M', f: 'W' }
 const MODAL_STROKE: Record<string, string> = {
-  free: 'FR', back: 'BK', breast: 'BR', fly: 'FL', im: 'IM',
+  free: 'FR', back: 'BA', breast: 'BR', fly: 'FL', im: 'IM',
 }
 
 // ── state: init from URL query params, then localStorage fallback ─
@@ -358,6 +358,7 @@ const THEAD = `<thead><tr>
   <th class="c-rank">Rank · 순위</th><th class="c-name">Name · 성명</th>
   <th class="c-time">Time · 기록</th><th class="c-date">Date · 일자</th>
   <th class="c-city">City · 도시</th><th class="c-meet">Meet · 대회</th>
+  <th class="c-pts">POINT · 포인트</th>
 </tr></thead>`
 
 function fmtWP(wp: number | null | undefined): string {
@@ -398,7 +399,6 @@ function rowHtml(r: EventRank, isFirst: boolean): string {
   const mStroke   = MODAL_STROKE[state.stroke]  ?? 'FR'
   const mCourse   = state.course.toUpperCase()
   const datetime  = r.date || ''
-  const waBadge  = r.waPoints ? `<span class="wa-badge">${fmtWP(r.waPoints)}</span>` : ''
   const timeTd    = hasTime
     ? `<td class="time"><span
         class="time-trigger"
@@ -414,11 +414,14 @@ function rowHtml(r: EventRank, isFirst: boolean): string {
         data-timeid="${r.timeID ?? ''}"
         role="button"
         tabindex="0"
-      >${esc(normTime(r.time))}${waBadge}</span></td>`
+      >${esc(normTime(r.time))}</span></td>`
     : `<td class="time">—</td>`
   const regBadge = state.division === 'all'
     ? ` <span class="reg-badge">${r.isMasters ? '비등록' : '등록'}</span>`
     : ''
+  const ptsTd = r.waPoints
+    ? `<td class="pts">${fmtWP(r.waPoints)}</td>`
+    : `<td class="pts">—</td>`
   return `<tr${isFirst ? ' class="first"' : ''}>
     <td class="rank">${r.rank}</td>
     <td class="name"><span class="name-link" data-name="${esc(r.name||'')}">${esc(r.name||'—')}</span>${regBadge}</td>
@@ -426,13 +429,14 @@ function rowHtml(r: EventRank, isFirst: boolean): string {
     <td class="date">${esc(r.date||'—')}</td>
     <td class="city">${esc(r.city||'—')}</td>
     <td class="meet"><span class="meet-full">${esc(r.meet_full||r.meet||'—')}</span><span class="meet-short">${esc(r.meet||r.meet_full||'—')}</span></td>
+    ${ptsTd}
   </tr>`
 }
 function emptyRowHtml(i: number, isFirst: boolean): string {
   return `<tr class="empty${isFirst?' first':''}">
     <td class="rank">${i}</td><td class="name">등재 대기중</td>
     <td class="time">—</td><td class="date">—</td>
-    <td class="city">—</td><td class="meet">—</td>
+    <td class="city">—</td><td class="meet">—</td><td class="pts">—</td>
   </tr>`
 }
 

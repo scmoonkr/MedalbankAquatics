@@ -29,7 +29,7 @@
                   <span class="lbl">{{ row.type }}</span>
                   {{ row.label }}
                   <template v-if="row.time">
-                    <span class="time"> {{ normTime(row.time) }}</span> · <span class="diff">{{ row.diff }}</span>
+                    <span class="time"> {{ normTime(row.time) }}</span><template v-if="row.diff"> · <span class="diff">{{ row.diff }}</span></template>
                   </template>
                   <span v-if="row.credit" class="credit">{{ row.credit }}</span>
                 </span>
@@ -119,7 +119,7 @@ interface LedgerDoc {
 }
 
 const GENDER_LABEL: Record<string, string> = { men: '남자', women: '여자', M: '남자', W: '여자' }
-const DISC_LABEL:   Record<string, string> = { BR: '평영', FR: '자유형', BK: '배영', FL: '접영', IM: '개인혼영' }
+const DISC_LABEL:   Record<string, string> = { BR: '평영', FR: '자유형', BA: '배영', FL: '접영', IM: '개인혼영' }
 
 // ── compare 비교 섹션 ──────────────────────────────────────────
 const TYPE_LABEL: Record<string, string> = {

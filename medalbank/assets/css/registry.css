@@ -852,6 +852,23 @@ main.results {
   line-height: 1.4;
 }
 
+/* POINT 컬럼 */
+.c-pts {
+  width: 80px; text-align: right;
+}
+.index-table td.pts {
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: right;
+  color: var(--fg-mute);
+  white-space: nowrap;
+  padding-right: 12px !important;
+}
+.index-table th.c-pts {
+  text-align: right;
+  padding-right: 12px !important;
+}
+
 /* WA 포인트 뱃지 */
 .wa-badge {
   display: inline-block;
