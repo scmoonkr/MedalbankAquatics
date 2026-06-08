@@ -19,6 +19,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '파일이 없습니다.' })
   }
 
+  const fieldText = (name: string) =>
+    parts?.find(p => p.name === name && !p.filename)?.data.toString('utf-8').trim() ?? ''
+  const competitionName = fieldText('competitionName')
+  const datetime        = fieldText('datetime')
+  if (!competitionName) {
+    throw createError({ statusCode: 400, statusMessage: '대회명을 입력해 주세요.' })
+  }
+
   const ext = extname(part.filename).toLowerCase()
   if (!ALLOWED_EXT.has(ext)) {
     throw createError({ statusCode: 400, statusMessage: '허용되지 않는 파일 형식입니다. (.xlsx, .pdf)' })
@@ -55,6 +63,8 @@ export default defineEventHandler(async (event) => {
     report_date:  now.toISOString().slice(0, 10),
     submittedAt:  now,
     status:       'pending',
+    competitionName,
+    datetime:     datetime || null,
     file: {
       path:         filePath,
       originalName: part.filename,
