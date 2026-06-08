@@ -165,18 +165,18 @@
         </div>
         <p class="modal-block-note">World Aquatics 포인트가 가장 가까운 기록 모아보기.</p>
         <div v-if="similarPending" class="empty-state">불러오는 중…</div>
-        <p v-else-if="!waPoints" class="modal-emptynote">기록을 입력하면 유사한 점수의 기록이 표시됩니다.</p>
+        <p v-else-if="!waPoints" class="modal-emptynote">기록을 입력하면 유사한 포인트의 기록이 표시됩니다.</p>
         <template v-else>
           <!-- 같은 영법: oldest → recent → sameYear -->
           <template v-for="set in similarSets" :key="'same-' + set.key">
             <div class="sim-set-head">
-              <span class="sim-set-group">가장 유사한 점수의 {{ strokeKo(state.stroke) }} 기록 ({{ set.data?.same?.length ?? 0 }}건)</span>
+              <span class="sim-set-group">{{ simDescription }} {{ strokeKo(state.stroke) }} 기록 ({{ set.data?.same?.length ?? 0 }}건)</span>
               <span class="sim-set-sep"> | </span>
               <span class="sim-set-label">{{ set.title }}</span>
             </div>
             <div class="sim-table-wrap">
               <table class="modal-similar-table">
-                <thead><tr><th class="c-event">종목</th><th class="c-athlete">선수</th><th class="c-time">기록</th><th class="c-date">일자</th><th class="c-pts">점수</th><th class="c-gap">차이</th></tr></thead>
+                <thead><tr><th class="c-event">종목</th><th class="c-athlete">선수</th><th class="c-time">기록</th><th class="c-date">일자</th><th class="c-pts">포인트</th><th class="c-gap">차이</th></tr></thead>
                 <tbody>
                   <tr v-if="!set.data?.same?.length"><td colspan="6" class="empty-row">데이터 없음</td></tr>
                   <tr v-for="(r, i) in sortByDiff(set.data?.same)" :key="i">
@@ -185,7 +185,7 @@
                     <td class="time">{{ normTime(r.time) }}</td>
                     <td class="date">{{ r.date }}</td>
                     <td class="pts">{{ r.points.toLocaleString() }}</td>
-                    <td class="gap">{{ diffFromCurrent(r.points) }}</td>
+                    <td class="gap">{{ signedDiff(r.points) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -194,13 +194,13 @@
           <!-- 타 영법: oldest → recent → sameYear -->
           <template v-for="set in similarSets" :key="'other-' + set.key">
             <div class="sim-set-head">
-              <span class="sim-set-group">가장 유사한 점수의 타 영법 기록 ({{ set.data?.other?.length ?? 0 }}건)</span>
+              <span class="sim-set-group">{{ simDescription }} 타 영법 기록 ({{ set.data?.other?.length ?? 0 }}건)</span>
               <span class="sim-set-sep"> | </span>
               <span class="sim-set-label">{{ set.title }}</span>
             </div>
             <div class="sim-table-wrap">
               <table class="modal-similar-table">
-                <thead><tr><th class="c-event">종목</th><th class="c-athlete">선수</th><th class="c-time">기록</th><th class="c-date">일자</th><th class="c-pts">점수</th><th class="c-gap">차이</th></tr></thead>
+                <thead><tr><th class="c-event">종목</th><th class="c-athlete">선수</th><th class="c-time">기록</th><th class="c-date">일자</th><th class="c-pts">포인트</th><th class="c-gap">차이</th></tr></thead>
                 <tbody>
                   <tr v-if="!set.data?.other?.length"><td colspan="6" class="empty-row">데이터 없음</td></tr>
                   <tr v-for="(r, i) in sortByDiff(set.data?.other)" :key="i">
@@ -209,7 +209,7 @@
                     <td class="time">{{ normTime(r.time) }}</td>
                     <td class="date">{{ r.date }}</td>
                     <td class="pts">{{ r.points.toLocaleString() }}</td>
-                    <td class="gap">{{ diffFromCurrent(r.points) }}</td>
+                    <td class="gap">{{ signedDiff(r.points) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -561,6 +561,18 @@ const wrRef = computed(() => {
 function diffFromCurrent(pts: number): number {
   return Math.abs((waPoints.value ?? 0) - pts)
 }
+function signedDiff(pts: number): string {
+  const d = pts - (waPoints.value ?? 0)
+  if (d === 0) return '±0'
+  return (d > 0 ? '+' : '') + d.toLocaleString()
+}
+
+const simDescription = computed(() => {
+  const athlete = attribution.athlete ? `${attribution.athlete} 선수의 ` : ''
+  const event   = `${strokeKo(state.stroke)} ${state.distance}M ${state.course}`
+  const time    = state.timeSec && scoringReady.value ? ` ${normTime(S().formatTime(state.timeSec))}` : ''
+  return `${athlete}${event}${time} 경기실적과 유사한 포인트의`
+})
 function sortByDiff<T extends { points: number }>(arr: T[] | null | undefined): T[] {
   if (!arr?.length) return []
   return [...arr].sort((a, b) => diffFromCurrent(a.points) - diffFromCurrent(b.points))
