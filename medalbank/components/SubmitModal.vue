@@ -185,7 +185,6 @@
             <div class="sm-evidence">
               <div class="sm-ev-head">
                 증빙자료
-                <span class="sm-hint">증빙사진은 여건이 닿는대로 최소 1장만 제출해주셔도 됩니다.</span>
               </div>
               <div class="sm-ev-btns">
                 <div v-for="slot in EV_SLOTS" :key="slot.key" class="sm-ev-slot">
@@ -199,6 +198,7 @@
                     @click="onEvPhoto(slot.key, null)">×</button>
                 </div>
               </div>
+              <p class="sm-ev-note">증빙사진은 여건이 닿는대로 최소 1장만 제출해주셔도 됩니다.</p>
             </div>
 
             <div v-if="error" class="sm-error">{{ error }}</div>
@@ -556,6 +556,11 @@ async function submit() {
 }
 .sm-ev-btns {
   display: flex; flex-wrap: wrap; gap: 10px;
+}
+.sm-ev-note {
+  font-family: var(--sans); font-size: 11px; line-height: 1.5;
+  color: var(--fg-faint); opacity: 0.7;
+  margin: 10px 0 0;
 }
 .sm-ev-slot {
   display: flex; align-items: center; gap: 4px;
