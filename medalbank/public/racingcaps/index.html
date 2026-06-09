@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>메달뱅크 클럽 레이싱캡</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23111111'/></svg>">
 <link rel="mask-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='black'/></svg>" color="#111111">
@@ -16,13 +16,14 @@
   html{scroll-behavior:smooth}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
     font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo","Pretendard","Noto Sans KR", "Helvetica Neue", Arial, sans-serif;
-    -webkit-font-smoothing:antialiased; line-height:1.55;}
+    -webkit-font-smoothing:antialiased; line-height:1.55;
+    -webkit-text-size-adjust:100%; text-size-adjust:100%; overscroll-behavior-y:none;}
   a{color:inherit}
   .wrap{max-width:var(--maxw); margin:0 auto; padding:0 24px}
   header.nav{position:sticky; top:0; background:rgba(250,250,250,.92); backdrop-filter: blur(10px); border-bottom:1px solid var(--line); z-index:50}
   .nav-inner{display:flex; align-items:center; justify-content:space-between; height:60px}
-  .brand{display:flex; align-items:center; gap:9px}
-  .brand-logo{height:26px; width:auto; display:block; flex-shrink:0}
+  .brand{display:flex; align-items:center; gap:9px; text-decoration:none; color:inherit; cursor:pointer}
+  .brand-logo{height:26px; width:auto; max-width:160px; object-fit:contain; display:block; flex-shrink:0}
   .brand-name{font-weight:800; letter-spacing:.08em; font-size:15px; color:var(--ink); white-space:nowrap}
   .nav-links a{margin-left:22px; font-size:14px; color:var(--muted); text-decoration:none}
   .nav-links a:hover{color:var(--ink)}
@@ -37,7 +38,7 @@
 
   /* HERO */
   .hero{padding:80px 0 40px}
-  .eyebrow{display:inline-block; font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); padding:6px 10px; border-radius:999px; background:#fff}
+  .eyebrow{display:inline-block; font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:#fff; border:1px solid #111; padding:6px 10px; border-radius:999px; background:#111}
   h1{font-size:clamp(34px,5vw,64px); line-height:1.05; letter-spacing:-.02em; margin:18px 0 18px; font-weight:800}
   h1 em{font-style:normal; background:#111; color:#fff; padding:0 .15em}
   .lede{font-size:18px; color:#333; max-width:760px}
@@ -67,11 +68,12 @@
   /* CASES */
   #caseCards{display:flex; flex-direction:column; gap:18px}
   .case-card{background:#fff; border:1px solid var(--line); border-radius:20px; padding:28px}
-  .case-head{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px}
-  .case-title{font-size:22px; font-weight:800; margin:0}
+  .case-title{font-size:22px; font-weight:800; margin:0;
+              display:flex; align-items:center; flex-wrap:wrap; gap:8px}
+  .case-title .badge{margin-left:0; font-size:11px; padding:4px 9px}
   .case-desc{color:var(--muted); margin-top:6px; max-width:760px}
   .views{display:grid; grid-template-columns:repeat(4,1fr); margin-top:16px; overflow:hidden}
-  .view{aspect-ratio: 4/3.4; display:flex; flex-direction:column; justify-content:flex-end; position:relative; overflow:hidden}
+  .view{aspect-ratio: 200/204; display:flex; flex-direction:column; justify-content:flex-end; position:relative; overflow:hidden}
   .view .label{position:absolute; top:0; font-size:11px; letter-spacing:.18em; color:#666}
   .view svg{width:100%; height:100%; display:block}
   /* 케이스 갤러리 — 카드 안에 캡만 깔끔하게 배치 (회색 박스/칸막이/이중 마진 제거) */
@@ -166,9 +168,11 @@
   .hint{font-size:12px; color:var(--muted); margin-top:8px}
   .controls .hint{grid-column:1 / -1; margin:6px 0 0}
   /* 이대로 주문하기 — 선택한 옵션을 주문 양식에 반영하고 주문 흐름으로 이동 */
-  .order-now-btn{grid-column:1 / -1; display:inline-flex; align-items:center; justify-content:center; gap:9px; margin-top:12px; padding:15px 20px; border:1px solid #111; background:#111; color:#fff; border-radius:12px; font-weight:700; font-size:15px; cursor:pointer; transition:background .15s, transform .12s, box-shadow .2s; box-shadow:0 6px 20px rgba(0,0,0,0.1)}
+  .order-now-btn{grid-column:1 / -1; display:inline-flex; align-items:center; justify-content:center; gap:9px; margin-top:12px; padding:15px 20px; border:1px solid #111; background:#111; color:#fff; border-radius:12px; font-weight:700; font-size:15px; cursor:pointer; transition:background .15s, transform .12s, box-shadow .2s, opacity .2s; box-shadow:0 6px 20px rgba(0,0,0,0.1)}
   .order-now-btn:hover{background:#000; box-shadow:0 10px 28px rgba(0,0,0,0.16)}
   .order-now-btn:active{transform:translateY(1px)}
+  /* 로고 업로드 전: 흐릿하게 비활성화 — 클릭 불가, 호버 효과도 막힘 */
+  .order-now-btn:disabled{opacity:0.35; cursor:not-allowed; box-shadow:none; pointer-events:none}
   .order-now-btn svg{flex-shrink:0}
   @media (max-width:760px){ .controls{grid-template-columns:1fr} }
 
@@ -208,9 +212,26 @@
   .dl-btn{display:inline-flex; align-items:center; gap:10px; background:#111; color:#fff;
           font-weight:700; font-size:15px; padding:14px 24px; border-radius:14px;
           border:1px solid #111; text-decoration:none; justify-self:end; white-space:nowrap;
-          cursor:pointer; transition:background .15s ease, border-color .15s ease}
-  .dl-btn:hover{background:#000; border-color:#000}
+          cursor:pointer; transition:background .15s ease, border-color .15s ease, transform .2s ease, box-shadow .25s ease;
+          will-change:transform;
+          animation: dl-jingle 2.4s ease-in-out infinite}
+  /* 살짝 딸랑딸랑 → 짧게 휴식 → 다시 딸랑딸랑. 사이클의 60~95%가 흔들림, 약 1.5초 간격으로 반복. */
+  @keyframes dl-jingle{
+    0%, 60%, 100%{ transform: translateX(0) rotate(0); }
+    65%{ transform: translateX(-2px) rotate(-2.2deg); }
+    71%{ transform: translateX(2px)  rotate( 2.2deg); }
+    77%{ transform: translateX(-1.4px) rotate(-1.4deg); }
+    83%{ transform: translateX(1.4px)  rotate( 1.4deg); }
+    89%{ transform: translateX(-0.7px) rotate(-0.7deg); }
+    95%{ transform: translateX(0)     rotate(0); }
+  }
+  .dl-btn:hover{background:#000; border-color:#000; transform:translateY(-1px); box-shadow:0 8px 22px rgba(0,0,0,0.18); animation-play-state:paused}
+  .dl-btn:active{transform:translateY(0); box-shadow:none}
   .dl-btn svg{flex-shrink:0}
+  /* 시스템 모션 감소 모드에서는 흔들림 비활성 */
+  @media (prefers-reduced-motion: reduce){
+    .dl-btn{animation:none}
+  }
   .form-panel{margin-top:20px}
   .form-panel textarea{
     width:100%; min-height:300px; box-sizing:border-box;
@@ -262,13 +283,13 @@
   /* 되돌리기/다시실행 묶음과 복원·닫기를 시각적으로 구분 */
   .fm-tool-sep{width:1px; align-self:stretch; margin:7px 2px; background:rgba(0,0,0,0.1)}
   /* 메모장 textarea */
-  .form-modal-textarea{flex:1; width:100%; box-sizing:border-box; border:none; background:transparent; padding:24px 28px; font-family:-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Helvetica Neue", Arial, sans-serif; font-size:15px; line-height:1.75; color:#1b1b1b; resize:none; outline:none; tab-size:2}
+  .form-modal-textarea{flex:1; width:100%; box-sizing:border-box; border:none; background:transparent; padding:24px 28px; font-family:-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Helvetica Neue", Arial, sans-serif; font-size:16px; line-height:1.75; color:#1b1b1b; resize:none; outline:none; tab-size:2; overscroll-behavior:contain; -webkit-text-size-adjust:100%}
   .form-modal-textarea::placeholder{color:#aaa}
   .form-modal-hint{padding:10px 18px; font-size:11.5px; color:#8a8a80; background:rgba(255,250,236,0.75); border-top:1px solid rgba(0,0,0,0.06); text-align:left; flex-shrink:0; letter-spacing:0.01em; line-height:1.55}
   .form-modal-hint strong{color:#b8772a; font-weight:700}
   /* 하단 액션 바 — 복사 + DM 버튼 */
   .form-modal-actions{position:relative; display:flex; gap:10px; padding:16px 18px; border-top:1px solid rgba(0,0,0,0.08); background:rgba(255,255,255,0.6); backdrop-filter:blur(8px); flex-shrink:0; align-items:center}
-  .form-modal-actions .copy-btn, .form-modal-actions .dm-btn{flex:1; min-width:140px; padding:13px 16px; font-size:14px}
+  .form-modal-actions .copy-btn, .form-modal-actions .dm-btn{flex:1; min-width:140px; padding:13px 14px; font-size:13px}
   /* 복사 피드백 — 레이아웃을 밀지 않도록 버튼 위 빈 공간에 토스트로 띄움 */
   .form-modal-actions .copy-feedback{position:absolute; left:50%; bottom:calc(100% + 9px); width:auto; max-width:calc(100% - 36px); margin:0; white-space:nowrap; text-align:center; padding:7px 15px; border-radius:999px; background:rgba(255,255,255,0.97); box-shadow:0 6px 22px rgba(0,0,0,0.18); border:1px solid rgba(0,0,0,0.06); pointer-events:none; font-size:13px; transform:translate(-50%,7px); transition:opacity .25s ease, transform .25s ease}
   .form-modal-actions .copy-feedback.show{transform:translate(-50%,0)}
@@ -280,7 +301,12 @@
   /* 인라인 미리보기 — "탭하여 편집" 안내 배지 */
   /* 래퍼를 textarea와 같은 radius로 클립 → 내부 스크롤바가 라운드 코너를 덮지 않음 */
   .form-preview-wrap{position:relative; border-radius:16px; overflow:hidden}
-  .form-preview-wrap textarea{resize:none; display:block}
+  /* 인라인 미리보기는 '탭하면 모달' 전용 — 자체 스크롤/선택/터치를 모두 죽여서
+     아이폰에서 여기 스크롤이 페이지 스크롤을 가두지 않게 함. 높이도 살짝 줄임. */
+  .form-preview-wrap textarea{resize:none; display:block; pointer-events:none; overflow:hidden; height:210px; min-height:0; -webkit-user-select:none; user-select:none}
+  /* textarea 위를 덮는 투명 레이어 — 탭하면 모달 열림, 드래그하면 페이지가 스크롤됨(가두지 않음) */
+  .form-preview-cover{position:absolute; inset:0; z-index:4; width:100%; height:100%; margin:0; padding:0; border:none; background:transparent; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  .form-preview-cover:focus-visible{outline:2px solid #111; outline-offset:-2px; border-radius:16px}
   .form-edit-badge{position:absolute; top:16px; right:26px; display:inline-flex; align-items:center; gap:5px; padding:6px 11px; border-radius:999px; background:rgba(17,17,17,0.82); color:#fff; font-size:12px; font-weight:600; pointer-events:none; backdrop-filter:blur(4px); box-shadow:0 4px 14px rgba(0,0,0,0.18); animation:edit-badge-float 2.6s ease-in-out infinite}
   @keyframes edit-badge-float{0%,100%{transform:translateY(0); opacity:.92}50%{transform:translateY(-3px); opacity:1}}
   @media (max-width:780px){
@@ -339,9 +365,8 @@
 
     /* CASES */
     .case-card{padding:18px; border-radius:18px}
-    .case-title{font-size:18px}
+    .case-title{font-size:18px; gap:6px}
     .case-desc{font-size:13px; line-height:1.55}
-    .case-head{gap:6px}
     .views{margin-top:16px}
     /* 갤러리 4-view 중 FRONT/BACK은 4유형 모두 동일하므로 모바일에서 숨김 */
     .case-card .view:nth-child(-n+2){display:none}
@@ -390,6 +415,8 @@
     .dl-card .dl-text p{font-size:14px; line-height:1.55}
     .dl-btn{font-size:14px; padding:13px 22px}
     .form-panel textarea{min-height:240px; padding:14px 16px; font-size:13.5px; line-height:1.6}
+    /* 모바일 인라인 미리보기는 더 작게 (탭하면 모달이라 클 필요 없음) */
+    .form-preview-wrap textarea{height:175px; min-height:0}
     .form-actions{gap:8px}
     .copy-btn, .dm-btn{min-width:0; flex:1 1 calc(50% - 4px); padding:12px 10px; font-size:13px}
     .form-hint{font-size:12px; line-height:1.55}
@@ -400,8 +427,8 @@
     .fm-tool, .form-modal-close{width:34px; height:34px}
     .fm-tool svg{width:17px; height:17px}
     .form-modal-tools{gap:4px}
-    .form-modal-textarea{padding:18px 20px; font-size:14px; line-height:1.7}
-    .form-modal-actions .copy-btn, .form-modal-actions .dm-btn{min-width:0; flex:1 1 calc(50% - 5px); padding:12px 10px; font-size:13px}
+    .form-modal-textarea{padding:18px 20px; font-size:16px; line-height:1.7}
+    .form-modal-actions .copy-btn, .form-modal-actions .dm-btn{min-width:0; flex:1 1 calc(50% - 5px); padding:12px 8px; font-size:12.5px}
     .form-edit-badge{top:14px; right:20px; font-size:11px; padding:5px 9px}
   }
   @media (max-width:480px){
@@ -435,10 +462,10 @@
 
 <header class="nav">
   <div class="wrap nav-inner">
-    <div class="brand">
-      <img class="brand-logo" src="images/medalbankaquatics.png" alt="메달뱅크 아쿠아틱스" />
+    <a class="brand" href="#" aria-label="페이지 맨 위로" onclick="event.preventDefault(); window.scrollTo({top:0, behavior:'smooth'})">
+      <img class="brand-logo" src="images/medalbankaquatics.png" alt="메달뱅크 아쿠아틱스" onerror="this.remove()" />
       <span class="brand-name">SOFT DOME CAPS</span>
-    </div>
+    </a>
     <nav class="nav-links">
       <a href="#cases"><span class="is-full">디자인 유형</span><span class="is-short">유형</span></a>
       <a href="#tool"><span class="is-full">시안 미리보기</span><span class="is-short">시안</span></a>
@@ -462,8 +489,11 @@
       <span class="pill"><span class="is-full">최소주문수량 30장 · 수량 할인 없음</span><span class="is-short">최소주문수량 30장</span></span>
       <span class="pill"><span class="is-full">소요기간 약 2~6주</span><span class="is-short">약 2~6주 소요</span></span>
       <span class="pill mobile-hide">배송비 포함 · 추가 비용 없음</span>
-      <span class="pill">소프트타입 · 원사이즈</span>
+      <span class="pill">경기용 수모</span>
+      <span class="pill">소프트타입</span>
+      <span class="pill">원사이즈</span>
       <span class="pill">블랙 · 화이트 · 블루 · 레드</span>
+      <span class="pill">평영 화이팅</span>
     </div>
   </div>
   <div class="scroll-indicator" aria-hidden="true">
@@ -477,7 +507,7 @@
 <section id="cases">
   <div class="wrap">
     <h2>커스텀 디자인 유형</h2>
-    <p class="sub">프린팅되는 요소는 모두 국제 규격을 따르며, 단순하고 제한적입니다. 월드아쿠아틱스는 왼쪽면에 국가표시, 오른쪽면에 스폰서표시를 제안하며, 사이즈 또한 명시합니다. 메달뱅크 또한 이 기준을 최대한 준수합니다.</p>
+    <p class="sub">프린팅되는 요소는 모두 국제 규격을 따르며, 단순하고 제한적입니다. 월드아쿠아틱스는 왼쪽면에 국가표시, 오른쪽면에 스폰서표시를 제안하며, 사이즈 또한 명시합니다. 메달뱅크 또한 이 기준을 최대한 준수합니다. 원하시는 내용 프린팅 작업을 제외하면 모두 동일한 제품입니다.</p>
 
     <div id="caseCards"></div>
   </div>
@@ -492,12 +522,12 @@
     <div class="tool">
       <div class="tool-views">
         <!-- FRONT/BACK: 렌더링은 유지하되 화면에는 표시 안 함 -->
-        <svg id="tv-front" viewBox="10 15 200 170" style="display:none"></svg>
-        <svg id="tv-back" viewBox="10 15 200 170" style="display:none"></svg>
+        <svg id="tv-front" viewBox="10 15 200 204" style="display:none"></svg>
+        <svg id="tv-back" viewBox="10 15 200 204" style="display:none"></svg>
         <!-- 표시 순서: RIGHT 먼저 → LEFT (정면에서 본 착용자 기준으로 자연스러운 배치) -->
         <div class="views views-2col">
-          <div class="view"><span class="label">RIGHT</span><svg id="tv-right" viewBox="10 15 200 170"></svg></div>
-          <div class="view"><span class="label">LEFT</span><svg id="tv-left" viewBox="10 15 200 170"></svg></div>
+          <div class="view"><span class="label">RIGHT</span><svg id="tv-right" viewBox="10 15 200 204"></svg></div>
+          <div class="view"><span class="label">LEFT</span><svg id="tv-left" viewBox="10 15 200 204"></svg></div>
         </div>
         <!-- 시안 이미지 보기 오버레이 — 로고 업로드 시에만 등장 -->
         <div class="export-row" aria-hidden="true">
@@ -510,7 +540,7 @@
           </button>
           <div class="export-hints-wrap">
             <p class="export-hint">새 창에 JPG 이미지가 열립니다.<br>길게 누르거나 우클릭으로 저장하세요.</p>
-            <p class="export-hint export-hint-extra">이미지가 들어가는 공간은 제한이 되어 있습니다.<br>가장 적절한 클럽로고는 가로로 긴 형태입니다.<br>원이나 정사각형에 가까운 모양은 작게 보일 수도 있습니다.</p>
+            <p class="export-hint export-hint-extra">이미지가 들어가는 공간은 허용되는 범위 내에서 비율을 유지한채 가장 크게 배치됩니다.<br>본 시안과 실제 작업된 제품에서 보는 요소들의 크기나 위치는 다소 다른 비율일 수 있습니다.</p>
           </div>
         </div>
       </div>
@@ -590,7 +620,7 @@
       <div class="price-card">
         <h3>기본형 <span class="badge">클럽로고</span></h3>
         <div class="p">₩40,000<span style="font-size:14px; color:var(--muted); font-weight:500"> /장</span></div>
-        <div class="desc">선수명(이니셜) 없이 양쪽 면에 클럽로고만 표기. 로고 인쇄 영역이 가로 120 × 세로 60mm로 더 넓습니다.</div>
+        <div class="desc">선수명(이니셜) 없이 양쪽 면에 클럽로고만 표기. 로고 인쇄 영역이 90 × 65mm로 세로가 더 길어, 로고를 가장 크게 넣을 수 있습니다.</div>
         <ul>
           <li>최소주문수량 30장 · 수량 할인 없음</li>
           <li>클럽로고 인쇄 포함 (단색 기준)</li>
@@ -648,17 +678,10 @@
 <!-- =================== PROMO =================== -->
 <section>
   <div class="wrap">
-    <div class="promo">
+    <div class="promo" style="grid-template-columns:1fr">
       <div>
-        <h3>3+1 프로모션</h3>
-        <p>주문하는 수모 (최소) 30장 중에 <b>동일한 선수명(이니셜)</b>을 3장 주문하면 1장을 서비스로 제공합니다. 클럽이 한 선수이 시즌에 사용할 수모를 여러개 한꺼번에 주문할 시 큰 혜택이 됩니다. 많은 선수가 경기용 A급 수모를 아껴두고, 평소 훈련 시 착용하는 수모를 별도로 운영하기도 합니다.</p>
-        <p style="font-size:13px; color:#9d9d9d; margin-top:14px">공식 가격표에는 게재되지 않는 내부 정책이며, 최소주문수량 달성시에만 해당되는 내용이고, 별도로 추가 주문할 수는 없습니다. 본 혜택은 최대 12장의 동일한 디자인당 4장 추가 무료 증정으로 한정됩니다. 미리 말씀해주시지 않으면 적용되지 않을 수 있으니 주문시 꼭 언급해주시기 바랍니다.</p>
-      </div>
-      <div class="tier">
-        <div class="t"><b>3장</b>주문 시<br/>+1 무료</div>
-        <div class="t"><b>6장</b>주문 시<br/>+2 무료</div>
-        <div class="t"><b>9장</b>주문 시<br/>+3 무료</div>
-        <div class="t"><b>12장</b>주문 시<br/>+4 무료</div>
+        <h3>30+3 프로모션</h3>
+        <p>주문최소수량인 30장(이상) 제작주문시 3장의 기념품을 무료 증정합니다. (동일한 돔 수모 제품, 내용 선택 불가.)</p>
       </div>
     </div>
   </div>
@@ -676,15 +699,15 @@
       <div class="info"><h4>색상</h4><p><strong>블랙, 화이트, 레드, 블루.</strong> 수모 색상은 총 네가지만 제공합니다. 선수명 색상은 수모 색상에 따라 규격대로 자동 조절되며 선택불가합니다. <strong>모든 단체 주문건의 수모 색상은 한개로 통일되어야 합니다.</strong></p></div>
       <div class="info"><h4>사이즈</h4><p>얇고, 신축성이 뛰어난 소프트 타입 돔캡으로, 두상이 큰 남성 및 머리가 긴 여성도 귀를 덮어 착용 가능. 너무 두꺼워서 장시간 착용시에도 (비교적) 두통을 유발하지 않는 편안한 느낌. <strong>연습 때 사용할 수 있을 정도로 편안하고, 실전에서 사용할 만큼 잘 감싸주는 핏. 머리가 긴편인 경우에도 들뜸 없이 잘 맞는 윗쪽이 잘 늘어나는 핏.</strong></p></div>
       <div class="info"><h4>클럽로고 디자인</h4>
-        <p>기본형일 경우, 120mm x 60mm 영역 내에서 비율 유지하며 잘리지 않게 최대한 크게 인쇄. 좌우 다른 디자인 불가.</p>
-        <p>클럽형 및 규격형일 경우, 100mm x 47mm 영역에서 비율 유지하며 잘리지 않게 최대한 크게 인쇄. 클럽형일 경우, 좌우 다른 디자인 불가. 규격형일 경우, 좌우 반전 불가.</p>
+        <p>기본형일 경우, 90mm x 65mm 영역 내에서 비율 유지하며 잘리지 않게 최대한 크게 인쇄. 좌우 다른 디자인 불가.</p>
+        <p>클럽형 및 규격형일 경우, 90mm x 47mm 영역에서 비율 유지하며 잘리지 않게 최대한 크게 인쇄. 클럽형일 경우, 좌우 다른 디자인 불가. 규격형일 경우, 좌우 반전 불가.</p>
         <p>클럽로고 이미지 파일은 .ai 파일을 보내주시는 것이 가장 편리하지만, <strong>화질이 좋은 이미지를 제공해주신다면 .jpg 포맷도 문제 없습니다. 화질이 좋은 이미지란, 최소한 2000px 가량의 선명하고 잘리지 않은 로고를 말합니다.</strong></p>
         <p><strong>기존 제품이나 보유하고 있는 물건의 로고를 사진 찍어 보내주시는 경우에는 절대 작업이 불가합니다.</strong></p>
       </div>
-      <div class="info"><h4>선수명 디자인</h4><p>선수명(이니셜)은 클럽로고 또는 태극기 하단에 120mm x 15mm 영역 내에서 인쇄. 양쪽 동일하게만 작업 가능. 저작권 문제로 인해 기본 폰트만 사용하며, 폰트 변경 불가. 선수명 표기 기준 또한 월드아쿠아틱스 경영 수모 규격을 최대한 준수하며 위치나 크기 임의 선택 불가. <strong>오직 영문 대문자만 허용하며, 1~8 글자를 권장하고, 10 글자도 가능. 12 글자까지도 가능하지만 권장하지 않음. 띄어쓰기, 쉼표, 마침표는 각각 1 글자로 계산. 한글·한자·영문소문자 불가.</strong></p></div>
+      <div class="info"><h4>선수명 디자인</h4><p>선수명(이니셜)은 클럽로고 또는 태극기 하단에 90mm x 15mm 영역 내에서 인쇄. 양쪽 동일하게만 작업 가능. 저작권 문제로 인해 기본 폰트만 사용하며, 폰트 변경 불가. 선수명 표기 기준 또한 월드아쿠아틱스 경영 수모 규격을 최대한 준수하며 위치나 크기 임의 선택 불가. <strong>오직 영문 대문자만 허용하며, 1~8 글자를 권장하고, 10 글자도 가능. 12 글자까지도 가능하지만 권장하지 않음. 띄어쓰기, 쉼표, 마침표는 각각 1 글자로 계산. 한글·한자·영문소문자 불가.</strong></p></div>
       <div class="info"><h4>태극기 디자인</h4><p>월드아쿠아틱스가 제안하는 경영 수모 규격 준수. 위치 및 사이즈는 고정이며 선택 불가. 태극기가 들어간 수모 제작 진행시, 선수명 제출 필수. 없을 경우 KOR로 강제로 대체하여 작업 진행 예정. 타 국가 국기 진행 희망시, 작업 난도와는 상관없이 전체 장당 50,000원 견적.</p></div>
       <div class="info"><h4>최소 주문 수량</h4><p>최소 30장 이상만 주문 가능합니다. 수량이 늘어나도 추가 할인은 불가합니다. 모든 수영인이 최소수량부터 염가를 누릴 수 있도록 최선을 다해 노력하겠습니다.</p></div>
-      <div class="info"><h4>제작 및 배송</h4><p>시기에 따라 주문 접수 및 결제대금 송금 후 수령까지 약 2~6주 소요. 선입선출. 작업열 임의 수정 불가. 배송비 포함. 소비자 추가 부담 없음.</p></div>
+      <div class="info"><h4>제작 및 배송</h4><p>주문 접수 및 결제대금 송금 후, 수령까지 약 2~6주 소요. 시기에 따라 다를 수 있음. 선입선출. 작업열 임의 수정 불가. 배송비 포함. 소비자 추가 부담 없음.</p></div>
       <div class="info"><h4>저작권</h4><p>타인이 제작한 디자인 또는 타 클럽로고는 원작자와 직접관계자의 서면 동의 없이 동일 디자인으로 작업 불가. 생성형 이미지로 직접 제작하거나 비슷하게 그려 보내주시면 작업 진행 가능.</p></div>
     </div>
   </div>
@@ -728,7 +751,12 @@
         <span>여기서 직접 입력·수정한 내용은 이 기기에만 임시로 저장돼요. 브라우저 데이터를 지우거나 기기가 바뀌면 사라질 수 있으니, <strong>완성한 내용은 꼭 복사해서 안전한 곳에 보관</strong>하거나 바로 DM으로 보내주시는 걸 추천드려요.</span>
       </div>
       <div class="form-preview-wrap">
-      <textarea id="form-template" rows="20" readonly>경기용 수모 (소프트 돔수모) 주문 종합을 시작합니다.
+      <textarea id="form-template" rows="20" readonly>이 양식을 작성하여 @medalbankaquatics 로 DM 주시면 확인하겠습니다.
+클럽 로고 사진도 바로 같이 보내주시면 가장 좋습니다.
+
+--
+
+경기용 수모 (소프트 돔수모) 주문 종합을 시작합니다.
 
 클럽명: 33333
 
@@ -753,6 +781,7 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
           탭하여 편집
         </span>
+        <button type="button" class="form-preview-cover" id="form-preview-cover" aria-label="주문 양식 편집 — 전체화면으로 열기"></button>
       </div>
       <div class="form-actions">
         <button class="copy-btn" id="form-copy" type="button">
@@ -768,7 +797,7 @@
             <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
             <circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/>
           </svg>
-          인스타그램 DM 보내기
+          DM 보내기
         </a>
         <span class="copy-feedback" id="copy-feedback"></span>
       </div>
@@ -837,7 +866,7 @@
           <rect x="6" y="6" width="11" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
           <path d="M14 4H5a1 1 0 0 0-1 1v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         </svg>
-        내용 복사하기
+        이 내용 복사하기
       </button>
       <a class="dm-btn" id="form-modal-dm" href="https://ig.me/m/medalbankaquatics" target="_blank" rel="noopener">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -845,7 +874,7 @@
           <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
           <circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/>
         </svg>
-        인스타그램 DM 보내기
+        이 내용 복사해서 DM 날리기
       </a>
       <span class="copy-feedback" id="form-modal-feedback"></span>
     </footer>
@@ -876,12 +905,13 @@ const FLAG_DATA_URL = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQABLAEsAAD/4QCARX
 const MEDALBANK_LOGO_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAmcAAABMCAIAAACnJIeaAAAACXBIWXMAAC4jAAAuIwF4pT92AAAE9WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgMTAuMC1jMDAwIDc5LmQyMGU0NjYzMCwgMjAyNS8xMi8wOS0wMjoxMToyMyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDI3LjcgKE1hY2ludG9zaCkiIHhtcDpDcmVhdGVEYXRlPSIyMDI2LTAxLTI2VDIwOjQ0OjQ0KzA5OjAwIiB4bXA6TW9kaWZ5RGF0ZT0iMjAyNi0wNi0wM1QxODoxNjoyOCswOTowMCIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyNi0wNi0wM1QxODoxNjoyOCswOTowMCIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MzdmMWE3ODktYTM1MS00YzY5LTkwYWEtZGQxY2U3MGI2YjZlIiB4bXBNTTpEb2N1bWVu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';
 const MEDALBANK_LOGO_RATIO = 76 / 615;   // height / width
 
-/* === 비율 기반 배치 ===
-   수모 전체 높이 160mm = SVG 좌표상 y=20~156 (총 136px)
-   1mm ≈ 0.85px. 모든 요소 위치/사이즈는 mm() 헬퍼를 통해 비율 변환. */
-const PX_PER_MM = 136 / 160;
+/* === 비율 기반 배치 (수모 가로 180mm × 세로 160mm, 시각 조정 비율) ===
+   캡 실루엣 폭 194px = 180mm → 1mm ≈ 1.078px. 캡 높이 160mm(≈172px, apex 20~rim 192).
+   내용물 예) 로고 90mm ≈ 캡 폭의 50%, 선수명 90mm ≈ 50%, 태극기 70mm ≈ 39%, MEDALBANK 62mm ≈ 34%.
+   세로 배치는 밑단 기준 mm 규격(선수명 40mm·로고 윗변 112mm 등) 그대로. */
+const PX_PER_MM = 194 / 180;
 const mm = v => v * PX_PER_MM;
-const BOTTOM_Y = 156;        // 수모 맨 아래(rim 중심)
+const BOTTOM_Y = 192;        // 수모 맨 아래(rim 중심) — 가로180×세로160mm 비율 (apex20~rim192 = 172px)
 const CENTER_X = 110;        // 수모 가로 중심
 
 /* Cap dome — 220×200 viewBox.
@@ -889,10 +919,10 @@ const CENTER_X = 110;        // 수모 가로 중심
    rim ellipse at bottom gives the open-cap look. Radial gradient + specular
    highlight give 3-D depth matching the reference photo. */
 const COLOR_TOKENS = {
-  black: {hi:'#383838', mid:'#1c1c1c', lo:'#060606', rim:'#020202', hlO:0.07, ink:'#ffffff'},
-  white: {hi:'#ffffff', mid:'#e8e8e8', lo:'#bcbcbc', rim:'#909090', hlO:0.35, ink:'#111111'},
-  blue:  {hi:'#2563c9', mid:'#0047a0', lo:'#002766', rim:'#001a47', hlO:0.14, ink:'#ffffff'},
-  red:   {hi:'#e85563', mid:'#cd2e3a', lo:'#7a1b22', rim:'#4d0d12', hlO:0.14, ink:'#ffffff'},
+  black: {hi:'#383838', mid:'#1c1c1c', lo:'#060606', rim:'#020202', hlO:0.05, ink:'#ffffff'},
+  white: {hi:'#ffffff', mid:'#e8e8e8', lo:'#bcbcbc', rim:'#909090', hlO:0.22, ink:'#111111'},
+  blue:  {hi:'#2563c9', mid:'#0047a0', lo:'#002766', rim:'#001a47', hlO:0.09, ink:'#ffffff'},
+  red:   {hi:'#e85563', mid:'#cd2e3a', lo:'#7a1b22', rim:'#4d0d12', hlO:0.09, ink:'#ffffff'},
 };
 let _gid = 0;
 function capShape(color) {
@@ -907,10 +937,10 @@ function capShape(color) {
         <stop offset="100%" stop-color="${t.lo}"/>
       </radialGradient>
     </defs>
-    <ellipse cx="110" cy="174" rx="95" ry="5" fill="#000" opacity="0.12"/>
-    <ellipse cx="110" cy="156" rx="97" ry="13" fill="${t.rim}"/>
-    <!-- 직선 측면(y=90까지) + 넓고 납작한 돔(ry=70) → 엄지 끝 모양 -->
-    <path d="M13,156 L13,90 A97,70 0 0,1 207,90 L207,156 Z" fill="url(#${gid})"/>
+    <ellipse cx="110" cy="210" rx="95" ry="5" fill="#000" opacity="0.12"/>
+    <ellipse cx="110" cy="192" rx="97" ry="13" fill="${t.rim}"/>
+    <!-- 직선 측면(y=90~192, 가로180×세로160mm 비율) + 넓고 납작한 돔(ry=70, 그대로) -->
+    <path d="M13,192 L13,90 A97,70 0 0,1 207,90 L207,192 Z" fill="url(#${gid})"/>
     <ellipse cx="82" cy="52" rx="38" ry="22" fill="white" opacity="${t.hlO}" transform="rotate(-20,82,52)"/>`;
 }
 
@@ -922,7 +952,7 @@ function renderCap(svg, view, opts){
   const guideFill = isLightCap ? '#000000' : '#ffffff';
   const guideOp   = isLightCap ? 0.18      : 0.6;
 
-  // case 1: 양쪽 클럽로고 (선수명(이니셜) 없음, 로고 박스 확장 120×60mm)
+  // case 1: 양쪽 클럽로고 (선수명(이니셜) 없음, 로고 박스 확장 90×65mm)
   // case 2: 양쪽 클럽로고 + 선수명(이니셜)
   // case 3: (deprecated)
   // case 4: 왼쪽 태극기 + 오른쪽 클럽로고 + 양쪽 선수명(이니셜) — 규격형
@@ -935,12 +965,14 @@ function renderCap(svg, view, opts){
   let deco = '';
 
   if (view === 'front'){
-    // MEDALBANK 로고 이미지: 가로 50mm 비율, 맨 아래에서 35mm 지점에 세로 중앙.
+    // MEDALBANK 로고 이미지: 가로 62mm(높이 ≈ 7.66mm). 아랫변을 밑단에서 40mm 지점에 정렬 →
+    //   선수명 글자의 alphabetic baseline(= 글자 시각적 밑단)이 동일한 40mm 지점에 정렬되어 같은 라인을 공유.
+    //   윗변은 자연스럽게 밑단 47.66mm 지점 (기본형 90×65 박스 아랫변 47.5mm와 0.16mm 차이로 시각적 일치).
     // 어두운 수모(블랙·블루·레드)에서는 lighten 블렌드로 검정 배경을 수모에 녹이고 흰 글자만 표시.
     // 흰 수모에서는 invert(1)로 글자색을 검정으로 뒤집고 multiply 블렌드로 흰 배경을 투명화.
-    const w = mm(50), h = w * MEDALBANK_LOGO_RATIO;
+    const w = mm(62), h = w * MEDALBANK_LOGO_RATIO;
     const x = CENTER_X - w/2;
-    const y = (BOTTOM_Y - mm(35)) - h/2;
+    const y = BOTTOM_Y - mm(40) - h;
     const blend = isLightCap
       ? 'mix-blend-mode:multiply; filter:invert(1);'
       : 'mix-blend-mode:lighten;';
@@ -958,9 +990,9 @@ function renderCap(svg, view, opts){
     //    RIGHT 시안의 오른쪽 가장자리에는 원본 이미지의 왼쪽 절반(MEDA 쪽)이 노출됨.
     //    각 시안에서 이미지의 '중앙선'을 캡 가장자리에 정렬하고, clipPath로 그 절반만 보이게 한다. ──
     {
-      const peekW = mm(50);
+      const peekW = mm(62);   // 앞면 MEDALBANK 로고와 동일 폭(신규격 62mm)
       const peekH = peekW * MEDALBANK_LOGO_RATIO;
-      const peekY = (BOTTOM_Y - mm(35)) - peekH/2;
+      const peekY = BOTTOM_Y - mm(40) - peekH;   // 앞면과 동일 — 아랫변 40mm 지점
       const peekVisibleW = peekW * 0.5;  // 이미지의 절반(약 4글자)이 노출
       const peekBlend = isLightCap
         ? 'mix-blend-mode:multiply; filter:invert(1);'
@@ -987,40 +1019,42 @@ function renderCap(svg, view, opts){
       }
     }
 
-    // ── 선수명 박스: 120 × 15mm. 박스 '아랫변'이 수모 맨 아래에서 30mm 위 ──
-    const nameW = mm(120), nameH = mm(15);
-    const nameBottom = BOTTOM_Y - mm(30);
+    // ── 선수명 박스: 90 × 15mm, 아랫변이 밑단에서 40mm 위 (실측 규격) ──
+    const nameW = mm(90), nameH = mm(15);
+    const nameBottom = BOTTOM_Y - mm(40);
     const nameY = nameBottom - nameH;
     const nameX = CENTER_X - nameW/2;
 
-    // ── 메인 자산(클럽로고/태극기): 아랫변이 선수명 박스 위로 10mm ──
-    const mainBottom = nameY - mm(10);
+    // ── 로고/태극기 윗변 앵커 = 밑단에서 110mm (이름 있는 유형 기준) ──
+    //    이름 있는 유형: 로고 47mm → 아랫변이 밑단에서 63mm. 글자 baseline 40mm + Arial Black cap ~12mm =
+    //    글자 윗변 ~52mm → 글자↔로고 간격 ~11mm. 글자가 baseline 정렬로 약 3mm 내려간 만큼 로고/태극기도 2mm 하향.
+    //    기본형(이름 없음): 로고 65mm, '아랫변'을 밑단 47.5mm에 맞춤 (→ 윗변 112.5mm, mainTop 무관).
+    const mainTop = BOTTOM_Y - mm(110);
 
     const isFlag = (view === 'left' && leftIsFlag) || (view === 'right' && rightIsFlag);
 
     if (isFlag){
-      // 태극기 70 × 46mm (실제 이미지)
-      const fw = mm(70), fh = mm(46);
-      const fx = CENTER_X - fw/2, fy = mainBottom - fh;
+      // 태극기 70 × 47mm — 윗변을 로고 기준선(mainTop)에 맞춤
+      const fw = mm(70), fh = mm(47);
+      const fx = CENTER_X - fw/2, fy = mainTop;
       deco += `<image href="${FLAG_DATA_URL}" x="${fx}" y="${fy}"
                       width="${fw}" height="${fh}" preserveAspectRatio="xMidYMid meet"/>`;
     } else if (opts.logoHref){
       // 업로드된 클럽로고 — 가이드 박스 대신 실제 이미지 표시
-      // 선수명(이니셜) 없는 기본형(case 1)은 박스가 가로 120mm × 세로 60mm로 확장됨.
-      // 위치(top)는 그대로 유지하고 아래로만 14mm 더 길어짐.
-      const lw = (c === 1) ? mm(120) : mm(100);
-      const lh = (c === 1) ? mm(60)  : mm(46);
+      // 기본형(case 1): 90 × 65mm, 그 외(이름 있음): 90 × 47mm. 윗변은 항상 mainTop.
+      const lw = mm(90);
+      const lh = (c === 1) ? mm(65) : mm(47);
       const lx = CENTER_X - lw/2;
-      const ly = mainBottom - mm(46);
+      const ly = (c === 1) ? (BOTTOM_Y - mm(47.5) - lh) : mainTop;
       deco += `<image href="${opts.logoHref}" x="${lx}" y="${ly}"
                       width="${lw}" height="${lh}" preserveAspectRatio="xMidYMid meet"/>`;
     } else {
       // 클럽로고 자리 가이드 박스 — 수모 색상에 따라 대비 색상 자동 선택
-      // 선수명(이니셜) 없는 기본형(case 1)은 박스가 가로 120mm × 세로 60mm로 확장됨.
-      const lw = (c === 1) ? mm(120) : mm(100);
-      const lh = (c === 1) ? mm(60)  : mm(46);
+      // 기본형(case 1): 90 × 65mm, 그 외: 90 × 47mm. 윗변은 항상 mainTop.
+      const lw = mm(90);
+      const lh = (c === 1) ? mm(65) : mm(47);
       const lx = CENTER_X - lw/2;
-      const ly = mainBottom - mm(46);
+      const ly = (c === 1) ? (BOTTOM_Y - mm(47.5) - lh) : mainTop;
       deco += `<rect x="${lx}" y="${ly}" width="${lw}" height="${lh}"
                       fill="${guideFill}" opacity="${guideOp}" rx="2"/>`;
       // 박스 중앙에 사이즈 라벨 흐릿하게 — 갤러리는 mm 규격, 시안 미리보기는 권장 픽셀 + 안내문구
@@ -1028,7 +1062,7 @@ function renderCap(svg, view, opts){
       const _labelColor = isLightCap ? '#111' : '#fff';
       const _labelY = ly + lh/2;
       if (_isTool){
-        const _mainPx = (c === 1) ? '2000px x 1000px' : '2000px x 940px';
+        const _mainPx = (c === 1) ? '2000px x 1440px' : '2000px x 1040px';
         // 메인(상단) + 안내문 2줄(하단) 구성
         deco += `<text x="${CENTER_X}" y="${_labelY - 5}" text-anchor="middle"
                         font-family="sans-serif" font-weight="500"
@@ -1038,40 +1072,38 @@ function renderCap(svg, view, opts){
                    <tspan x="${CENTER_X}" dy="4.5" font-size="3.5">여백 없이 꽉찬 이미지 + 투명배경으로 시도해주세요.</tspan>
                  </text>`;
       } else {
-        const _labelText = (c === 1) ? '최대 120mm × 60mm' : '최대 100mm × 47mm';
+        const _labelText = (c === 1) ? '최대 90mm × 65mm' : '최대 90mm × 47mm';
         deco += `<text x="${CENTER_X}" y="${_labelY}" text-anchor="middle" dominant-baseline="central"
                         font-family="sans-serif" font-size="7" font-weight="500"
                         fill="${_labelColor}" opacity="0.55">${_labelText}</text>`;
       }
     }
 
-    // 선수명 가이드 박스: 선수명(이니셜)이 디자인에 포함되는 유형(2·4·5)에서, 사용자가 직접 입력하기 전 또는 빈값일 때만 표시.
-    // case 1·3은 선수명(이니셜)이 디자인에 없는 유형이므로 가이드 박스도 처음부터 표시하지 않음.
-    // userTyped 플래그: 페이지 로드 시 채워진 랜덤 데모 이름은 "아직 사용자가 입력 안 한 상태"로 간주.
+    // 선수명 가이드 박스: 선수명(이니셜)이 디자인에 포함되는 유형(2·4·5)에서, 빈값 또는 미입력 상태일 때 표시.
+    // 시안 미리보기(tool)는 항상 랜덤 데모 이름이 채워져 있어 박스가 텍스트 뒤로 겹쳐 보이므로 그리지 않음 — 갤러리에서만 표시.
     const _trimmed = (opts.initial || '').trim().toUpperCase();
     const _isDefaultName = _trimmed === '' || !opts.userTyped;
     const _caseHasInitial = (c === 2 || c === 4 || c === 5);
-    if (_caseHasInitial && _isDefaultName){
+    if (_caseHasInitial && _isDefaultName && opts.context !== 'tool'){
       deco += `<rect x="${nameX}" y="${nameY}" width="${nameW}" height="${nameH}"
                       fill="${guideFill}" opacity="${guideOp}" rx="1.5"/>`;
-      // 박스 중앙에 사이즈 라벨 흐릿하게 — 시안 미리보기에서는 데모 이름과 겹쳐서 숨김
-      if (opts.context !== 'tool'){
-        const _nameLabelColor = isLightCap ? '#111' : '#fff';
-        deco += `<text x="${CENTER_X}" y="${nameY + nameH/2}" text-anchor="middle" dominant-baseline="central"
-                        font-family="sans-serif" font-size="7" font-weight="500"
-                        fill="${_nameLabelColor}" opacity="0.55">최대 120mm × 15mm</text>`;
-      }
+      const _nameLabelColor = isLightCap ? '#111' : '#fff';
+      deco += `<text x="${CENTER_X}" y="${nameY + nameH/2}" text-anchor="middle" dominant-baseline="central"
+                      font-family="sans-serif" font-size="7" font-weight="500"
+                      fill="${_nameLabelColor}" opacity="0.55">최대 90mm × 15mm</text>`;
     }
     if (showInitial){
-      // Arial Black 900, 15mm 박스 높이를 꽉 채움 (실제 프린트가 굵직하므로).
-      // 폰트 크기는 높이 기준 고정 → 짧은 이름은 자연 폭으로 가운데 정렬,
-      // 박스 폭을 넘칠 만큼 긴 이름만 textLength 로 가로 압축(넘침 방지).
-      const fs = nameH * 1.3;
-      const maxW = nameW - 6;
-      const estW = opts.initial.trim().length * fs * 0.78;   // Arial Black 대문자 평균 폭 추정
-      const fit = estW > maxW ? `textLength="${maxW}" lengthAdjust="spacingAndGlyphs"` : '';
-      deco += `<text x="${CENTER_X}" y="${nameY + nameH/2}" text-anchor="middle"
-                      dominant-baseline="central" ${fit}
+      // Arial Black 900. 짧은 이름은 15mm 박스 높이를 꽉 채우는 fsMax 그대로,
+      // 박스 폭(90mm - 좌우 여백)을 넘칠 만큼 긴 이름은 글자를 늘이지 않고 폰트 크기 자체를 줄임.
+      // alphabetic baseline 을 박스 아랫변(= 밑단에서 40mm = MEDALBANK 로고 밑단과 동일 높이)에 정렬 →
+      // 글자 시각적 밑단이 MEDALBANK 로고 밑단과 정확히 같은 라인을 공유.
+      // 작은 글씨일수록 윗변이 박스 안쪽으로 내려가 로고/태극기와의 간격이 미세하게 더 벌어짐.
+      const fsMax = nameH * 1.3;
+      const maxW  = nameW - 6;
+      const estW  = opts.initial.trim().length * fsMax * 0.78;   // Arial Black 대문자 평균 폭 추정
+      const fs    = estW > maxW ? fsMax * (maxW / estW) : fsMax;
+      deco += `<text x="${CENTER_X}" y="${nameBottom}" text-anchor="middle"
+                      dominant-baseline="alphabetic"
                       font-family="'Arial Black','Arial Narrow',Arial,sans-serif" font-weight="900"
                       font-size="${fs}" fill="${ink}">${escapeXml(opts.initial.toUpperCase())}</text>`;
     }
@@ -1107,16 +1139,13 @@ function renderCaseCards(){
     const card = document.createElement('div');
     card.className = 'case-card';
     card.innerHTML = `
-      <div class="case-head">
-        <h3 class="case-title">${c.title}</h3>
-        <span class="pill">${c.subtitle}</span>
-      </div>
+      <h3 class="case-title">${c.title} <span class="badge">${c.subtitle}</span></h3>
       <p class="case-desc">${c.desc}</p>
       <div class="views">
-        <div class="view"><span class="label">FRONT</span><svg viewBox="10 15 200 170" data-view="front" data-case="${c.id}"></svg></div>
-        <div class="view"><span class="label">BACK</span><svg viewBox="10 15 200 170" data-view="back" data-case="${c.id}"></svg></div>
-        <div class="view"><span class="label">RIGHT</span><svg viewBox="10 15 200 170" data-view="right" data-case="${c.id}"></svg></div>
-        <div class="view"><span class="label">LEFT</span><svg viewBox="10 15 200 170" data-view="left" data-case="${c.id}"></svg></div>
+        <div class="view"><span class="label">FRONT</span><svg viewBox="10 15 200 204" data-view="front" data-case="${c.id}"></svg></div>
+        <div class="view"><span class="label">BACK</span><svg viewBox="10 15 200 204" data-view="back" data-case="${c.id}"></svg></div>
+        <div class="view"><span class="label">RIGHT</span><svg viewBox="10 15 200 204" data-view="right" data-case="${c.id}"></svg></div>
+        <div class="view"><span class="label">LEFT</span><svg viewBox="10 15 200 204" data-view="left" data-case="${c.id}"></svg></div>
       </div>`;
     cards.appendChild(card);
 
@@ -1180,6 +1209,13 @@ function syncOrderSelections(){
   if (mta && modal && !modal.hidden) mta.value = text;
 }
 
+// 기본형(case 1)은 로고만 인쇄하므로 선수명 종합 블록이 필요 없음.
+// "이대로 주문하기"로 기본형 진입 시 모달에 보일 양식에서 이 블록만 한 번 제거.
+// (인라인 textarea와 localStorage 초안에는 원본 그대로 보존)
+function stripInitialBlock(text){
+  return text.replace(/\n+선수명\(한글불가[^\n]*\n[\s\S]*?\*\*기본형일 경우[^\n]*\n?/, '\n\n');
+}
+
 function renderTool(){
   ['front','back','left','right'].forEach(v=>{
     renderCap(document.getElementById('tv-'+v), v, {...toolState, context:'tool'});
@@ -1191,6 +1227,9 @@ function renderTool(){
     const er = tv.querySelector('.export-row');
     if (er) er.setAttribute('aria-hidden', toolState.logoOriginal ? 'false' : 'true');
   }
+  // "이대로 주문하기" 버튼: 로고가 업로드되기 전엔 비활성 → 사용자가 의도 없이 진입하는 일 방지
+  const onb = document.getElementById('tool-order-now');
+  if (onb) onb.disabled = !toolState.logoOriginal;
 }
 
 function bindTool(){
@@ -1292,122 +1331,16 @@ function bindTool(){
   // 각 단계 최소 표시 시간 — 실제 처리가 더 빨라도 사용자가 메시지를 읽을 수 있게.
   const STAGE_MIN_MS = 600;
 
-  // 업로드 로고 종합 처리 (단계별 진행):
-  //  1) 가장자리 픽셀에서 배경색 동적 감지 → 콘텐츠 바운딩 박스 산출
-  //  2) 추정된 배경색 픽셀(전부) → 완전 투명
-  //  3) 어두운 수모일 때, 채도 낮고 매우 어두운 픽셀(=진짜 검정/짙은 회색)만 → 흰색
-  //     채도가 있는 색(핑크/빨강/초록/노랑 등)은 어두워도 그대로 보존.
-  function processLogo(srcDataUrl, capColor){
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = async () => {
-        const w = img.naturalWidth, h = img.naturalHeight;
-        const cv = document.createElement('canvas');
-        cv.width = w; cv.height = h;
-        const cx = cv.getContext('2d');
-        cx.drawImage(img, 0, 0);
-        let imgData;
-        try { imgData = cx.getImageData(0, 0, w, h); }
-        catch(_) { resolve(srcDataUrl); return; }
-        const data = imgData.data;
-        const isLightCap = (capColor === 'white');
-
-        // ---- Stage 1: 가장자리에서 배경색 추출 + 콘텐츠 바운딩 박스 ----
-        _loader.update('여백이 너무 넓습니다. 적절한 크기로 크롭합니다...', 'STEP 1 / 3');
-        const stage1 = (async () => {
-          // 가장자리 픽셀 전체 샘플 → 불투명 픽셀의 평균색 + 투명 픽셀 비율
-          let sumR = 0, sumG = 0, sumB = 0;
-          let total = 0, transparentCount = 0, opaqueCount = 0;
-          const sample = (idx) => {
-            total++;
-            const a = data[idx+3];
-            if (a < 10){ transparentCount++; return; }
-            opaqueCount++;
-            sumR += data[idx]; sumG += data[idx+1]; sumB += data[idx+2];
-          };
-          for (let x = 0; x < w; x++){
-            sample(x * 4);                       // top
-            sample(((h-1)*w + x) * 4);           // bottom
-          }
-          for (let y = 1; y < h-1; y++){
-            sample((y*w) * 4);                   // left
-            sample((y*w + (w-1)) * 4);           // right
-          }
-          // 가장자리 절반 이상이 투명하면 → 배경은 투명, alpha만 보면 됨
-          const bgIsTransparent = (transparentCount / total) > 0.5;
-          const bgR = opaqueCount ? sumR / opaqueCount : 0;
-          const bgG = opaqueCount ? sumG / opaqueCount : 0;
-          const bgB = opaqueCount ? sumB / opaqueCount : 0;
-          // 배경 픽셀 판정 — 추정 배경색과 색거리(L2)가 가까우면 배경
-          const TOL_SQ = 60 * 60;
-          const isBgPixel = (r, g, b, a) => {
-            if (a < 10) return true;
-            if (bgIsTransparent) return false;
-            const dr = r - bgR, dg = g - bgG, db = b - bgB;
-            return (dr*dr + dg*dg + db*db) < TOL_SQ;
-          };
-          // 콘텐츠 바운딩 박스
-          let minX = w, minY = h, maxX = -1, maxY = -1;
-          for (let y = 0; y < h; y++){
-            for (let x = 0; x < w; x++){
-              const i = (y * w + x) * 4;
-              if (!isBgPixel(data[i], data[i+1], data[i+2], data[i+3])){
-                if (x < minX) minX = x;
-                if (x > maxX) maxX = x;
-                if (y < minY) minY = y;
-                if (y > maxY) maxY = y;
-              }
-            }
-          }
-          return { minX, minY, maxX, maxY, isBgPixel };
-        })();
-        const [bbox] = await Promise.all([stage1, _wait(STAGE_MIN_MS)]);
-        const isBgPixel = bbox.isBgPixel;
-
-        // ---- Stage 2: 추정된 배경색 픽셀 전부 → 완전 투명 ----
-        _loader.update('배경색상을 제거합니다...', 'STEP 2 / 3');
-        const stage2 = (async () => {
-          for (let i = 0; i < data.length; i += 4){
-            if (isBgPixel(data[i], data[i+1], data[i+2], data[i+3])){
-              data[i+3] = 0;
-            }
-          }
-        })();
-        await Promise.all([stage2, _wait(STAGE_MIN_MS)]);
-
-        // ---- Stage 3: 채도 낮은 + 매우 어두운 픽셀만 흰색으로 ----
-        // 핵심: 진짜 무채색(R≈G≈B) + 매우 어두운(max<80) 픽셀만 검정으로 간주.
-        // 핑크(255,0,128) 같은 고채도 픽셀은 luminance 가 낮아도 색이 있으니 그대로 둠.
-        _loader.update('이미지의 블랙과 화이트 색상 부분을 수모 색상에 맞게 반전합니다...', 'STEP 3 / 3');
-        const stage3 = (async () => {
-          if (isLightCap) return; // 화이트 수모는 반전 없음
-          for (let i = 0; i < data.length; i += 4){
-            const a = data[i+3];
-            if (a === 0) continue;
-            const r = data[i], g = data[i+1], b = data[i+2];
-            const maxC = Math.max(r, g, b);
-            const minC = Math.min(r, g, b);
-            const isGreyish  = (maxC - minC) < 25; // 채도 거의 0 — 회색조
-            const isVeryDark = maxC < 80;          // 가장 밝은 채널도 매우 어두움
-            if (isGreyish && isVeryDark){
-              data[i] = 255; data[i+1] = 255; data[i+2] = 255;
-            }
-          }
-        })();
-        await Promise.all([stage3, _wait(STAGE_MIN_MS)]);
-
-        cx.putImageData(imgData, 0, 0);
-        if (bbox.maxX < 0){ resolve(srcDataUrl); return; }
-        const cropW = bbox.maxX - bbox.minX + 1;
-        const cropH = bbox.maxY - bbox.minY + 1;
-        const out = document.createElement('canvas');
-        out.width = cropW; out.height = cropH;
-        out.getContext('2d').drawImage(cv, bbox.minX, bbox.minY, cropW, cropH, 0, 0, cropW, cropH);
-        resolve(out.toDataURL('image/png'));
-      };
-      img.onerror = () => resolve(srcDataUrl);
-      img.src = srcDataUrl;
-    });
+  // 업로드 로고 처리 — 핵심 픽셀 작업은 공용 코어(processLogoPixels)에 위임, 여기선 단계별 안내만 표시.
+  async function processLogo(srcDataUrl, capColor){
+    _loader.update('여백이 너무 넓습니다. 적절한 크기로 크롭합니다...', 'STEP 1 / 3');
+    await _wait(STAGE_MIN_MS);
+    _loader.update('배경색을 인식해 투명하게 처리합니다...', 'STEP 2 / 3');
+    const result = await processLogoPixels(srcDataUrl, capColor);   // 실제 처리(배경감지+제거+크롭+대비변환)
+    await _wait(STAGE_MIN_MS);
+    _loader.update('무채색(검정·흰색) 부분을 수모 색상에 맞게 변환합니다...', 'STEP 3 / 3');
+    await _wait(STAGE_MIN_MS);
+    return result;
   }
   document.getElementById('tool-logo').addEventListener('change', e=>{
     const file = e.target.files && e.target.files[0];
@@ -1436,15 +1369,15 @@ function bindTool(){
 /* ===== QA ===== */
 const QA = [
   ['최대한 빨리 만드는 방법이 뭔가요?',
-    '주문제작의 과정에 드는 소요기간이 정해져있고, 시기에 따라서 2~6주 가량 소요됩니다. <strong>일부 과정은 외부 업체와 함께 조율하며 진행하기 때문에 저희가 임의로 작업열을 앞당길 수도 없습니다.</strong>\n\n하지만 그래도 최대한 빠른 방법은, 이 페이지 맨 아래에 있는 버튼을 참고하시어서 내용을 작성하고, DM을 주시면 가능한한 최대한 신속하게, 성심껏 응대하겠습니다.\n\n<strong>우선, DM을 통해, 클럽로고를 바로 보내주세요. 작업 가능 여부에 대해 의논하는 과정이 완료되면 나머지는 간단합니다.</strong>'],
+    '주문 후 제작 과정에는 여러가지 필수적인 소요기간이 정해져있고, 시기에 따라서 2~6주 가량 소요됩니다. <strong>일부 과정은 외부 업체와 협업하기 때문에 임의로 작업열을 앞당길 수 없습니다.</strong>\n\n이 페이지 맨 아래에 있는 내용을 참고하시어서 DM 주시면 가능한한 최대한 신속하게 진행하겠습니다.\n\n<strong>우선 클럽로고를 바로 보내주시고 나서 종합을 시작하시는 것을 추천드립니다. 작업 가능 여부에 대해 의논하는 과정이 완료되면 나머지는 간단합니다.</strong>'],
   ['유선 통화 가능한가요?',
-    '죄송합니다. 시간적 역량이 부족하여, 미리 양해 부탁드립니다. <strong>더 정확한 응대와 응대내용의 기록을 위해 온라인 상담을 지향합니다.</strong> 언제든지 DM 주시면, 메세지 확인하는대로 답변드리겠습니다.'],
+    '죄송합니다. 시간적 역량이 부족하여, 미리 양해 부탁드립니다. <strong>더 정확한 상담과 상담내용의 기록을 위해 온라인 상담을 지향합니다.</strong> 언제든지 편하게 메세지 주세요. DM 주시면 답변하겠습니다.'],
   ['양쪽을 다른 디자인으로 할 수 있나요?',
     '불가합니다. 양쪽은 항상 동일한 클럽로고가 들어가는 것이 기본이며, 규격형을 선택하는 경우에도, 좌우 반전은 불가합니다. 규격대로 왼쪽이 국가 표시, 오른쪽이 제조사(스폰서, 클럽 등등) 조합입니다.'],
   ['태극기 디자인을 변경할 수 있나요?',
     '불가합니다. 월드아쿠아틱스가 제안하는 경영 수모의 허용 규격을 준수합니다.'],
   ['다른 수모에 내용만 작업할 수 있나요?',
-    '불가합니다. 메달뱅크 클럽 레이싱캡 전용으로만 주문제작 형태로 진행됩니다. 아쉽게도 메달뱅크가 제시할 수 있는 것은 이 제품 뿐입니다.\n\n각종 경기용 수모를 평일 훈련에서도, 주말 훈련에서도, 여러 국가대표 출신의 수영인들과 면밀히 소통하며, 항상 직접 사용하며, 가장 적합한 제품을 찾고 있습니다.\n\n소프트 타입의 돔 수모를 좋아하신다면, 수영인의 마음으로 제작한 좋은 제품입니다. 게다가 소속 클럽의 아이덴티티가 묻어있잖아요. 분명 만족하실겁니다.'],
+    '불가합니다. 메달뱅크 클럽 레이싱캡 전용으로만 주문제작 형태로 진행됩니다. 아쉽게도 메달뱅크가 제시할 수 있는 것은 이 제품 뿐입니다.\n\n평일 훈련에서도, 주말 훈련에서도 각종 경기용 수모를 항상 직접 사용하고 있습니다. 국가대표 출신의 수영인들과 면밀히 소통하며, 가장 필요한 제품에 대해 끊임 없이 탐구하고 있습니다.\n\n수영인의 마음으로 제작한 착한 제품입니다. 소프트 타입의 돔 수모를 좋아하신다면, 분명 만족하실겁니다. 게다가 우리 소속 클럽의 아이덴티티가 묻어있으니까요.'],
   ['왜 메달뱅크 클럽 레이싱캡인가요?',
     '시장에는 이미 훌륭한 제품이 많고 커스텀 서비스도 이미 존재합니다. 메달뱅크는 그 가치를 부정하지 않습니다. S사, A사, M사의 제품을 우리 멤버들 역시 신뢰하며, 매일 직접 사용하고 있습니다.\n\n다만 한 가지, 해결되지 않는 불편사항이 있습니다. 단체로 경기용 수모를 제작하는 일입니다. 여러 업체에 전화를 돌리다가, 수소문 끝에 로고를 새겨 넣고, 선수명(이니셜)을 적고 나면 가격은 어느새 7만 원대로 올라섭니다. 매년, 매번 반복되는 이 과정은 적지 않은 부담입니다.\n\n<strong>경기용 수모, 돔수모는 대회 때만 쓰이는 장비가 아닙니다.</strong> 평소 훈련에서 감각적으로 활용하면 충분히 의미 있는 훈련 도구가 됩니다. 그러나 비용과 기회의 가치가 높다 보니, 정작 일상 훈련에서는 선뜻 손이 가지 않는 것 또한 현실이죠.\n\n메달뱅크 클럽 레이싱캡은 바로 이 지점에서 출발합니다. <strong>전국 모든 훈련팀이 언제든 부담 없이 구매하고 사용할 수 있는, 훈련용이자 경기용인 나만의 맞춤 수모.</strong> 가장 편하게 매일도 쓸 수 있는 형태의 경기용 수모를 누구나 쉽게 제작하고, 전국으로 대중화하는 것.\n\n메달뱅크는 그 기준을 결코 타협하지 않습니다. <strong>세계기록 보유자와 수영 선진국 대표팀이 사용하는 제품과 동일한 공장, 동일한 공정, 동일한 품질이 기준입니다.</strong> 나와 내 친구, 내 동료, 우리나라의 수영인들이 가장 좋은 것을 사용하는 일은 분명 좋은 일이니까요.\n\n그렇게 평소의 훈련 환경이 한 단계 올라설 때, 대한민국 수영의 품질 평균도 함께 올라갈 것이라 확신합니다.'],
   ['사람들 의견이 너무 분분한데 어쩌죠?',
@@ -1604,10 +1537,17 @@ function bindOrderForm(){
     modalTa.setSelectionRange(0, 0);
   };
 
-  const openModal = () => {
+  // 기본형 진입(선수명 블록을 모달에서 숨김) 상태 플래그. 사용자가 모달에서 한 글자라도 편집하면 false로 풀려
+  // close 시 정상 저장. 미편집 close 면 저장 초안은 원본(블록 포함) 그대로 보존.
+  let _stripActive = false;
+
+  const openModal = (opts) => {
     if (!modal.hidden) return;
     const saved = loadDraft();
-    modalTa.value = saved !== null ? saved : textarea.value;
+    let initial = saved !== null ? saved : textarea.value;
+    _stripActive = !!(opts && opts.stripInitial);
+    if (_stripActive) initial = stripInitialBlock(initial);
+    modalTa.value = initial;
     histInit(modalTa.value);
     setSaved();
     modal.hidden = false;
@@ -1622,16 +1562,22 @@ function bindOrderForm(){
   const closeModal = () => {
     if (modal.hidden) return;
     histFlush();
-    saveDraft(modalTa.value);
-    textarea.value = modalTa.value;     // 인라인 미리보기 동기화
+    if (!_stripActive){
+      saveDraft(modalTa.value);
+      textarea.value = modalTa.value;     // 인라인 미리보기 동기화
+    }
+    _stripActive = false;
     modal.hidden = true;
     modal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
   };
 
-  // 인라인 textarea 클릭/포커스 → 모달 열기 (readonly 유지하고 모달에서만 편집)
-  const triggerOpen = (e) => { e.preventDefault(); openModal(); textarea.blur(); };
-  textarea.addEventListener('click', triggerOpen);
+  // 인라인 미리보기는 투명 커버 버튼으로만 모달 열기.
+  // (textarea는 pointer-events:none이라 직접 클릭/스크롤되지 않음 → 아이폰 스크롤 가둠 해소)
+  const triggerOpen = (e) => { if (e) e.preventDefault(); openModal(); };
+  const previewCover = document.getElementById('form-preview-cover');
+  if (previewCover) previewCover.addEventListener('click', triggerOpen);
+  // 폴백: 혹시 textarea가 포커스되면(키보드 등) 모달로 유도
   textarea.addEventListener('focus', triggerOpen);
 
   // 닫기 — X 버튼 / 백드롭 클릭
@@ -1645,6 +1591,7 @@ function bindOrderForm(){
 
   // 입력 → 자동 저장 + 히스토리 적재 + 저장상태 표시
   modalTa.addEventListener('input', () => {
+    _stripActive = false;             // 사용자 편집 시작 → 이제부터 저장 정상 진행
     saveDraft(modalTa.value);
     histSchedule(modalTa.value);
     markSaving();
@@ -1677,6 +1624,29 @@ function bindOrderForm(){
     flashFeedback(modalFb, ok ? '✓ 복사되었습니다' : '복사 실패 — 직접 선택해 주세요', !ok);
   });
 
+  // 모달 내 "이 내용 복사해서 DM 날리기" — a[target=_blank] navigation은 자동, 그 직전 클립보드에 동기 복사
+  const modalDm = document.getElementById('form-modal-dm');
+  if (modalDm){
+    modalDm.addEventListener('click', () => {
+      let copied = false;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext){
+          // 사용자 제스처 컨텍스트 내 — Promise는 백그라운드로 처리하고 a 태그 navigation은 계속 진행
+          navigator.clipboard.writeText(modalTa.value).catch(()=>{});
+          copied = true;
+        } else {
+          // execCommand 동기 fallback
+          const prevFocus = document.activeElement;
+          modalTa.focus(); modalTa.select();
+          copied = document.execCommand('copy');
+          modalTa.setSelectionRange(0, 0);
+          if (prevFocus && prevFocus !== modalTa && prevFocus.focus) prevFocus.focus();
+        }
+      } catch(_){}
+      flashFeedback(modalFb, copied ? '✓ 복사 완료 — DM 창에 붙여넣어주세요' : 'DM 창에서 직접 붙여넣어주세요', !copied);
+    });
+  }
+
   // 툴 컨트롤의 "이대로 주문하기" — 선택 반영 후 주문 양식 열기
   const orderNowBtn = document.getElementById('tool-order-now');
   if (orderNowBtn){
@@ -1685,12 +1655,94 @@ function bindOrderForm(){
       if (panel.hidden){ panel.hidden = false; toggleBtn.style.display = 'none'; }
       const dl = document.getElementById('download');
       if (dl) dl.scrollIntoView({block:'start'});  // 모달 닫은 뒤 주문 양식이 보이도록
-      openModal();                           // 동기화된 내용으로 메모장 모달 열기
+      // 기본형(case 1)은 선수명이 디자인에 없으므로 모달에선 그 블록을 숨김 (저장 초안은 원본 유지)
+      openModal({stripInitial: toolState.case === 1});
     });
   }
 }
 
 /* ===== EXPORT PREVIEW AS JPG ===== */
+/* ===== 로고 픽셀 처리 코어 (업로드·내보내기 공용) =====
+   1) 가장자리 밴드에서 실제 '배경색'을 감지 (흰·검·임의색·투명 모두 대응 — 최빈 양자화색)
+   2) 그 배경색 픽셀을 전부 투명 처리 + 콘텐츠 바운딩 박스로 크롭
+   3) 대비 변환: '채도가 거의 없는(무채색)' 픽셀만 — 분홍/빨강 등 색이 있는 부분은 절대 강제 변경하지 않음
+        · 어두운 캡(블랙/블루/레드): 어두운 무채색 → 흰색  (그래야 잘 보임)
+        · 화이트 캡: 밝은 무채색 → 검정                    (그래야 잘 보임)
+   주의: 배경과 같은 색이 콘텐츠에도 있으면 함께 지워질 수 있음 → 투명배경 로고가 가장 안전(안내문에 명시). */
+function processLogoPixels(srcDataUrl, capColor){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const w = img.naturalWidth, h = img.naturalHeight;
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0);
+      let imgData;
+      try { imgData = cx.getImageData(0, 0, w, h); } catch(_) { resolve(srcDataUrl); return; }
+      const data = imgData.data;
+      const isLightCap = (capColor === 'white');
+
+      // 1) 가장자리 밴드 샘플 → 배경색 감지 (16단계 양자화 히스토그램의 최빈색)
+      const band = Math.max(1, Math.round(Math.min(w, h) * 0.04));
+      const hist = Object.create(null);
+      let edgeTotal = 0, edgeTransparent = 0;
+      const sampleEdge = (i) => {
+        edgeTotal++;
+        if (data[i+3] < 10){ edgeTransparent++; return; }
+        const key = (data[i]>>4) + '|' + (data[i+1]>>4) + '|' + (data[i+2]>>4);
+        hist[key] = (hist[key] || 0) + 1;
+      };
+      for (let y = 0; y < band; y++) for (let x = 0; x < w; x++){ sampleEdge((y*w+x)*4); sampleEdge(((h-1-y)*w+x)*4); }
+      for (let y = band; y < h-band; y++) for (let x = 0; x < band; x++){ sampleEdge((y*w+x)*4); sampleEdge((y*w+(w-1-x))*4); }
+      let bgKey = null, bgCount = 0;
+      for (const k in hist) if (hist[k] > bgCount){ bgCount = hist[k]; bgKey = k; }
+      const transFrac = edgeTransparent / Math.max(1, edgeTotal);
+      const opaqueEdge = edgeTotal - edgeTransparent;
+      const bgFrac = opaqueEdge ? bgCount / opaqueEdge : 0;
+
+      let mode, bgR = 0, bgG = 0, bgB = 0;
+      if (transFrac > 0.5) mode = 'transparent';            // 이미 투명배경
+      else if (bgKey && bgFrac > 0.30){                      // 뚜렷한 단색 배경
+        mode = 'color';
+        const p = bgKey.split('|'); bgR = (+p[0])*16+8; bgG = (+p[1])*16+8; bgB = (+p[2])*16+8;
+      } else mode = 'whiteOnly';                             // 애매하면 흰색만 (보수적)
+
+      const TOL_SQ = 64 * 64;
+      const isBg = (r,g,b,a) => {
+        if (a < 10) return true;
+        if (mode === 'transparent') return false;
+        if (mode === 'whiteOnly') return (r >= 240 && g >= 240 && b >= 240);
+        const dr = r-bgR, dg = g-bgG, db = b-bgB;
+        return (dr*dr + dg*dg + db*db) < TOL_SQ;
+      };
+
+      // 2) 배경 제거 + 3) 무채색 대비 변환 + 바운딩 박스
+      let minX = w, minY = h, maxX = -1, maxY = -1;
+      for (let y = 0; y < h; y++){
+        for (let x = 0; x < w; x++){
+          const i = (y*w+x)*4;
+          const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+          if (isBg(r,g,b,a)){ data[i+3] = 0; continue; }
+          if (x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y;
+          const mx = Math.max(r,g,b), mn = Math.min(r,g,b);
+          if (mx - mn < 32){                       // 채도 거의 0 = 무채색(검/회/흰)만 대상
+            const light = (mx + mn) * 0.5;
+            if (!isLightCap){ if (light < 95){ data[i]=255; data[i+1]=255; data[i+2]=255; } }
+            else            { if (light > 165){ data[i]=0;   data[i+1]=0;   data[i+2]=0;   } }
+          }
+        }
+      }
+      cx.putImageData(imgData, 0, 0);
+      if (maxX < 0){ resolve(srcDataUrl); return; }
+      const cw = maxX - minX + 1, ch = maxY - minY + 1;
+      const out = document.createElement('canvas'); out.width = cw; out.height = ch;
+      out.getContext('2d').drawImage(cv, minX, minY, cw, ch, 0, 0, cw, ch);
+      resolve(out.toDataURL('image/png'));
+    };
+    img.onerror = () => resolve(srcDataUrl);
+    img.src = srcDataUrl;
+  });
+}
+
 function bindExport(){
   const btn = document.getElementById('export-btn');
   if (!btn) return;
@@ -1716,48 +1768,125 @@ function bindExport(){
   }
 
   btn.addEventListener('click', async () => {
-    const tvLeft = document.getElementById('tv-left');
-    const tvRight = document.getElementById('tv-right');
-    if (!tvLeft || !tvRight) return;
     btn.disabled = true;
     const _origText = btn.lastChild.nodeValue;
-    btn.lastChild.nodeValue = ' 이미지 생성 중...';
+    btn.lastChild.nodeValue = ' 전체 시안 생성 중...';
 
     try {
-      const [L, R] = await Promise.all([svgToImage(tvLeft), svgToImage(tvRight)]);
-      const exportScale = 5;  // 고해상도 출력 배율
-      const gap = 30;          // 두 시안 사이 간격 (viewBox 단위)
-      const padding = 40;      // 캔버스 외곽 여백 (viewBox 단위)
-      const drawW = L.vbW;
-      const drawH = L.vbH;
-      const canvasW = (drawW * 2 + gap + padding * 2) * exportScale;
-      const canvasH = (drawH + padding * 2) * exportScale;
-      const canvas = document.createElement('canvas');
-      canvas.width = canvasW;
-      canvas.height = canvasH;
-      const ctx = canvas.getContext('2d');
-      // 화이트 배경
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvasW, canvasH);
-      // 화면과 동일한 순서: 왼쪽에 RIGHT, 오른쪽에 LEFT
-      ctx.drawImage(R.img, padding * exportScale, padding * exportScale,
-                    drawW * exportScale, drawH * exportScale);
-      ctx.drawImage(L.img, (padding + drawW + gap) * exportScale, padding * exportScale,
-                    drawW * exportScale, drawH * exportScale);
+      const TYPES  = [{id:1,name:'기본형'},{id:2,name:'클럽형'},{id:4,name:'규격형'},{id:5,name:'태극기형'}];
+      const COLORS = [{key:'black',name:'블랙'},{key:'white',name:'화이트'},{key:'blue',name:'블루'},{key:'red',name:'레드'}];
 
-      // JPG로 변환 후 새 창에 표시
+      // 업로드 로고를 캡 색상별로 2종 준비: 어두운 캡용(검정→흰 반전) / 화이트 캡용(검정 유지)
+      let logoDark = null, logoLight = null;
+      if (toolState.logoOriginal){
+        [logoDark, logoLight] = await Promise.all([
+          processLogoPixels(toolState.logoOriginal, 'black'),
+          processLogoPixels(toolState.logoOriginal, 'white')
+        ]);
+      } else if (toolState.logoHref){
+        logoDark = logoLight = toolState.logoHref;
+      }
+      const logoFor = (color) => (color === 'white') ? logoLight : logoDark;
+
+      // 한 조합의 한 면(view)을 이미지로
+      const renderView = async (caseId, color, view) => {
+        const holder = document.createElement('div');
+        holder.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="10 15 200 204"></svg>';
+        const svg = holder.firstChild;
+        renderCap(svg, view, { case: caseId, color, initial: toolState.initial, userTyped: true, logoHref: logoFor(color), context: 'export' });
+        return (await svgToImage(svg)).img;
+      };
+
+      // 16조합 × (RIGHT, LEFT) 전부 렌더
+      const combos = [];
+      for (const t of TYPES) for (const c of COLORS) combos.push({t, c});
+      const rendered = await Promise.all(combos.map(async ({t, c}) => ({
+        key: t.id + '_' + c.key,
+        R: await renderView(t.id, c.key, 'right'),
+        L: await renderView(t.id, c.key, 'left')
+      })));
+      const cellOf = {}; rendered.forEach(o => { cellOf[o.key] = o; });
+
+      // ===== 레이아웃 (단위 → ×S 고해상도) =====
+      const S = 2;
+      const capW = 152, capH = Math.round(capW * 204 / 200), pairGap = 6;
+      const pairW = capW * 2 + pairGap;
+      const pad = 42, titleH = 70, rowLabelW = 100, colGap = 24, rowGap = 16, noteLineH = 20;
+      const headGap = 24;                          // 헤딩↔내용 / 표↔안내문 공통 여백
+      const footerReserve = noteLineH * 3 + 6;
+      const gridW = COLORS.length * pairW + (COLORS.length - 1) * colGap;
+      const gridLeft = pad + rowLabelW;
+      const colHdrY  = pad + titleH + 14;          // 열 헤딩 baseline
+      const gridTop  = colHdrY + headGap;          // 헤딩 아래 headGap 만큼 띄우고 표 시작
+      const rowsH    = TYPES.length * capH + (TYPES.length - 1) * rowGap;
+      const gridBottom = gridTop + rowsH;
+      const noteTop  = gridBottom + headGap + 11;  // 표 ↔ 안내문 여백도 headGap (baseline 보정 +11)
+      const W = pad + rowLabelW + gridW + pad;
+      const H = noteTop + footerReserve + pad;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(W * S); canvas.height = Math.round(H * S);
+      const ctx = canvas.getContext('2d');
+      ctx.scale(S, S);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+      const KFONT = '-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+      const HEAD_FONT = `700 14px ${KFONT}`, HEAD_COLOR = '#444';   // 가로·세로 헤딩 공통 스타일
+
+      // 제목
+      ctx.fillStyle = '#111'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      ctx.font = `700 27px ${KFONT}`;
+      ctx.fillText('SOFT DOME CAPS — 전체 시안', pad, pad + 28);
+      ctx.fillStyle = '#888'; ctx.font = `400 13px ${KFONT}`;
+      ctx.fillText('4가지 유형 × 4가지 색상 · 각 칸은 오른쪽면 + 왼쪽면', pad, pad + 49);
+
+      // 색상 헤딩(열) — 공통 스타일, 가운데 정렬
+      ctx.font = HEAD_FONT; ctx.fillStyle = HEAD_COLOR; ctx.textAlign = 'center';
+      COLORS.forEach((c, ci) => {
+        ctx.fillText(c.name, gridLeft + ci * (pairW + colGap) + pairW / 2, colHdrY);
+      });
+
+      // 유형 행 + 셀(오른쪽면 + 왼쪽면)
+      TYPES.forEach((t, ti) => {
+        const top = gridTop + ti * (capH + rowGap);
+        // 유형 헤딩(행) — 열 헤딩과 동일 스타일, 표에서 headGap 떨어뜨려 우측정렬(세로 가운데)
+        ctx.font = HEAD_FONT; ctx.fillStyle = HEAD_COLOR; ctx.textAlign = 'right';
+        ctx.fillText(t.name, gridLeft - headGap, top + capH / 2 + 5);
+        COLORS.forEach((c, ci) => {
+          const left = gridLeft + ci * (pairW + colGap);
+          const o = cellOf[t.id + '_' + c.key];
+          if (!o) return;
+          ctx.drawImage(o.R, left, top, capW, capH);
+          ctx.drawImage(o.L, left + capW + pairGap, top, capW, capH);
+        });
+      });
+
+      // 푸터 안내문 (한글 글자 단위 자동 줄바꿈)
+      const wrap = (text, x, y, maxW, lineH, color) => {
+        ctx.fillStyle = color; ctx.textAlign = 'left';
+        let line = '', yy = y;
+        for (const ch of text){
+          if (ctx.measureText(line + ch).width > maxW && line){ ctx.fillText(line, x, yy); line = ch; yy += lineH; }
+          else line += ch;
+        }
+        ctx.fillText(line, x, yy);
+        return yy + lineH;
+      };
+      ctx.font = `400 13px ${KFONT}`;
+      const ny = wrap('본 이미지는 참고용이며, 실제 제작 결과와는 차이가 있을 수 있습니다.', pad, noteTop, W - pad * 2, noteLineH, '#666');
+      wrap('첨부한 로고가 자동으로 적절하게 변환되지 않을 경우, 위-아래-양옆에 여백이 없는 딱맞는, 투명배경의 로고이미지를 첨부하면 최선의 결과를 확인할 수 있습니다.', pad, ny + 3, W - pad * 2, noteLineH, '#999');
+
+      // JPG → 새 창 (없으면 다운로드)
       const jpgUrl = canvas.toDataURL('image/jpeg', 0.92);
       const win = window.open('', '_blank');
       if (win){
-        win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>메달뱅크 클럽 돔수모 시안</title>
+        win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>메달뱅크 클럽 돔수모 — 전체 시안</title>
           <style>html,body{margin:0;background:#f4f4f4}body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}img{max-width:100%;height:auto;display:block;box-shadow:0 4px 24px rgba(0,0,0,0.08)}</style>
-          </head><body><img src="${jpgUrl}" alt="시안" /></body></html>`);
+          </head><body><img src="${jpgUrl}" alt="전체 시안" /></body></html>`);
         win.document.close();
       } else {
-        // 팝업 차단 시 fallback: 다운로드 트리거
         const a = document.createElement('a');
         a.href = jpgUrl;
-        a.download = 'medalbank-dome-cap-preview.jpg';
+        a.download = 'medalbank-dome-cap-all.jpg';
         document.body.appendChild(a);
         a.click();
         a.remove();

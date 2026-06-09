@@ -199,7 +199,7 @@ const COURSES = [
 
 // ── raw DB enum values (for edit panel selects) ─────────────────
 const DB_GROUPS      = ['유년부', '초등부', '중등부', '고등부', '성인부', '일반부']
-const DB_DISCIPLINES = ['FR', 'BK', 'BR', 'FL', 'IM']
+const DB_DISCIPLINES = ['FR', 'BA', 'BR', 'FL', 'IM']
 const DB_DISTANCES   = ['25M', '50M', '100M', '200M', '400M', '800M', '1500M']
 const DB_COURSES     = ['LCM', 'SCM']
 

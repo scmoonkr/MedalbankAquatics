@@ -306,12 +306,12 @@ useHead({ title: 'Records — 메달뱅크 Backend' })
 // ── Constants ─────────────────────────────────────────────────────
 const TABS = [
   { key:'men-free',   gender:'men',   stroke:'free',   style:'FR', label:'남자 자유형',   genderLabel:'남자', strokeLabel:'자유형' },
-  { key:'men-back',   gender:'men',   stroke:'back',   style:'BK', label:'남자 배영',     genderLabel:'남자', strokeLabel:'배영' },
+  { key:'men-back',   gender:'men',   stroke:'back',   style:'BA', label:'남자 배영',     genderLabel:'남자', strokeLabel:'배영' },
   { key:'men-breast', gender:'men',   stroke:'breast', style:'BR', label:'남자 평영',     genderLabel:'남자', strokeLabel:'평영' },
   { key:'men-fly',    gender:'men',   stroke:'fly',    style:'FL', label:'남자 접영',     genderLabel:'남자', strokeLabel:'접영' },
   { key:'men-im',     gender:'men',   stroke:'im',     style:'IM', label:'남자 개인혼영', genderLabel:'남자', strokeLabel:'개인혼영' },
   { key:'women-free',   gender:'women', stroke:'free',   style:'FR', label:'여자 자유형',   genderLabel:'여자', strokeLabel:'자유형' },
-  { key:'women-back',   gender:'women', stroke:'back',   style:'BK', label:'여자 배영',     genderLabel:'여자', strokeLabel:'배영' },
+  { key:'women-back',   gender:'women', stroke:'back',   style:'BA', label:'여자 배영',     genderLabel:'여자', strokeLabel:'배영' },
   { key:'women-breast', gender:'women', stroke:'breast', style:'BR', label:'여자 평영',     genderLabel:'여자', strokeLabel:'평영' },
   { key:'women-fly',    gender:'women', stroke:'fly',    style:'FL', label:'여자 접영',     genderLabel:'여자', strokeLabel:'접영' },
   { key:'women-im',     gender:'women', stroke:'im',     style:'IM', label:'여자 개인혼영', genderLabel:'여자', strokeLabel:'개인혼영' },
@@ -325,20 +325,20 @@ const RT_LABELS: Record<string, string> = {
   WR:'세계기록', OR:'올림픽기록', AR:'아시아기록', KR:'한국기록',
   WMR:'세계마스터즈기록', KMR:'한국마스터즈기록', ER:'인핸스드게임기록',
 }
-const STYLE_TO_STROKE: Record<string, string> = { FR:'free', BK:'back', BR:'breast', FL:'fly', IM:'im' }
-const STROKE_TO_STYLE: Record<string, string> = { free:'FR', back:'BK', breast:'BR', fly:'FL', im:'IM' }
+const STYLE_TO_STROKE: Record<string, string> = { FR:'free', BA:'back', BR:'breast', FL:'fly', IM:'im' }
+const STROKE_TO_STYLE: Record<string, string> = { free:'FR', back:'BA', breast:'BR', fly:'FL', im:'IM' }
 
-const STROKE_ORDER = ['FR', 'BK', 'BR', 'FL', 'IM'] as const
+const STROKE_ORDER = ['FR', 'BA', 'BR', 'FL', 'IM'] as const
 const STROKE_LABELS: Record<string, { ko: string; en: string }> = {
   FR: { ko: '자유형',   en: 'Freestyle'         },
-  BK: { ko: '배영',     en: 'Backstroke'        },
+  BA: { ko: '배영',     en: 'Backstroke'        },
   BR: { ko: '평영',     en: 'Breaststroke'      },
   FL: { ko: '접영',     en: 'Butterfly'         },
   IM: { ko: '개인혼영', en: 'Individual Medley' },
 }
 const STROKE_DISTS_STYLE: Record<string, number[]> = {
   FR: [50, 100, 200, 400, 800, 1500],
-  BK: [50, 100, 200], BR: [50, 100, 200], FL: [50, 100, 200], IM: [200, 400],
+  BA: [50, 100, 200], BR: [50, 100, 200], FL: [50, 100, 200], IM: [200, 400],
 }
 const RT_LABELS_SHORT: Record<string, string> = {
   WR:'세계', OR:'올림픽', AR:'아시아', KR:'한국',
@@ -346,7 +346,7 @@ const RT_LABELS_SHORT: Record<string, string> = {
 }
 
 function isNoOR(style: string, dist: number, rt: string): boolean {
-  return rt === 'OR' && dist === 50 && ['BK', 'BR', 'FL'].includes(style)
+  return rt === 'OR' && dist === 50 && ['BA', 'BR', 'FL'].includes(style)
 }
 function recWhen(e: Entry): string {
   return [e.year, e.competitionName].filter(Boolean).join(' · ')

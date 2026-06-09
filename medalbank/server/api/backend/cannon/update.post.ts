@@ -1,4 +1,4 @@
-// POST /api/backend/cannon/update
+// POST /api/backend/canon/update
 // records 컬렉션 → mergedTimes 동기화
 // 대상: updateTimes 없는 records만
 // 중복 체크: name + gender + discipline + course + distance + time
@@ -10,7 +10,7 @@ import { ObjectId } from 'mongodb'
 // style 필드 정규화: "freestyle" / "FR" 모두 → "FR"
 const STYLE_TO_DISC: Record<string, string> = {
   FR: 'FR', freestyle: 'FR',
-  BK: 'BK', backstroke: 'BK', back: 'BK',
+  BA: 'BA', backstroke: 'BA', back: 'BA',
   BR: 'BR', breaststroke: 'BR', breast: 'BR',
   FL: 'FL', butterfly: 'FL', fly: 'FL',
   IM: 'IM', medley: 'IM',

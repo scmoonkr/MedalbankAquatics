@@ -98,7 +98,7 @@ const pagedRows  = computed(() => errataList.value.slice((page.value - 1) * PER_
 watch(errataList, () => { page.value = 1 })
 
 const GENDER_LABEL: Record<string, string> = { men: '남자', women: '여자' }
-const DISC_LABEL:   Record<string, string> = { BR: '평영', FR: '자유형', BK: '배영', FL: '접영', IM: '개인혼영' }
+const DISC_LABEL:   Record<string, string> = { BR: '평영', FR: '자유형', BA: '배영', FL: '접영', IM: '개인혼영' }
 
 function esc(s: unknown): string {
   if (s == null) return ''

@@ -7,7 +7,7 @@
 (() => {
   'use strict';
 
-  const STROKE_ORDER = ['FR','BK','BR','FL','IM'];
+  const STROKE_ORDER = ['FR','BA','BR','FL','IM'];
 
   let DATA = null;
 

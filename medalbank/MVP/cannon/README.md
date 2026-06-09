@@ -76,7 +76,7 @@ The Index · The Errata · The Ledger · The Canon · The Charter
     {
       id:       "m-fr-50",
       gender:   "M" | "W",
-      stroke:   "FR" | "BK" | "BR" | "FL" | "IM",
+      stroke:   "FR" | "BA" | "BR" | "FL" | "IM",
       distance: 50 | 100 | 200 | 400 | 800 | 1500,
       course:   "LCM",
       label:    "남자 자유형 50m",
@@ -156,7 +156,7 @@ python3 -m http.server 4178
 
 데이터 속성:
 - `data-gender`   : `M` · `W`
-- `data-stroke`   : `FR` · `BK` · `BR` · `FL` · `IM`
+- `data-stroke`   : `FR` · `BA` · `BR` · `FL` · `IM`
 - `data-distance` : `50` · `100` · `200` · `400` · `800` · `1500`
 - `data-course`   : `LCM` · `SCM`
 - `data-time`     : `m:ss.SS` 또는 `ss.SS` 형식 (예: `1:54.00`, `20.91`)

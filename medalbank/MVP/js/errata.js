@@ -42,7 +42,7 @@ window.KSR_ERRATA = [
   "category": "누락건 신규 등재",
   "time": {
    "gender": "men",
-   "discipline": "BK",
+   "discipline": "BA",
    "distance": "100M",
    "course": "SCM",
    "rank": 8,
@@ -175,7 +175,7 @@ window.KSR_ERRATA = [
   "category": "누락건 신규 등재",
   "time": {
    "gender": "women",
-   "discipline": "BK",
+   "discipline": "BA",
    "distance": "200M",
    "course": "SCM",
    "rank": 2,

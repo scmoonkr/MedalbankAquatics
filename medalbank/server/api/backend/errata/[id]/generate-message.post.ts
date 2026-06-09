@@ -6,8 +6,8 @@ import { BASE_TIMES, calcWAPoints, getBasetime } from '~/server/utils/wapoints'
 
 // ── 상수 ────────────────────────────────────────────────────────────
 const GENDER_KO: Record<string, string>  = { men: '남자', women: '여자', M: '남자', W: '여자' }
-const STROKE_KO: Record<string, string>  = { FR: '자유형', BK: '배영', BR: '평영', FL: '접영', IM: '개인혼영' }
-const STROKE_SHORT: Record<string, string> = { FR: 'FR', BK: 'BK', BR: 'BR', FL: 'FL', IM: 'IM' }
+const STROKE_KO: Record<string, string>  = { FR: '자유형', BA: '배영', BR: '평영', FL: '접영', IM: '개인혼영' }
+const STROKE_SHORT: Record<string, string> = { FR: 'FR', BA: 'BA', BR: 'BR', FL: 'FL', IM: 'IM' }
 
 // ── 시간 파싱 ────────────────────────────────────────────────────────
 function parseTimeSeconds(t: string): number | null {

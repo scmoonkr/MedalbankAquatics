@@ -6,7 +6,7 @@
  * 빈 셀은 `null` — 렌더 시 "—"로 표시. WR 컬럼의 실제 기록은 시드 더미.
  * 운영자가 OR/AR/KR/WMR/KMR/ER 컬럼을 점진적으로 채워 넣는 구조.
  *
- * Strokes:  FR · BK · BR · FL · IM
+ * Strokes:  FR · BA · BR · FL · IM
  * Genders:  M · W
  * Course:   LCM (고정)
  * Distance: number (m)
@@ -39,7 +39,7 @@ window.KSR_CANON = {
 
   strokeLabels: {
     FR: { ko: "자유형",   en: "Freestyle",         short: "FR" },
-    BK: { ko: "배영",     en: "Backstroke",        short: "BK" },
+    BA: { ko: "배영",     en: "Backstroke",        short: "BA" },
     BR: { ko: "평영",     en: "Breaststroke",      short: "BR" },
     FL: { ko: "접영",     en: "Butterfly",         short: "FL" },
     IM: { ko: "개인혼영", en: "Individual Medley", short: "IM" }
@@ -66,12 +66,12 @@ window.KSR_CANON = {
     // ════════════════════════════════════════════════════════
     // Backstroke · 배영
     // ════════════════════════════════════════════════════════
-    _ev("m-bk-50",  "M","BK", 50, "남자 배영 50m",  { WR: _r("23.55",   "Hunter Armstrong", "USA", 2022, "Greensboro") }),
-    _ev("w-bk-50",  "W","BK", 50, "여자 배영 50m",  { WR: _r("26.86",   "Liu Xiang",        "CHN", 2018, "Jakarta") }),
-    _ev("m-bk-100", "M","BK",100, "남자 배영 100m", { WR: _r("51.60",   "Thomas Ceccon",    "ITA", 2022, "Budapest") }),
-    _ev("w-bk-100", "W","BK",100, "여자 배영 100m", { WR: _r("57.13",   "Kaylee McKeown",   "AUS", 2024, "Paris") }),
-    _ev("m-bk-200", "M","BK",200, "남자 배영 200m", { WR: _r("1:51.92", "Aaron Peirsol",    "USA", 2009, "Rome") }),
-    _ev("w-bk-200", "W","BK",200, "여자 배영 200m", { WR: _r("2:03.14", "Kaylee McKeown",   "AUS", 2023, "Sydney") }),
+    _ev("m-bk-50",  "M","BA", 50, "남자 배영 50m",  { WR: _r("23.55",   "Hunter Armstrong", "USA", 2022, "Greensboro") }),
+    _ev("w-bk-50",  "W","BA", 50, "여자 배영 50m",  { WR: _r("26.86",   "Liu Xiang",        "CHN", 2018, "Jakarta") }),
+    _ev("m-bk-100", "M","BA",100, "남자 배영 100m", { WR: _r("51.60",   "Thomas Ceccon",    "ITA", 2022, "Budapest") }),
+    _ev("w-bk-100", "W","BA",100, "여자 배영 100m", { WR: _r("57.13",   "Kaylee McKeown",   "AUS", 2024, "Paris") }),
+    _ev("m-bk-200", "M","BA",200, "남자 배영 200m", { WR: _r("1:51.92", "Aaron Peirsol",    "USA", 2009, "Rome") }),
+    _ev("w-bk-200", "W","BA",200, "여자 배영 200m", { WR: _r("2:03.14", "Kaylee McKeown",   "AUS", 2023, "Sydney") }),
 
     // ════════════════════════════════════════════════════════
     // Breaststroke · 평영

@@ -226,7 +226,7 @@ CREATE TABLE mergedTimes (
   group          VARCHAR(20),
   course         VARCHAR(10),                -- 'LCM' | 'SCM'
   distance       VARCHAR(10),               -- '100M' | '50M'
-  discipline     VARCHAR(10),               -- 'FL' | 'BR' | 'BK' | 'FR' | 'IM'
+  discipline     VARCHAR(10),               -- 'FL' | 'BR' | 'BA' | 'FR' | 'IM'
   round          VARCHAR(20),               -- 예선 / 결선
   datetime       DATE,
   rank           INT,
@@ -250,7 +250,7 @@ CREATE TABLE mergedTimes (
 | competitionID | INT FK | 대회 → competitions |
 | poolID | INT FK | 수영장 → pools |
 | stemID | INT FK | 시리즈 → stems |
-| discipline | VARCHAR | 영법 (FL / BR / BK / FR / IM) |
+| discipline | VARCHAR | 영법 (FL / BR / BA / FR / IM) |
 | distance | VARCHAR | 거리 (50M / 100M / 200M 등) |
 | course | VARCHAR | 코스 (LCM / SCM) |
 | round | VARCHAR | 예선 / 결선 |

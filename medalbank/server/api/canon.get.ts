@@ -9,7 +9,7 @@ function parseTimeSec(str: string): number {
 }
 
 // GET /api/canon — records 컬렉션에서 canon matrix용 데이터 반환
-// key: "{G}-{stroke}-{distance}-{type}" (G=M|W, stroke=FR|BK|..., distance=숫자)
+// key: "{G}-{stroke}-{distance}-{type}" (G=M|W, stroke=FR|BA|..., distance=숫자)
 export default defineEventHandler(async () => {
   const db = await getDb()
 

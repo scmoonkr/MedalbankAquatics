@@ -2,7 +2,7 @@
 // 특정 종목의 세계신기록 갱신 시 해당 종목 전체 waPoints 재계산.
 // Body (JSON):
 //   gender:      'men' | 'women'
-//   discipline:  'FR' | 'BK' | 'BR' | 'FL' | 'IM'
+//   discipline:  'FR' | 'BA' | 'BR' | 'FL' | 'IM'
 //   distance:    '50M' | '100M' | ...
 //   course:      'LCM' | 'SCM'
 //   basetime?:   number (초) — 생략 시 wapoints.ts 상수 사용

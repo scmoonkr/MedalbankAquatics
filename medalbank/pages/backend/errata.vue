@@ -173,7 +173,7 @@
               <label>영법 <span class="ep-req">*</span></label>
               <select v-model="panel.form.time.discipline" :class="['ep-inp', { 'ep-inp-changed': mf.has('discipline') }]">
                 <option value="FR">자유형 (FR)</option>
-                <option value="BK">배영 (BK)</option>
+                <option value="BA">배영 (BA)</option>
                 <option value="BR">평영 (BR)</option>
                 <option value="FL">접영 (FL)</option>
                 <option value="IM">개인혼영 (IM)</option>
@@ -344,7 +344,7 @@ definePageMeta({ layout: 'backend' })
 useHead({ title: 'Errata — 메달뱅크 Backend' })
 
 const CATEGORY_ORDER   = ['누락건 신규 등재', '기록오류 정정', '날짜오류 정정', '이름오류 정정', '기타오류 정정']
-const DISCIPLINE_ORDER = ['FR', 'BK', 'BR', 'FL', 'IM']
+const DISCIPLINE_ORDER = ['FR', 'BA', 'BR', 'FL', 'IM']
 const DISTANCE_ORDER   = ['25M', '50M', '100M', '200M', '400M', '800M', '1500M']
 const COURSE_ORDER     = ['LCM', 'SCM']
 const ALL_GROUPS       = ['유년부', '초등부', '중등부', '고등부', '일반부', '성인부']
@@ -431,7 +431,7 @@ function resetFilters() {
 }
 
 const GENDER_LABEL: Record<string, string> = { men: '남자', women: '여자' }
-const DISC_LABEL:   Record<string, string> = { BR: '평영', FR: '자유형', BK: '배영', FL: '접영', IM: '개인혼영' }
+const DISC_LABEL:   Record<string, string> = { BR: '평영', FR: '자유형', BA: '배영', FL: '접영', IM: '개인혼영' }
 
 function esc(s: unknown): string {
   if (s == null) return ''

@@ -199,7 +199,7 @@ const f = reactive({ tier: '', gender: '', group: '', discipline: '', course: ''
 // Domain-correct filter option orders (alphabetical sort would put 1500M before 200M).
 const COURSE_ORDER     = ['LCM', 'SCM']
 const DISTANCE_ORDER   = ['25M', '50M', '100M', '200M', '400M', '800M', '1500M']
-const DISCIPLINE_ORDER = ['FR', 'BK', 'BR', 'FL', 'IM']
+const DISCIPLINE_ORDER = ['FR', 'BA', 'BR', 'FL', 'IM']
 // All group values that may appear in a record (used by the edit panel select).
 const ALL_GROUPS = ['유년부', '초등부', '중등부', '고등부', '일반부', '성인부']
 // Adult group label swaps with tier: elite→'일반부', masters→'성인부'.

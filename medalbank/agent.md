@@ -71,7 +71,7 @@ registry/                ← Nuxt 앱 루트 (포트 6632)
   round:           "finals",           // "finals"|"prelim"|"" 등
 
   // ── 종목 ─────────────────────────────────────────────
-  discipline:      "BR",               // BR|FR|BK|FL|IM
+  discipline:      "BR",               // BR|FR|BA|FL|IM
   distance:        "100M",             // "50M"|"100M"|"200M"|"400M"|"800M"|"1500M"
   course:          "LCM",              // "LCM" | "SCM"
 
@@ -199,7 +199,7 @@ mergedTimes ──┬── competitionID ──▶ competitions
 | `group: "유년부"` | `group: "youth"` | |
 | `discipline: "BR"` | `stroke: "breast"` | |
 | `discipline: "FR"` | `stroke: "free"` | |
-| `discipline: "BK"` | `stroke: "back"` | |
+| `discipline: "BA"` | `stroke: "back"` | |
 | `discipline: "FL"` | `stroke: "fly"` | |
 | `gender: "men"` | `gender: "m"` | |
 | `gender: "women"` | `gender: "f"` | |
@@ -401,7 +401,7 @@ registry/
 |---|---|---|---|
 | `isMasters`  | boolean | `false` / `true` | 전문체육 vs 생활체육(마스터즈) 구분 |
 | `gender`     | string  | `"men"` / `"women"` | |
-| `discipline` | string  | `"FR"`/`"BK"`/`"BR"`/`"FL"`/`"IM"` | 영법 |
+| `discipline` | string  | `"FR"`/`"BA"`/`"BR"`/`"FL"`/`"IM"` | 영법 |
 | `distance`   | string  | `"50M"`/`"100M"`/`"200M"`/`"400M"`/`"800M"`/`"1500M"` | 거리 |
 | `course`     | string  | `"LCM"` / `"SCM"` | 풀 길이 |
 | `time`       | string  | `"00:20.88"` | mm:ss.dd |
@@ -474,7 +474,7 @@ registry/
 "men-free-50-lcm"   →  gender-stroke-dist-lcm
 ```
 
-stroke 변환: `FR→free, BK→back, BR→breast, FL→fly, IM→im`
+stroke 변환: `FR→free, BA→back, BR→breast, FL→fly, IM→im`
 
 ### records.vue 동작 흐름
 

@@ -1,6 +1,6 @@
 // GET /api/ledger — ledger collection, sorted by report_date desc
 const DISCIPLINE_MAP: Record<string, string> = {
-  BR: '평영', FR: '자유형', BK: '배영', FL: '접영', IM: '개인혼영',
+  BR: '평영', FR: '자유형', BA: '배영', FL: '접영', IM: '개인혼영',
 }
 const GENDER_MAP: Record<string, string> = { men: '남자', women: '여자' }
 
