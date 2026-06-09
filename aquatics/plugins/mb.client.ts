@@ -77,7 +77,7 @@ export default defineNuxtPlugin(() => {
     lightboxImg.dataset.currentUrl = thumbUrl
     lightbox.style.setProperty('--lb-img', `url("${thumbUrl}")`)
     if (lightboxBg) lightboxBg.style.backgroundImage = `url("${thumbUrl}")`
-    if (lightboxCaption) lightboxCaption.textContent = caption || fullUrl || ''
+    if (lightboxCaption) lightboxCaption.textContent = caption || ''
     lightbox.classList.add('open')
     lightbox.setAttribute('aria-hidden', 'false')
     document.body.classList.add('lb-open')

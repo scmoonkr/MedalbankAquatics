@@ -37,13 +37,13 @@
         </div>
       </div>
 
-      <!-- 선수별 사진 열람 버튼 -->
-      <NuxtLink class="athlete-browse-btn" to="/athletes">
+      <!-- 선수별 사진 열람 버튼 (선수 데이터가 충분해지면 다시 노출) -->
+      <!-- <NuxtLink class="athlete-browse-btn" to="/athletes">
         선수별 사진 열람
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="3" y1="8" x2="13" y2="8"/><polyline points="9 4, 13 8, 9 12"/>
         </svg>
-      </NuxtLink>
+      </NuxtLink> -->
 
     </div>
 
@@ -164,7 +164,7 @@ function onTileClick(img: { image_id: number; filename?: string | null; urls: { 
   clickedId.value = img.image_id
   setTimeout(() => { clickedId.value = null }, 500)
   if (window.MB?.openLightbox) {
-    window.MB.openLightbox(img.urls.thumb, img.urls.original, `Photo #${img.image_id}`, img.filename || img.urls.original || '')
+    window.MB.openLightbox(img.urls.thumb, img.urls.original, `Photo #${img.image_id}`)
   }
 }
 
