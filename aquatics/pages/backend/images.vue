@@ -454,7 +454,7 @@ td { padding: 8px 12px; vertical-align: middle; }
 .col-tags { width: 140px; color: #8b949e; font-size: 12px; }
 .col-category { width: 140px; color: #a371f7; font-size: 12px; }
 input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: #388bfd; }
-.thumb { height: 80px; width: auto; object-fit: contain; border-radius: 4px; display: block; }
+.thumb { height: 80px; width: auto; max-width: none; border-radius: 4px; display: block; }
 .no-img { width: 80px; height: 80px; background: #21262d; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #8b949e; font-size: 11px; }
 
 /* ── 그리드 뷰 ── */
