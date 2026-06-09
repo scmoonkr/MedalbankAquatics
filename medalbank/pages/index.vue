@@ -147,14 +147,13 @@
               :disabled="pdfBusy || !totalCount"
               @click="downloadPdf"
             >
+              <span>{{ pdfBusy ? '준비 중…' : 'PDF' }}</span>
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
                    stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-                <path d="M14 3v5h5" />
-                <path d="M12 11.5v5" />
-                <path d="M9.5 14l2.5 2.5L14.5 14" />
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              <span>{{ pdfBusy ? '준비 중…' : 'PDF 다운로드' }}</span>
             </button>
           </div>
         </div>
@@ -494,14 +493,20 @@ async function fetchAllRanks(): Promise<EventRank[]> {
   return collected
 }
 
-function buildPdfHtml(ranks: EventRank[]): string {
+// "마스터즈 성인부 남자 평영 50m LCM" — used for the sheet title and the PDF filename
+function eventTitleKo(): string {
   const genderKo = GENDER_LABEL[state.gender] ?? state.gender
   const strokeKo = STROKE_LABEL[state.stroke] ?? state.stroke
-  const genderEn = GENDER_EN[state.gender] ?? state.gender.toUpperCase()
-  const strokeEn = STROKE_EN[state.stroke] ?? state.stroke
   const courseU  = state.course.toUpperCase()
   const divKo    = state.division === 'masters' ? '마스터즈' : state.division === 'elite' ? '전문체육' : '전체'
   const grpKo    = state.group !== 'all' ? groupLabelFor(state.group, state.division) : ''
+  return `${divKo === '전체' ? '' : divKo + ' '}${grpKo ? grpKo + ' ' : ''}${genderKo} ${strokeKo} ${state.distance}m ${courseU}`
+}
+
+function buildPdfHtml(ranks: EventRank[], logoSrc: string): string {
+  const genderEn = GENDER_EN[state.gender] ?? state.gender.toUpperCase()
+  const strokeEn = STROKE_EN[state.stroke] ?? state.stroke
+  const courseU  = state.course.toUpperCase()
 
   const wr = recordFor('WR')
   const kr = recordFor('KR')
@@ -523,12 +528,13 @@ function buildPdfHtml(ranks: EventRank[]): string {
   const p2 = (n: number) => String(n).padStart(2, '0')
   const stamp = `${now.getFullYear()}-${p2(now.getMonth() + 1)}-${p2(now.getDate())}`
   const fullStamp = `${now.getFullYear()}/${p2(now.getMonth() + 1)}/${p2(now.getDate())} ${p2(now.getHours())}:${p2(now.getMinutes())}:${p2(now.getSeconds())}`
-  const evTitleKo = `${divKo === '전체' ? '' : divKo + ' '}${grpKo ? grpKo + ' ' : ''}${genderKo} ${strokeKo} ${state.distance}m ${courseU}`
+  const evTitleKo = eventTitleKo()
 
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <title>${esc(evTitleKo)} — Medalbank Results Summary</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   /* @page margins are unreliable here (the print dialog's margin setting can
      override them to 0). So margins are baked into the content instead:
@@ -538,7 +544,7 @@ function buildPdfHtml(ranks: EventRank[]): string {
   @page { size: A4 portrait; margin: 0; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
-  body { font-family: 'JetBrains Mono', 'Courier New', monospace; color: #111; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 14mm 16mm 0; }
+  body { font-family: 'JetBrains Mono', 'Noto Sans KR', 'Courier New', monospace; color: #111; font-size: 11px; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 14mm 16mm 0; }
   .sheet { padding: 0; }
   .head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; }
   .mark { display: flex; align-items: center; gap: 9px; }
@@ -578,11 +584,27 @@ function buildPdfHtml(ranks: EventRank[]): string {
   .foot { display: flex; justify-content: space-between; align-items: center; font-size: 8.5px; color: #555; letter-spacing: 0.06em; }
   .foot .center { text-align: center; }
   .foot .right { text-align: right; }
+  /* 상단 경고 문구 (1페이지 최상단) */
+  .top-warn { border: 1px solid #999; padding: 7px 10px; margin-bottom: 12px; font-size: 8px; line-height: 1.75; color: #333; }
+  .top-warn p { margin: 0; }
+  /* 하단 기록 등재 안내 (문서 맨 끝) */
+  .bottom-notice { margin-top: 18px; border-top: 1.5px solid #111; padding-top: 12px; font-size: 9px; line-height: 1.9; color: #333; }
+  .bottom-notice h4 { font-size: 11px; font-weight: 700; margin: 0 0 8px; letter-spacing: 0.01em; }
+  .bottom-notice p { margin: 0 0 7px; text-align: justify; }
+  .bottom-notice p:last-child { margin-bottom: 0; }
 </style></head>
 <body><div class="sheet">
+  <div class="top-warn">
+    <p>※ 공인·공식 순위가 아니며, 법적 효력이 없습니다.</p>
+    <p>※ 공식 기록을 기반하여 승화한 참고용 자료이며, 오류를 동반합니다.</p>
+    <p>※ 제보를 통해 수집된 자료이며, 제보되지 않은 경기실적은 누락될 수 있습니다.</p>
+    <p>※ 표기 포인트는 월드아쿠아틱스 공식 산식을 적용한 환산치(비공인)입니다.</p>
+    <p>※ 선수 자격·기록 인증·시상·선발 등 어떠한 공식적 판단의 근거로도 사용될 수 없습니다.</p>
+    <p>※ 데이터의 완전성·정확성·최신성에 대해 보증하지 않으며, 본 자료의 임의적 이용에 대한 직접·간접적 손해에 대해 책임지지 않습니다.</p>
+  </div>
   <div class="head">
     <div class="mark">
-      <img class="logo" src="/images/logo.png" alt="Medalbank" />
+      <img class="logo" src="${logoSrc || '/images/logo.png'}" alt="Medalbank" />
       <span class="word">MEDALBANK<span class="sub">대한민국 경영 종합순위표</span></span>
     </div>
     <div class="center"><div class="big">THE INDEX</div><div class="small">MEDALBANK · 등재부</div></div>
@@ -621,26 +643,47 @@ function buildPdfHtml(ranks: EventRank[]): string {
     </td></tr></tfoot>
     <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:24px;color:#888">데이터가 없습니다.</td></tr>'}</tbody>
   </table>
+  <div class="bottom-notice">
+    <h4>기록 등재 안내 (Record Listing Notice)</h4>
+    <p>본 등재부는 국내 수영 공식 경기에서 산출된 공식 기록(Official Records)만을 수집·정리하여 제공하는 통합 기록 데이터베이스입니다. MedalBank는 정확하고 신뢰할 수 있는 기록 정보를 제공하기 위해 지속적으로 데이터를 수집·검증하고 있습니다.</p>
+    <p>다만 본 등재부는 공인·공식 순위표가 아니며, 대한수영연맹·월드아쿠아틱스(World Aquatics) 등 공식 기구가 인증하거나 공표하는 공식 순위로서의 법적 효력을 갖지 않습니다. 본 자료는 참고용 정보로만 제공되며, 선수 자격·기록 인증·시상·선발 등 어떠한 공식적 판단의 근거로도 사용될 수 없습니다.</p>
+    <p>또한 본 등재부는 제보 및 공개된 경기 결과를 기반으로 구성되므로, 결과를 제보받지 못한 경기의 경우 일부 기록이 누락되거나 반영이 지연될 수 있습니다. MedalBank는 데이터의 완전성·정확성·최신성에 대하여 명시적·묵시적 보증을 하지 않으며, 본 자료의 이용으로 발생하는 직접·간접적 손해에 대해 책임을 지지 않습니다.</p>
+    <p>표기된 포인트는 월드아쿠아틱스가 공지한 공식 산출 공식을 동일하게 적용한 환산 수치로, 실제 부여된 공인 포인트가 아닙니다. 이는 "해당 경기가 월드아쿠아틱스 주관 대회였을 경우 부여되었을 가정상의 점수"이며, 어떠한 공식적 효력도 갖지 않는 참고 지표입니다.</p>
+    <p>기록에 오류가 있거나 누락된 경기 결과를 확인하신 경우 제보해 주시면 신속히 검토 후 반영하겠습니다.</p>
+  </div>
 </div>
 </body></html>`
 }
 
+// inline the brand logo as a data URI so the server-side renderer needs no
+// network/base-href to resolve it
+async function fetchLogoDataUrl(): Promise<string> {
+  try {
+    const blob = await (await fetch('/images/logo.png')).blob()
+    return await new Promise<string>((resolve) => {
+      const fr = new FileReader()
+      fr.onload  = () => resolve(String(fr.result))
+      fr.onerror = () => resolve('')
+      fr.readAsDataURL(blob)
+    })
+  } catch { return '' }
+}
+
 async function downloadPdf() {
   if (pdfBusy.value || !totalCount.value) return
-  // open the window synchronously (inside the click) so it isn't blocked as a popup
+  // open the tab synchronously (inside the click) so it isn't blocked as a popup
   const w = window.open('', '_blank')
   if (!w) { alert('팝업이 차단되었습니다. 브라우저의 팝업 차단을 해제해 주세요.'); return }
-  w.document.write('<!doctype html><meta charset="utf-8"><body style="font-family:sans-serif;padding:40px;color:#555">PDF 준비 중…</body>')
+  w.document.write('<!doctype html><meta charset="utf-8"><body style="font-family:sans-serif;padding:40px;color:#555">PDF 생성 중…</body>')
   pdfBusy.value = true
   try {
-    const ranks = await fetchAllRanks()
-    w.document.open()
-    w.document.write(buildPdfHtml(ranks))
-    w.document.close()
-    w.focus()
-    // same-origin window — drive print from here once layout/fonts settle
-    w.onafterprint = () => { try { w.close() } catch {} }
-    setTimeout(() => { try { w.print() } catch {} }, 350)
+    const [ranks, logoSrc] = await Promise.all([fetchAllRanks(), fetchLogoDataUrl()])
+    const html = buildPdfHtml(ranks, logoSrc)
+    // server renders the HTML to a real PDF (Puppeteer) and returns a token;
+    // navigate the tab to the GET URL so the browser saves it with the right filename
+    const { token } = await $fetch<{ token: string }>('/api/pdf', { method: 'POST', body: { html } })
+    const filename = `${eventTitleKo()}.pdf`
+    w.location.href = `/api/pdf?token=${encodeURIComponent(token)}&name=${encodeURIComponent(filename)}`
   } catch (err) {
     console.error('[index] pdf build error', err)
     try { w.close() } catch {}
