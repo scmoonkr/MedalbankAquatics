@@ -480,17 +480,20 @@ function recordFor(type: string): { time: string; athlete: string; nation: strin
   return recs[key] ?? null
 }
 
-// fetch every page of the current event so the PDF holds the full ranking
+// PDF에 담을 기록 최대 개수 (너무 많으면 렌더링이 무겁고 파일이 커짐)
+const MAX_PDF_RANKS = 1000
+
+// fetch pages of the current event for the PDF, up to MAX_PDF_RANKS
 async function fetchAllRanks(): Promise<EventRank[]> {
   const collected: EventRank[] = []
   let page = 1
   while (page <= 60) {
     const res = await $fetch<SheetResponse>('/api/sheet', { query: { ...fetchQuery.value, page } })
     collected.push(...res.ranks)
-    if (collected.length >= res.total || res.ranks.length === 0) break
+    if (collected.length >= MAX_PDF_RANKS || collected.length >= res.total || res.ranks.length === 0) break
     page++
   }
-  return collected
+  return collected.slice(0, MAX_PDF_RANKS)
 }
 
 // "마스터즈 성인부 남자 평영 50m LCM" — used for the sheet title and the PDF filename
