@@ -65,7 +65,7 @@
 
       <!-- Drawer -->
       <div v-if="panel.open" class="ep-backdrop" @click="closePanel">
-        <div class="ep-panel" @click.stop>
+        <div class="ep-panel" :class="{ 'ep-panel--wide': times.rows.length }" @click.stop>
           <div class="ep-head">
             <div>
               <div class="ep-title">{{ panel.id ? `대회 #${panel.form.competitionID ?? '—'}` : '새 대회' }}</div>
@@ -167,6 +167,69 @@
                 </label>
               </div>
             </div>
+
+            <!-- 기록(times) 엑셀 업로드 -->
+            <div v-if="panel.id" class="tu-section">
+              <div class="tu-head">
+                <span class="tu-title">기록 업로드</span>
+                <button class="tu-upload" :disabled="times.parsing" @click="timesFileRef?.click()">
+                  {{ times.parsing ? '분석 중…' : '기록 엑셀 업로드' }}
+                </button>
+                <input ref="timesFileRef" type="file" accept=".xlsx,.xls" style="display:none" @change="onTimesFile" />
+              </div>
+              <div v-if="times.fileName" class="tu-file">{{ times.fileName }}</div>
+              <div v-if="times.error" class="tu-error">{{ times.error }}</div>
+
+              <template v-if="times.summary">
+                <div class="tu-summary">
+                  총 <strong>{{ times.summary.total }}</strong> ·
+                  등재가능 <strong class="ok">{{ keepCount }}</strong> ·
+                  DB중복 {{ times.summary.duplicateInDb }} ·
+                  파일중복 {{ times.summary.duplicateInFile }} ·
+                  제외 {{ times.summary.flagged }}
+                  <span v-if="times.summary.sheets.length" class="tu-sheets">· 시트: {{ times.summary.sheets.join(', ') }}</span>
+                </div>
+
+                <div class="tu-table-wrap">
+                  <table class="tu-table">
+                    <thead>
+                      <tr>
+                        <th class="c-k"><input type="checkbox" :checked="allKept" @change="toggleAllKeep" /></th>
+                        <th>선수</th><th>성별</th><th>연령대</th><th>팀</th><th>영법</th><th>거리</th><th>기록</th>
+                        <th>순위</th><th>상태</th><th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="row in times.rows" :key="row.rowKey"
+                          :class="{ 'tu-skip': !row.insertable, 'tu-dup': row.dup !== 'none' }">
+                        <td class="c-k">
+                          <input type="checkbox" v-model="row.insertable" :disabled="!canKeep(row)" />
+                        </td>
+                        <td class="tu-name">{{ row.name || '—' }}</td>
+                        <td>{{ genderKo(row.gender) }}</td>
+                        <td><input v-model="row.ageGroup" class="tu-inp tu-inp-ag" /></td>
+                        <td><input v-model="row.team" class="tu-inp tu-inp-team" /></td>
+                        <td><input v-model="row.discipline" class="tu-inp tu-inp-sm" /></td>
+                        <td><input v-model="row.distance" class="tu-inp tu-inp-sm" /></td>
+                        <td><input v-model="row.time" class="tu-inp tu-inp-tm mono" @change="onRowTimeEdit(row)" /></td>
+                        <td class="mono">{{ row.rank ?? '' }}</td>
+                        <td class="tu-flags">
+                          <span v-if="row.dup === 'db'" class="tu-badge amber">DB중복</span>
+                          <span v-if="row.dup === 'file'" class="tu-badge amber">파일중복</span>
+                          <span v-if="row.status" class="tu-badge" :class="statusClass(row.status)">{{ row.status }}</span>
+                          <span v-for="fl in row.flags" :key="fl" class="tu-badge" :class="flagClass(fl)">{{ flagKo(fl) }}</span>
+                        </td>
+                        <td><button class="tu-rm" @click="removeRow(row)">✕</button></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <button class="tu-confirm" :disabled="times.confirming || !keepCount" @click="confirmTimes">
+                  {{ times.confirming ? '등재 중…' : `선택 ${keepCount}건 등재` }}
+                </button>
+              </template>
+            </div>
           </div>
 
           <div class="ep-foot">
@@ -180,6 +243,13 @@
         </div>
       </div>
     </div>
+
+    <!-- toast -->
+    <Transition name="ct">
+      <div v-if="compToast.show" class="ct-toast" :class="compToast.ok ? 'ct-ok' : 'ct-err'">
+        <p v-for="(line, i) in compToast.lines" :key="i">{{ line }}</p>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -246,6 +316,7 @@ function openPanel(r: CompRow) {
   panel.saving = false
   panel.form   = { ...r } as any
   resetCompState()
+  resetTimes()
 }
 function openNew() {
   panel.open   = true
@@ -253,11 +324,13 @@ function openNew() {
   panel.saving = false
   panel.form   = emptyForm()
   resetCompState()
+  resetTimes()
 }
 function closePanel() {
   panel.open = false
   panel.id   = ''
   resetCompState()
+  resetTimes()
 }
 function clearForm() {
   const id = panel.form.competitionID
@@ -348,6 +421,106 @@ async function searchCompetition() {
   } finally {
     panel.compSearching = false
   }
+}
+
+// ── 기록(times) 엑셀 업로드 ───────────────────────────────────────
+interface PreviewRow {
+  rowKey: string; sheet: string
+  name: string; names: string[]; gender: string
+  discipline: string; styleRaw: string; disciplineRaw: string
+  distance: string; course: string
+  time: string; timeSec: number | null; timeStamp: number; waPoints: number
+  rank: number | null; ageGroup: string; isMasters: boolean; isAdult: boolean
+  team: string; round: string; status: string
+  flags: string[]; dup: 'none' | 'file' | 'db'; insertable: boolean
+}
+interface TimesSummary {
+  total: number; insertable: number; duplicateInDb: number
+  duplicateInFile: number; flagged: number; sheets: string[]
+}
+
+const timesFileRef = ref<HTMLInputElement | null>(null)
+const times = reactive<{
+  parsing: boolean; confirming: boolean; fileName: string
+  rows: PreviewRow[]; summary: TimesSummary | null; error: string
+}>({ parsing: false, confirming: false, fileName: '', rows: [], summary: null, error: '' })
+
+function resetTimes() {
+  times.parsing = false; times.confirming = false; times.fileName = ''
+  times.rows = []; times.summary = null; times.error = ''
+}
+
+const keepCount = computed(() => times.rows.filter(r => r.insertable).length)
+const allKept   = computed(() => times.rows.length > 0 && times.rows.every(r => r.insertable || !canKeep(r)))
+
+const FLAG_KO: Record<string, string> = {
+  'unmapped-style': '영법인식불가', 'unmapped-distance': '거리인식불가',
+  'no-basetime': '기준기록없음', 'no-name': '이름없음',
+}
+function flagKo(f: string) { return FLAG_KO[f] ?? f }
+function flagClass(f: string) { return f === 'no-basetime' ? 'grey' : 'red' }
+function statusClass(s: string) { return s === 'DQ' ? 'red' : s === '번외' ? 'amber' : 'grey' }
+function genderKo(g: string) { return g === 'men' ? '남' : g === 'women' ? '여' : g === 'mixed' ? '혼성' : '—' }
+
+// a row may be kept if it has a valid event and is not a duplicate.
+// DNS/status rows are kept too (recorded with empty time + status).
+function canKeep(r: PreviewRow): boolean {
+  const DIST = ['25M','50M','100M','200M','400M','800M','1500M']
+  return !!r.name && ['FR','BA','BR','FL','IM','FRR','MR'].includes(r.discipline) &&
+    DIST.includes((r.distance || '').toUpperCase()) && (!!r.time || !!r.status) && r.dup === 'none'
+}
+function onRowTimeEdit(r: PreviewRow) { r.waPoints = 0 }  // server recomputes on confirm
+function removeRow(r: PreviewRow) { times.rows = times.rows.filter(x => x.rowKey !== r.rowKey) }
+function toggleAllKeep(ev: Event) {
+  const on = (ev.target as HTMLInputElement).checked
+  for (const r of times.rows) if (canKeep(r)) r.insertable = on
+}
+
+async function onTimesFile(ev: Event) {
+  const file = (ev.target as HTMLInputElement).files?.[0]
+  if (!file || !panel.id) return
+  times.parsing = true; times.error = ''; times.rows = []; times.summary = null
+  try {
+    const fd = new FormData(); fd.append('file', file)
+    const res = await $fetch<{ rows: PreviewRow[]; summary: TimesSummary }>(
+      `/api/backend/competitions/${panel.id}/times-parse`, { method: 'POST', body: fd })
+    times.rows = res.rows; times.summary = res.summary; times.fileName = file.name
+  } catch (e: any) {
+    times.error = e?.statusMessage || e?.data?.statusMessage || e?.message || '파싱 실패'
+  } finally {
+    times.parsing = false
+    if (timesFileRef.value) timesFileRef.value.value = ''
+  }
+}
+
+async function confirmTimes() {
+  if (times.confirming || !panel.id) return
+  const keep = times.rows.filter(r => r.insertable)
+  if (!keep.length) return
+  times.confirming = true
+  try {
+    const res = await $fetch<{ inserted: number; skippedDuplicate: number; skippedInvalid: number }>(
+      `/api/backend/competitions/${panel.id}/times-confirm`, { method: 'POST', body: { rows: keep } })
+    showCompToast(true, [
+      `✓ ${res.inserted}건 등재`,
+      res.skippedDuplicate ? `⊘ 중복 ${res.skippedDuplicate}건` : '',
+      res.skippedInvalid ? `⚠ 제외 ${res.skippedInvalid}건` : '',
+    ].filter(Boolean))
+    resetTimes()
+  } catch (e: any) {
+    showCompToast(false, [`등재 실패: ${e?.statusMessage || e?.data?.statusMessage || e?.message || e}`])
+  } finally {
+    times.confirming = false
+  }
+}
+
+// ── toast ─────────────────────────────────────────────────────────
+const compToast = reactive<{ show: boolean; ok: boolean; lines: string[] }>({ show: false, ok: true, lines: [] })
+let compToastTimer: ReturnType<typeof setTimeout> | null = null
+function showCompToast(ok: boolean, lines: string[]) {
+  if (compToastTimer) clearTimeout(compToastTimer)
+  compToast.ok = ok; compToast.lines = lines; compToast.show = true
+  compToastTimer = setTimeout(() => { compToast.show = false }, 3500)
 }
 
 onMounted(() => refresh())
@@ -509,4 +682,77 @@ onMounted(() => refresh())
 .btn-save   { border: 1px solid #0a1d3a; background: #0a1d3a; color: #fff; }
 .btn-save:hover:not(:disabled) { background: #1a3560; }
 .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── times upload ── */
+.ep-panel--wide { width: 860px; }
+.tu-section { margin-top: 18px; padding-top: 14px; border-top: 1px dashed #ddd; }
+.tu-head { display: flex; align-items: center; gap: 10px; }
+.tu-title { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.1em; }
+.tu-upload {
+  height: 30px; padding: 0 12px; font-size: 12px; cursor: pointer; border-radius: 3px;
+  border: 1px solid #0a1d3a; background: #0a1d3a; color: #fff; transition: background 0.15s;
+}
+.tu-upload:hover:not(:disabled) { background: #1a3560; }
+.tu-upload:disabled { opacity: 0.5; cursor: not-allowed; }
+.tu-file { margin-top: 8px; font-size: 11.5px; color: #555; font-family: var(--mono); }
+.tu-error { margin-top: 8px; font-size: 12px; color: #b91c1c; }
+.tu-summary { margin-top: 10px; font-size: 12px; color: #555; }
+.tu-summary strong { color: #0a0a0a; }
+.tu-summary strong.ok { color: #166534; }
+.tu-sheets { color: #999; }
+
+.tu-table-wrap { margin-top: 8px; max-height: 360px; overflow: auto; border: 1px solid #e8e8e4; border-radius: 4px; }
+/* width:auto → columns size to content (no leftover-space gaps), keeps the table narrow so 순위/상태 stay visible */
+.tu-table { width: auto; border-collapse: collapse; font-size: 12px; }
+.tu-table thead th {
+  position: sticky; top: 0; z-index: 1;
+  padding: 6px 6px; background: #f8f8f6; border-bottom: 1px solid #e0e0e0;
+  font-size: 10px; font-weight: 600; color: #888; text-align: left; white-space: nowrap;
+}
+.tu-table tbody td { padding: 4px 6px; border-bottom: 1px solid #f2f2ef; color: #222; white-space: nowrap; }
+.tu-table tbody tr.tu-skip { background: #fafafa; color: #999; }
+.tu-table tbody tr.tu-dup  { background: #fffbeb; }
+.tu-name { font-weight: 600; }
+.tu-table .mono { font-family: var(--mono); }
+.c-k { width: 28px; text-align: center; }
+.tu-inp {
+  width: 100%; min-width: 56px; height: 24px; padding: 0 5px; box-sizing: border-box;
+  border: 1px solid #e0e0e0; border-radius: 3px; font-family: var(--sans); font-size: 12px; color: #222;
+}
+.tu-inp:focus { border-color: #3b82f6; outline: none; }
+.tu-inp-sm { width: 48px; min-width: 40px; text-transform: uppercase; }
+.tu-inp-tm { width: 78px; min-width: 64px; }
+.tu-inp-ag { width: 120px; min-width: 110px; }
+.tu-inp-team { width: 100px; min-width: 90px; }
+.tu-raw { margin-left: 4px; font-size: 10px; color: #c026d3; }
+.tu-flags { white-space: normal; }
+.tu-badge {
+  display: inline-block; margin: 1px 2px; padding: 1px 5px; border-radius: 2px;
+  font-size: 9.5px; font-weight: 700; letter-spacing: 0.02em;
+}
+.tu-badge.red   { background: #fee2e2; color: #991b1b; }
+.tu-badge.amber { background: #fef3c7; color: #92400e; }
+.tu-badge.grey  { background: #f1f5f9; color: #64748b; }
+.tu-rm { border: 0; background: transparent; color: #b91c1c; cursor: pointer; font-size: 13px; padding: 0 2px; }
+.tu-rm:hover { color: #7f1d1d; }
+.tu-confirm {
+  margin-top: 10px; height: 34px; padding: 0 18px; font-size: 12.5px; cursor: pointer; border-radius: 3px;
+  border: 1px solid #166534; background: #166534; color: #fff; transition: background 0.15s;
+}
+.tu-confirm:hover:not(:disabled) { background: #14532d; }
+.tu-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── toast ── */
+.ct-toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  min-width: 240px; max-width: 420px; padding: 14px 20px; border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.22); z-index: 9999; pointer-events: none;
+}
+.ct-toast p { margin: 0; font-size: 13px; line-height: 1.7; white-space: nowrap; }
+.ct-toast p:first-child { font-weight: 600; }
+.ct-ok  { background: #0f2d1a; color: #86efac; border: 1px solid #166534; }
+.ct-err { background: #2d0f0f; color: #fca5a5; border: 1px solid #991b1b; }
+.ct-enter-active { transition: opacity 0.18s, transform 0.18s; }
+.ct-leave-active { transition: opacity 0.3s,  transform 0.3s;  }
+.ct-enter-from, .ct-leave-to { opacity: 0; transform: translateX(-50%) translateY(8px); }
 </style>
