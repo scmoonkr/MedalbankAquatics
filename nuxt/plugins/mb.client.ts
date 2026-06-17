@@ -147,6 +147,7 @@ export default defineNuxtPlugin(() => {
 
   const router = useRouter()
   const init = () => {
+    if (router.currentRoute.value.path === '/') return  // index.vue handles home page
     setupCursor()
     setupMenu()
     setupLightbox()

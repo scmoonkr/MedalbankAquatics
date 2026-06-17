@@ -605,7 +605,7 @@ body.is-home footer.ui {
 }
 .cursor {
   position: fixed; top: 0; left: 0; width: 32px; height: 32px;
-  pointer-events: none; z-index: 3000; will-change: transform;
+  pointer-events: none; z-index: 9999;
   opacity: 0; transition: opacity 0.3s; mix-blend-mode: difference;
 }
 .cursor.visible { opacity: 1; }
@@ -750,6 +750,7 @@ body.is-home nav.menu-fullscreen a { cursor: none; }
 body.is-home .lightbox,
 body.is-home .lightbox-close { cursor: none; }
 @media (hover: none), (pointer: coarse) { body.is-home .lightbox, body.is-home .lightbox-close { cursor: auto; } }
+body.lb-open .cursor { mix-blend-mode: normal; }
 body.lb-open .grain { opacity: 0.06; }
 .vignette { position: fixed; inset: 0; pointer-events: none; z-index: 5; background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.45) 100%); }
 .hint {
