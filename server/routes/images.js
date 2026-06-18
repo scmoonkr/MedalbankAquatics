@@ -121,6 +121,22 @@ export default function (app) {
     }
   })
 
+  app.patch('/api/admin/images/:id/consent', async (req, res) => {
+    try {
+      const image_id = parseInt(req.params.id)
+      const consented = req.body.consented !== false
+      await images().updateOne(
+        { image_id },
+        consented
+          ? { $set: { consent_date: new Date() } }
+          : { $set: { consent_date: null } }
+      )
+      res.json({ ok: true })
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
   app.delete('/api/admin/images/:id', async (req, res) => {
     try {
       const image_id = parseInt(req.params.id)
@@ -227,13 +243,14 @@ export default function (app) {
       const excludeTag = req.query.exclude_tag ? String(req.query.exclude_tag) : null
 
       const consented = req.query.consented !== 'false'
-      const filter = { consent_date: { $exists: consented } }
+      const filter = consented
+        ? { consent_date: { $ne: null } }   // 실제 날짜값만
+        : { consent_date: null }            // null 또는 필드 없음 모두 매칭
       if (meetId)     filter.meet_id  = meetId
       else            filter.meet_id  = { $gt: 0 }  // 명예의전당(meet_id:0) 제외
       if (tag)        filter.tags     = tag
       if (category)   filter.category = category
       if (excludeTag) filter.tags     = { ...(filter.tags ?? {}), $ne: excludeTag }
-
       const [total, docs] = await Promise.all([
         images().countDocuments(filter),
         images()

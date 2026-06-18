@@ -111,7 +111,7 @@ export default function (app) {
 
       const [athlete, imgDocs] = await Promise.all([
         athletes().findOne({ athlete_id: athleteId }),
-        images().find({ athlete_id: athleteId, consent_date: { $exists: true } })
+        images().find({ athlete_id: athleteId, consent_date: { $ne: null } })
           .sort({ date: -1, image_id: 1 }).toArray(),
       ])
 

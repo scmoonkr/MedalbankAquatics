@@ -104,8 +104,8 @@
               <div v-if="img.filename" class="cell-filename">{{ img.filename }}</div>
             </td>
             <td class="col-consent">
-              <span v-if="img.consent_date" class="badge approved">{{ fmtDate(img.consent_date) }}</span>
-              <span v-else class="badge review">미동의</span>
+              <span v-if="img.consent_date" class="badge approved toggle" title="클릭하면 비동의로 전환" @click.stop="toggleConsent(img)">{{ fmtDate(img.consent_date) }}</span>
+              <span v-else class="badge review toggle" title="클릭하면 동의로 전환" @click.stop="toggleConsent(img)">미동의</span>
             </td>
             <td class="col-tags">{{ (img.tags ?? []).join(', ') }}</td>
             <td class="col-category">{{ (Array.isArray(img.category) ? img.category : img.category ? [img.category] : []).join(', ') }}</td>
@@ -127,7 +127,9 @@
         <div class="grid-meta">
           <span class="grid-id">#{{ img.image_id }}</span>
           <span v-if="img.consent_date" class="grid-info">{{ img.athlete_name }} · {{ img.meet_label }}</span>
-          <span class="badge" :class="img.consent_date ? 'approved' : 'review'">
+          <span class="badge toggle" :class="img.consent_date ? 'approved' : 'review'"
+            :title="img.consent_date ? '클릭하면 비동의로 전환' : '클릭하면 동의로 전환'"
+            @click.stop="toggleConsent(img)">
             {{ img.consent_date ? '동의' : '미동의' }}
           </span>
         </div>
@@ -366,6 +368,15 @@ async function save() {
   await refresh()
 }
 
+async function toggleConsent(img: any) {
+  const consented = !img.consent_date
+  await $fetch(`/api/admin/images/${img.image_id}/consent`, {
+    method: 'PATCH',
+    body: { consented },
+  })
+  await refresh()
+}
+
 async function deleteOne(id: number) {
   if (!confirm('삭제하시겠습니까?')) return
   await $fetch(`/api/admin/images/${id}`, { method: 'DELETE' })
@@ -477,6 +488,8 @@ input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-colo
 .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
 .badge.approved { background: #1a3a2a; color: #3fb950; }
 .badge.review   { background: #2d333b; color: #8b949e; }
+.badge.toggle   { cursor: pointer; user-select: none; }
+.badge.toggle:hover { filter: brightness(1.3); }
 
 /* ── 편집 패널 ── */
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; }
