@@ -89,6 +89,18 @@ export default function (app) {
     }
   })
 
+  // 업로드 검증용: 대회별 저장된 파일명 목록(페이지네이션·consent 필터 없음)
+  app.get('/api/admin/meets/:meetId/image-filenames', async (req, res) => {
+    try {
+      const meetId = parseInt(req.params.meetId)
+      const docs = await images()
+        .find({ meet_id: meetId }, { projection: { _id: 0, filename: 1 } }).toArray()
+      res.json({ count: docs.length, filenames: docs.map(d => d.filename).filter(Boolean) })
+    } catch (e) {
+      res.status(500).json({ error: e.message })
+    }
+  })
+
   app.post('/api/admin/images/bulk-tags', async (req, res) => {
     try {
       const { image_ids, tags, action } = req.body

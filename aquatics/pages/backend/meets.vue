@@ -198,6 +198,22 @@
           class="btn-primary btn-full" @click="dirHandle ? doDirUpload() : doFileUpload()">
           {{ dirHandle ? dirPending.length : uploadFiles.length }}장 업로드
         </button>
+
+        <!-- 업로드 검증 (실제 파일 ↔ 서버 기록) -->
+        <button v-if="editing?.meet_id && !uploading && (dirHandle || fileLocalNames.size)"
+          class="btn-secondary btn-full" :disabled="verifying" @click="verifyUpload">
+          {{ verifying ? '확인 중…' : '업로드 확인 (실제 파일 ↔ 서버 기록)' }}
+        </button>
+
+        <div v-if="verifyResult" class="verify-result" :class="verifyResult.ok ? 'ok' : 'mismatch'">
+          <div class="verify-head">
+            <template v-if="verifyResult.ok">✓ 일치 — 로컬 {{ verifyResult.localCount }} · 서버 {{ verifyResult.serverCount }}장</template>
+            <template v-else>⚠ 누락 {{ verifyResult.missing.length }}장 (로컬 {{ verifyResult.localCount }} · 서버 {{ verifyResult.serverCount }})</template>
+          </div>
+          <ul v-if="verifyResult.missing.length" class="verify-missing">
+            <li v-for="(n, i) in verifyResult.missing" :key="i" :title="n">{{ n }}</li>
+          </ul>
+        </div>
       </div>
       <div class="edit-footer">
         <button v-if="editing.meet_id" class="btn-danger" @click="deleteOne(editing.meet_id)">삭제</button>
@@ -253,6 +269,12 @@ const uploadDone    = ref(0)
 const uploadTotal   = ref(0)
 const uploadResults = ref<any[]>([])
 const cancelling    = ref(false)
+
+// ── 업로드 검증 (실제 파일 ↔ 서버 기록 대조) ───────────────────────────────
+const verifying      = ref(false)
+const verifyResult   = ref<{ ok: boolean; missing: string[]; localCount: number; serverCount: number } | null>(null)
+const dirAllNames    = ref<string[]>([])          // fallback(dir) 모드: 폴더 전체 이미지 파일명
+const fileLocalNames = ref<Set<string>>(new Set()) // 파일 모드: 이번 세션 선택 파일명 누적
 
 // ── localStorage 업로드 기록 카운트 ────────────────────────────────────────
 const uploadedRecordCount = ref(0)   // 현재 meet_id 신규 스킴 기록 수
@@ -354,6 +376,45 @@ function resetUpload() {
   pendingRestoreName.value = ''
   uploadCategory.value = ''
   uploadTags.value = ''
+  verifyResult.value = null
+  dirAllNames.value = []
+  fileLocalNames.value = new Set()
+}
+
+// 모드별 "실제 파일" 파일명 수집 (검증용)
+async function collectLocalNames(): Promise<string[]> {
+  // FSA 폴더: 클릭 시점에 폴더를 다시 열거 (항상 최신 상태)
+  if (dirHandle.value && !dirFallback.value) {
+    const out: string[] = []
+    for await (const [name, h] of (dirHandle.value as any).entries())
+      if (h.kind === 'file' && IMAGE_RE.test(name)) out.push(name)
+    return out
+  }
+  if (dirFallback.value) return [...dirAllNames.value]   // webkitdirectory 선택분
+  return [...fileLocalNames.value]                        // 파일 모드 선택분
+}
+
+// 업로드 검증: 실제 로컬 파일 ↔ 서버 image 기록(filename) 대조
+async function verifyUpload() {
+  const meetId = editing.value?.meet_id
+  if (!meetId || verifying.value) return
+  verifying.value = true
+  try {
+    const local = await collectLocalNames()
+    const res = await $fetch<any>(`/api/admin/meets/${meetId}/image-filenames`)
+    const serverSet = new Set<string>(res.filenames ?? [])
+    const localSet  = new Set(local)
+    const missing   = [...localSet].filter(n => !serverSet.has(n))
+    verifyResult.value = {
+      ok: missing.length === 0, missing,
+      localCount: localSet.size, serverCount: res.count ?? serverSet.size,
+    }
+  } catch (e: any) {
+    verifyResult.value = null
+    alert('검증 실패: ' + (e?.data?.error ?? e?.message ?? e))
+  } finally {
+    verifying.value = false
+  }
 }
 
 // ── 파일 모드 ────────────────────────────────────────────────────────────────
@@ -364,6 +425,7 @@ function addFiles(files: FileList | null) {
   let skipped = 0
   for (const file of Array.from(files)) {
     if (!IMAGE_RE.test(file.name)) continue
+    fileLocalNames.value.add(file.name)   // 검증용 실제 파일명 누적
     if (uploadedSet.has(file.name)) { skipped++; continue }
     uploadFiles.value.push({ file, preview: URL.createObjectURL(file) })
   }
@@ -393,9 +455,15 @@ async function doFileUpload() {
 
   try {
     const res = await $fetch<any>('/api/admin/upload-images', { method: 'POST', body: fd })
-    uploadResults.value = res.results
-    uploadFiles.value = []
-    uploadDone.value = uploadTotal.value
+    uploadResults.value = res.results ?? []
+    // 부분성공: 실패한 파일만 큐에 남겨 재시도 가능하게 함
+    const failedNames = new Set((res.failures ?? []).map((f: any) => f.filename))
+    uploadFiles.value = uploadFiles.value.filter(f => failedNames.has(f.file.name))
+    uploadDone.value = res.count ?? uploadTotal.value
+    if (res.failed) alert(`${res.failed}장 업로드 실패 — "업로드 확인"으로 누락 파일을 확인하세요.`)
+  } catch (e: any) {
+    // 전체 요청 실패: 큐를 유지해 재시도 가능
+    alert('업로드 실패: ' + (e?.data?.error ?? e?.message ?? e))
   } finally {
     uploading.value = false
   }
@@ -625,6 +693,7 @@ function onDirInputChange(e: Event) {
     .filter(f => IMAGE_RE.test(f.name))
   if (!all.length) return
 
+  dirAllNames.value = all.map(f => f.name)   // 검증용 폴더 전체 파일명
   const uploadedSet = getUploadedSet(editing.value?.meet_id)
   const pending: File[] = []
   let skipped = 0
@@ -696,11 +765,14 @@ async function doDirUpload() {
         method: 'POST', body: fd,
         signal: uploadAC?.signal,
       })
-      uploadResults.value.push(...res.results)
-      const names = batchItems.map(({ file }) => file.name)
-      markUploaded(meetId, names)
-      for (const n of names) completedNames.add(n)
-      dirDoneCount.value += names.length
+      uploadResults.value.push(...(res.results ?? []))
+      // 부분성공: 서버가 실패로 보고한 파일은 완료 기록에서 제외 → 다음에 재시도
+      const batchNames  = batchItems.map(({ file }) => file.name)
+      const failedNames = new Set((res.failures ?? []).map((f: any) => f.filename))
+      const okNames     = batchNames.filter(n => !failedNames.has(n))
+      markUploaded(meetId, okNames)
+      for (const n of okNames) completedNames.add(n)
+      dirDoneCount.value += okNames.length
     } catch (e: any) {
       if (uploadAborted.value || e?.name === 'AbortError') break
       console.error(`Batch ${i}–${i + BATCH_SIZE} 실패`, e)
@@ -883,6 +955,13 @@ input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-colo
 .result-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #8b949e; }
 .result-item .upload-thumb { width: 48px; height: 48px; }
 .result-more { font-size: 11px; color: #8b949e; align-self: center; padding: 4px 8px; background: #21262d; border-radius: 4px; }
+
+.verify-result { border-radius: 6px; padding: 8px 10px; font-size: 12px; }
+.verify-result.ok       { border: 1px solid #3fb950; color: #3fb950; }
+.verify-result.mismatch { border: 1px solid #f85149; color: #f85149; }
+.verify-head { font-weight: 600; }
+.verify-missing { list-style: none; margin: 6px 0 0; padding: 0; max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+.verify-missing li { color: #e6edf3; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .btn-primary { padding: 8px 20px; background: #238636; border: none; border-radius: 6px; color: #fff; font-size: 13px; cursor: pointer; }
 .btn-primary:hover { background: #2ea043; }

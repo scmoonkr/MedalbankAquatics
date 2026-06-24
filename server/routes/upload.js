@@ -73,58 +73,65 @@ export default function (app) {
 
       if (!files?.length) return res.status(400).json({ error: '파일이 없습니다.' })
 
-      const results = []
+      const results  = []
+      const failures = []
 
       for (const file of files) {
-        const buf     = file.buffer
-        const imageId = await nextImageId()
-        const id      = String(imageId)
-
-        // EXIF DateTimeOriginal → created_at (없으면 현재 시각)
-        let createdAt = new Date()
+        // 파일별 try/catch — 한 장이 실패해도 나머지는 계속 업로드(부분성공)
         try {
-          const exif = await exifr.parse(buf, ['DateTimeOriginal', 'DateTime'])
-          const exifDate = exif?.DateTimeOriginal ?? exif?.DateTime
-          if (exifDate instanceof Date && !isNaN(exifDate)) createdAt = exifDate
-        } catch {}
+          const buf     = file.buffer
+          const imageId = await nextImageId()
+          const id      = String(imageId)
 
-        const [thumbBuf, previewBuf, largeBuf] = await Promise.all([
-          resizeWidth(buf, 400),
-          resizeWidthGrayscale(buf, 320),
-          resizeWidth(buf, 1600),
-        ])
+          // EXIF DateTimeOriginal → created_at (없으면 현재 시각)
+          let createdAt = new Date()
+          try {
+            const exif = await exifr.parse(buf, ['DateTimeOriginal', 'DateTime'])
+            const exifDate = exif?.DateTimeOriginal ?? exif?.DateTime
+            if (exifDate instanceof Date && !isNaN(exifDate)) createdAt = exifDate
+          } catch {}
 
-        const [thumbUrl, previewUrl, largeUrl, originalUrl] = await Promise.all([
-          s3Upload(thumbBuf,   `${prefix}/thumbs/${id}.jpg`),
-          s3Upload(previewBuf, `${prefix}/previews/${id}.jpg`),
-          s3Upload(largeBuf,   `${prefix}/large/${id}.jpg`),
-          s3Upload(buf,        `${prefix}/original/${id}.jpg`),
-        ])
+          const [thumbBuf, previewBuf, largeBuf] = await Promise.all([
+            resizeWidth(buf, 400),
+            resizeWidthGrayscale(buf, 320),
+            resizeWidth(buf, 1600),
+          ])
 
-        await images().insertOne({
-          image_id:   imageId,
-          athlete_id: 0,
-          meet_id,
-          date,
-          filename:   file.originalname,
-          urls: { thumb: thumbUrl, preview: previewUrl, large: largeUrl, original: originalUrl },
-          tags:     tagList,
-          category: catList,
-          created_at: createdAt,
-        })
+          const [thumbUrl, previewUrl, largeUrl, originalUrl] = await Promise.all([
+            s3Upload(thumbBuf,   `${prefix}/thumbs/${id}.jpg`),
+            s3Upload(previewBuf, `${prefix}/previews/${id}.jpg`),
+            s3Upload(largeBuf,   `${prefix}/large/${id}.jpg`),
+            s3Upload(buf,        `${prefix}/original/${id}.jpg`),
+          ])
 
-        results.push({
-          image_id: imageId,
-          urls: {
-            thumb:    toPublicUrl(thumbUrl),
-            preview:  toPublicUrl(previewUrl),
-            large:    toPublicUrl(largeUrl),
-            original: toPublicUrl(originalUrl),
-          },
-        })
+          await images().insertOne({
+            image_id:   imageId,
+            athlete_id: 0,
+            meet_id,
+            date,
+            filename:   file.originalname,
+            urls: { thumb: thumbUrl, preview: previewUrl, large: largeUrl, original: originalUrl },
+            tags:     tagList,
+            category: catList,
+            created_at: createdAt,
+          })
+
+          results.push({
+            image_id: imageId,
+            urls: {
+              thumb:    toPublicUrl(thumbUrl),
+              preview:  toPublicUrl(previewUrl),
+              large:    toPublicUrl(largeUrl),
+              original: toPublicUrl(originalUrl),
+            },
+          })
+        } catch (err) {
+          console.error(`upload failed: ${file.originalname}`, err)
+          failures.push({ filename: file.originalname, error: err?.message ?? String(err) })
+        }
       }
 
-      res.json({ ok: true, count: results.length, results })
+      res.json({ ok: failures.length === 0, count: results.length, failed: failures.length, results, failures })
     } catch (e) {
       console.error(e)
       res.status(500).json({ error: e.message })
