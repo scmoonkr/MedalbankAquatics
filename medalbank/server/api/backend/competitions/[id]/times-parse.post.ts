@@ -3,7 +3,7 @@
 import { ObjectId } from 'mongodb'
 import { readMultipartFormData } from 'h3'
 import { extname } from 'node:path'
-import { parseTimesWorkbook, buildCtx, dedupKey, type ParsedRow } from '~/server/utils/importTimes'
+import { parseTimesWorkbook, buildCtx, dedupKey, isDedupable, type ParsedRow } from '~/server/utils/importTimes'
 
 const ALLOWED_EXT = new Set(['.xlsx', '.xls'])
 const MAX_BYTES   = 30 * 1024 * 1024  // 30 MB
@@ -54,10 +54,10 @@ export default defineEventHandler(async (event) => {
     const existing = await db.collection('mergedTimes')
       .find(
         { competitionID: ctx.competitionID, name: { $in: names } },
-        { projection: { _id: 0, competitionID: 1, name: 1, gender: 1, isMasters: 1, discipline: 1, course: 1, distance: 1, time: 1 } },
+        { projection: { _id: 0, competitionID: 1, name: 1, gender: 1, isMasters: 1, discipline: 1, course: 1, distance: 1, time: 1, heat: 1, round: 1, rank: 1 } },
       )
       .toArray()
-    for (const d of existing) dbKeys.add(dedupKey(d as any))
+    for (const d of existing) if (isDedupable(d as any)) dbKeys.add(dedupKey(d as any))
   }
 
   // ── per-row flags / dup / insertable ─────────────────────────
@@ -76,9 +76,13 @@ export default defineEventHandler(async (event) => {
 
     const key = dedupKey({ competitionID: ctx.competitionID, ...r })
     let dup: PreviewRow['dup'] = 'none'
-    if (dbKeys.has(key)) dup = 'db'
-    else if (fileKeys.has(key)) dup = 'file'
-    else fileKeys.add(key)
+    // dedup only when heat/round/rank are all present (empty = distinct, always kept).
+    // empty time = DNS placeholder → never a file-duplicate (multiple DNS rows are kept, saved as DNS)
+    if (isDedupable(r)) {
+      if (dbKeys.has(key)) dup = 'db'
+      else if (r.time && fileKeys.has(key)) dup = 'file'
+      else if (r.time) fileKeys.add(key)
+    }
 
     // DNS/status rows are recorded too (empty time + status); only need a valid event + no dup
     const insertable = hasEvent && dup === 'none'

@@ -106,11 +106,22 @@ export function buildCtx(comp: Record<string, any>): CompetitionCtx {
 
 // mergedTimes dedup key — scoped to the SAME competition (re-importing the same
 // meet is a duplicate; the same swimmer's same time at a DIFFERENT meet is not).
+// heat / round / rank are part of the key: two rows are duplicates only when all
+// three also match (e.g. a 예선 and 결승 swim of identical time are NOT duplicates).
 export function dedupKey(r: {
   competitionID: number | null; name: string; gender: string; isMasters: boolean
   discipline: string; course: string; distance: string; time: string
+  heat?: string; round?: string; rank?: number | null
 }): string {
-  return `${r.competitionID}|${r.name}|${r.gender}|${r.isMasters}|${r.discipline}|${r.course}|${r.distance}|${r.time}`
+  const rank = r.rank != null ? String(r.rank) : ''
+  return `${r.competitionID}|${r.name}|${r.gender}|${r.isMasters}|${r.discipline}|${r.course}|${r.distance}|${r.time}|${r.heat ?? ''}|${r.round ?? ''}|${rank}`
+}
+
+// A row only participates in dedup when heat / round / rank are ALL present. An empty
+// value ('' / null) is treated as distinct — a blank field never matches another blank
+// field, so such rows are always kept rather than collapsed together.
+export function isDedupable(r: { heat?: string; round?: string; rank?: number | null }): boolean {
+  return !!String(r.heat ?? '').trim() && !!String(r.round ?? '').trim() && r.rank != null
 }
 
 export interface ParsedRow {
@@ -129,10 +140,12 @@ export interface ParsedRow {
   waPoints:      number
   rank:          number | null
   ageGroup:      string
+  group:         string   // 정규화 그룹 (유년부|초등부|중등부|고등부|일반부|성인부)
   isMasters:     boolean
   isAdult:       boolean
   team:          string
   round:         string
+  heat:          string   // 경기번호-조 (e.g. "211-3")
   status:        string
 }
 
@@ -216,9 +229,22 @@ function isJunior(ageGroup: string): boolean {
   return JUNIORS.some(j => a.includes(j))
 }
 
+// ageGroup 레이블 → 정규화 group 값 (canonical: 유년부|초등부|중등부|고등부|일반부|성인부)
+const GROUP_KEYWORDS: { keys: string[]; group: string }[] = [
+  { keys: ['초등'],         group: '초등부' },
+  { keys: ['중등', '중학'], group: '중등부' },
+  { keys: ['고등'],         group: '고등부' },
+  { keys: ['유년', '유치'], group: '유년부' },
+]
+export function ageGroupToGroup(ageGroup: string, isMasters: boolean): string {
+  const a = (ageGroup || '').replace(/\s/g, '')
+  for (const g of GROUP_KEYWORDS) if (g.keys.some(k => a.includes(k))) return g.group
+  return isMasters ? '성인부' : '일반부'
+}
+
 // parse a discipline header string ("남자 자유형 50M 결승") → parts (ported splitDiscipline)
 export function splitDiscipline(input: string): {
-  discipline: string; gender?: string; style?: string; distance?: string; round?: string; ageGroup?: string
+  discipline: string; gender?: string; style?: string; distance?: string; round?: string; ageGroup?: string; heat?: string
 } {
   const out: any = { discipline: String(input).replace(/\s{2,}/g, ' ').trim() }
   let s = String(input).replace('혼성', ' 혼성 ').replace(/\s{2,}/g, ' ').trim().toUpperCase()
@@ -233,6 +259,7 @@ export function splitDiscipline(input: string): {
     else if (round)                                        out.round = round
     else if (key.includes('혼성'))                          out.gender = '혼성'
     else if (key.includes('남') || key.includes('여'))      out.gender = key
+    else if (/^\d+(-\d+)?$/.test(key))                      out.heat = key   // 경기번호-조 (e.g. "211-3") → not ageGroup
     else                                                    leftover.push(key)
   }
   if (leftover.length) out.ageGroup = leftover.join(' ').trim()
@@ -400,7 +427,7 @@ export function parseTimesWorkbook(buf: Buffer, ctx: CompetitionCtx): ParsedRow[
 
   for (const sheetRows of Object.values(sheets)) {
     const expanded = expandSheet(sheetRows)
-    const context: { gender?: string; style?: string; distance?: string; ageGroup?: string; round?: string; disciplineRaw?: string } = {}
+    const context: { gender?: string; style?: string; distance?: string; ageGroup?: string; round?: string; heat?: string; disciplineRaw?: string } = {}
 
     for (const row of expanded) {
       // section-header row → update inheritance context, skip
@@ -411,6 +438,7 @@ export function parseTimesWorkbook(buf: Buffer, ctx: CompetitionCtx): ParsedRow[
         if (hdr.distance) context.distance = hdr.distance
         if (hdr.round)    context.round    = hdr.round
         if (hdr.ageGroup) context.ageGroup = hdr.ageGroup
+        if (hdr.heat)     context.heat     = hdr.heat
         context.disciplineRaw = hdr.discipline
         continue
       }
@@ -430,6 +458,7 @@ export function parseTimesWorkbook(buf: Buffer, ctx: CompetitionCtx): ParsedRow[
       const dRaw  = row.distance || context.distance || ''
       const ageGroup = String(row.ageGroup || context.ageGroup || '').trim()
       const round    = String(row.round || context.round || '').trim()
+      const heat     = String(row.heat || context.heat || '').trim()
 
       const { status: statusRaw, rank } = applyStatus(row)
       const time = normalizeTime(row.time ?? row.times)
@@ -481,10 +510,12 @@ export function parseTimesWorkbook(buf: Buffer, ctx: CompetitionCtx): ParsedRow[
         waPoints:      derived.waPoints,
         rank,
         ageGroup,
+        group:         ageGroupToGroup(ageGroup, isMasters),
         isMasters,
         isAdult:       !isJunior(ageGroup),
         team,
         round,
+        heat,
         status,
       })
     }

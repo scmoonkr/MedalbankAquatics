@@ -195,7 +195,7 @@
                     <thead>
                       <tr>
                         <th class="c-k"><input type="checkbox" :checked="allKept" @change="toggleAllKeep" /></th>
-                        <th>선수</th><th>성별</th><th>연령대</th><th>팀</th><th>영법</th><th>거리</th><th>기록</th>
+                        <th>선수</th><th>성별</th><th>연령대</th><th>조</th><th>팀</th><th>영법</th><th>거리</th><th>기록</th>
                         <th>순위</th><th>상태</th><th></th>
                       </tr>
                     </thead>
@@ -208,6 +208,7 @@
                         <td class="tu-name">{{ row.name || '—' }}</td>
                         <td>{{ genderKo(row.gender) }}</td>
                         <td><input v-model="row.ageGroup" class="tu-inp tu-inp-ag" /></td>
+                        <td><input v-model="row.heat" class="tu-inp tu-inp-heat" /></td>
                         <td><input v-model="row.team" class="tu-inp tu-inp-team" /></td>
                         <td><input v-model="row.discipline" class="tu-inp tu-inp-sm" /></td>
                         <td><input v-model="row.distance" class="tu-inp tu-inp-sm" /></td>
@@ -430,8 +431,8 @@ interface PreviewRow {
   discipline: string; styleRaw: string; disciplineRaw: string
   distance: string; course: string
   time: string; timeSec: number | null; timeStamp: number; waPoints: number
-  rank: number | null; ageGroup: string; isMasters: boolean; isAdult: boolean
-  team: string; round: string; status: string
+  rank: number | null; ageGroup: string; group: string; isMasters: boolean; isAdult: boolean
+  team: string; round: string; heat: string; status: string
   flags: string[]; dup: 'none' | 'file' | 'db'; insertable: boolean
 }
 interface TimesSummary {
@@ -448,6 +449,23 @@ const times = reactive<{
 function resetTimes() {
   times.parsing = false; times.confirming = false; times.fileName = ''
   times.rows = []; times.summary = null; times.error = ''
+}
+
+// preview rows sort: isMasters → isAdult → gender → ageGroup → heat → round → discipline → distance → name
+const cmpStr = (a: string, b: string) => String(a ?? '').localeCompare(String(b ?? ''), undefined, { numeric: true })
+const cmpBool = (a: boolean, b: boolean) => (a === b ? 0 : a ? 1 : -1)
+function sortPreviewRows(rows: PreviewRow[]): PreviewRow[] {
+  return [...rows].sort((a, b) =>
+    cmpBool(a.isMasters, b.isMasters) ||
+    cmpBool(a.isAdult, b.isAdult) ||
+    cmpStr(a.gender, b.gender) ||
+    cmpStr(a.ageGroup, b.ageGroup) ||
+    cmpStr(a.heat, b.heat) ||
+    cmpStr(a.round, b.round) ||
+    cmpStr(a.discipline, b.discipline) ||
+    cmpStr(a.distance, b.distance) ||
+    cmpStr(a.name, b.name),
+  )
 }
 
 const keepCount = computed(() => times.rows.filter(r => r.insertable).length)
@@ -484,7 +502,7 @@ async function onTimesFile(ev: Event) {
     const fd = new FormData(); fd.append('file', file)
     const res = await $fetch<{ rows: PreviewRow[]; summary: TimesSummary }>(
       `/api/backend/competitions/${panel.id}/times-parse`, { method: 'POST', body: fd })
-    times.rows = res.rows; times.summary = res.summary; times.fileName = file.name
+    times.rows = sortPreviewRows(res.rows); times.summary = res.summary; times.fileName = file.name
   } catch (e: any) {
     times.error = e?.statusMessage || e?.data?.statusMessage || e?.message || '파싱 실패'
   } finally {
@@ -684,7 +702,7 @@ onMounted(() => refresh())
 .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── times upload ── */
-.ep-panel--wide { width: 860px; }
+.ep-panel--wide { width: 1000px; }
 .tu-section { margin-top: 18px; padding-top: 14px; border-top: 1px dashed #ddd; }
 .tu-head { display: flex; align-items: center; gap: 10px; }
 .tu-title { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.1em; }
@@ -723,6 +741,7 @@ onMounted(() => refresh())
 .tu-inp-sm { width: 48px; min-width: 40px; text-transform: uppercase; }
 .tu-inp-tm { width: 78px; min-width: 64px; }
 .tu-inp-ag { width: 120px; min-width: 110px; }
+.tu-inp-heat { width: 64px; min-width: 52px; }
 .tu-inp-team { width: 100px; min-width: 90px; }
 .tu-raw { margin-left: 4px; font-size: 10px; color: #c026d3; }
 .tu-flags { white-space: normal; }
