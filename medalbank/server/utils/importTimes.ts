@@ -491,6 +491,8 @@ export function parseTimesWorkbook(buf: Buffer, ctx: CompetitionCtx): ParsedRow[
       } else if (ageGroup && (ageGroup.includes('기록회') || (!ageGroup.includes('비등록') && ageGroup.includes('등록선수')))) {
         isMasters = false
       }
+      // 번외(exhibition) swims are never masters records
+      if (status === '번외') isMasters = false
 
       const derived = computeDerived({ time, gender, discipline, distance, course: ctx.course })
 
