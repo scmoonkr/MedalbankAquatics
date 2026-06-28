@@ -195,7 +195,7 @@
                     <thead>
                       <tr>
                         <th class="c-k"><input type="checkbox" :checked="allKept" @change="toggleAllKeep" /></th>
-                        <th>선수</th><th>성별</th><th>연령대</th><th>조</th><th>팀</th><th>영법</th><th>거리</th><th>기록</th>
+                        <th>선수</th><th>성별</th><th>구분</th><th>연령대</th><th>조</th><th>팀</th><th>영법</th><th>거리</th><th>기록</th>
                         <th>순위</th><th>상태</th><th></th>
                       </tr>
                     </thead>
@@ -207,6 +207,12 @@
                         </td>
                         <td class="tu-name">{{ row.name || '—' }}</td>
                         <td>{{ genderKo(row.gender) }}</td>
+                        <td>
+                          <select v-model="row.isMasters" class="tu-inp tu-inp-mst">
+                            <option :value="true">masters</option>
+                            <option :value="false">elite</option>
+                          </select>
+                        </td>
                         <td><input v-model="row.ageGroup" class="tu-inp tu-inp-ag" /></td>
                         <td><input v-model="row.heat" class="tu-inp tu-inp-heat" /></td>
                         <td><input v-model="row.team" class="tu-inp tu-inp-team" /></td>
@@ -743,6 +749,7 @@ onMounted(() => refresh())
 .tu-inp-ag { width: 120px; min-width: 110px; }
 .tu-inp-heat { width: 64px; min-width: 52px; }
 .tu-inp-team { width: 100px; min-width: 90px; }
+.tu-inp-mst { width: 76px; min-width: 64px; }
 .tu-raw { margin-left: 4px; font-size: 10px; color: #c026d3; }
 .tu-flags { white-space: normal; }
 .tu-badge {
