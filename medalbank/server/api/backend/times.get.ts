@@ -30,12 +30,17 @@ export default defineEventHandler(async (event) => {
     course:          d.course          || '—',
     group:           d.group           || '—',
     isMasters:       !!d.isMasters,
+    isAdult:         !!d.isAdult,
     round:           d.round           || '—',
     name:            d.name            || '—',
     sido:            d.sido            || '—',
     team:            d.team            || '—',
+    pool:            d.pool            || '',
     time:            d.time            || '—',
     datetime:        d.datetime        ? String(d.datetime).slice(0, 10) : '—',
     competitionName: d.competitionName || '—',
+    rank:            d.rank ?? null,
+    ageGroup:        d.ageGroup        || '',
+    status:          d.status          || '',
   }))
 })

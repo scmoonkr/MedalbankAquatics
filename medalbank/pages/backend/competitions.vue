@@ -175,6 +175,7 @@
                 <button class="tu-upload" :disabled="times.parsing" @click="timesFileRef?.click()">
                   {{ times.parsing ? '분석 중…' : '기록 엑셀 업로드' }}
                 </button>
+                <button class="tu-add" @click="openAddTime">times 추가</button>
                 <input ref="timesFileRef" type="file" accept=".xlsx,.xls" style="display:none" @change="onTimesFile" />
               </div>
               <div v-if="times.fileName" class="tu-file">{{ times.fileName }}</div>
@@ -247,6 +248,103 @@
               {{ panel.saving ? '저장 중…' : '저장' }}
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- times 단건 추가 모달 -->
+    <div v-if="addTime.open" class="at-backdrop" @click="closeAddTime">
+      <div class="at-modal" @click.stop>
+        <div class="at-head">
+          <div class="at-title">기록 단건 추가</div>
+          <button class="ep-close" @click="closeAddTime">✕</button>
+        </div>
+        <div class="at-meta">
+          {{ panel.form.competitionName || '—' }}
+          <span>· #{{ panel.form.competitionID ?? '—' }}</span>
+          <span>· {{ panel.form.datetime || '—' }}</span>
+          <span>· {{ panel.form.sido || '—' }}</span>
+          <span>· {{ panel.form.course }}</span>
+          <span>· {{ panel.form.isMasters ? '마스터즈' : '일반' }}</span>
+        </div>
+        <div class="at-body">
+          <div class="at-field">
+            <label>선수명 · name</label>
+            <input v-model="addTime.form.name" class="ep-inp" />
+          </div>
+          <div class="at-field">
+            <label>팀 · team</label>
+            <input v-model="addTime.form.team" class="ep-inp" />
+          </div>
+          <div class="at-field">
+            <label>연령대 · ageGroup</label>
+            <input v-model="addTime.form.ageGroup" class="ep-inp" placeholder="일반부 / 초등부 …" />
+          </div>
+          <div class="at-field">
+            <label>성별 · gender</label>
+            <select v-model="addTime.form.gender" class="ep-inp ep-sel">
+              <option value="men">men</option>
+              <option value="women">women</option>
+              <option value="mixed">mixed</option>
+            </select>
+          </div>
+          <div class="at-field">
+            <label>영법 · discipline</label>
+            <select v-model="addTime.form.discipline" class="ep-inp ep-sel">
+              <option v-for="d in ADD_DISCIPLINES" :key="d.code" :value="d.code">{{ d.code }} · {{ d.ko }}</option>
+            </select>
+          </div>
+          <div class="at-field">
+            <label>거리 · distance</label>
+            <select v-model="addTime.form.distance" class="ep-inp ep-sel">
+              <option v-for="d in ADD_DISTANCES" :key="d" :value="d">{{ d }}</option>
+            </select>
+          </div>
+          <div class="at-field">
+            <label>기록 · time (mm:ss.dd)</label>
+            <input v-model="addTime.form.time" class="ep-inp mono" placeholder="00:00.00" />
+          </div>
+          <div class="at-field">
+            <label>순위 · rank</label>
+            <input v-model="addTime.form.rank" class="ep-inp mono" placeholder="" />
+          </div>
+          <div class="at-field">
+            <label>상태 · status</label>
+            <select v-model="addTime.form.status" class="ep-inp ep-sel">
+              <option value="">기록</option>
+              <option value="DNS">DNS</option>
+              <option value="DQ">DQ</option>
+              <option value="번외">번외</option>
+            </select>
+          </div>
+          <div class="at-field">
+            <label>그룹 · group</label>
+            <select v-model="addTime.form.group" class="ep-inp ep-sel">
+              <option value="">자동(연령대)</option>
+              <option v-for="g in ADD_GROUPS" :key="g" :value="g">{{ g }}</option>
+            </select>
+          </div>
+          <div class="at-field">
+            <label>마스터즈 · isMasters</label>
+            <label class="ep-check">
+              <input type="checkbox" v-model="addTime.form.isMasters" />
+              <span>마스터즈</span>
+            </label>
+          </div>
+          <div class="at-field">
+            <label>성인 · isAdult</label>
+            <label class="ep-check">
+              <input type="checkbox" v-model="addTime.form.isAdult" />
+              <span>성인</span>
+            </label>
+          </div>
+        </div>
+        <div v-if="addTime.error" class="at-error">{{ addTime.error }}</div>
+        <div class="at-foot">
+          <button class="btn-cancel" @click="closeAddTime">취소</button>
+          <button class="tu-confirm" :disabled="addTime.saving" @click="submitAddTime">
+            {{ addTime.saving ? '저장 중…' : '추가' }}
+          </button>
         </div>
       </div>
     </div>
@@ -455,6 +553,73 @@ const times = reactive<{
 function resetTimes() {
   times.parsing = false; times.confirming = false; times.fileName = ''
   times.rows = []; times.summary = null; times.error = ''
+}
+
+// ── 기록 단건 추가 모달 ───────────────────────────────────────────
+const ADD_DISCIPLINES = [
+  { code: 'FR', ko: '자유형' }, { code: 'BA', ko: '배영' }, { code: 'BR', ko: '평영' },
+  { code: 'FL', ko: '접영' }, { code: 'IM', ko: '개인혼영' }, { code: 'FRR', ko: '계영' },
+  { code: 'MR', ko: '혼계영' },
+]
+const ADD_DISTANCES = ['25M', '50M', '100M', '200M', '400M', '800M', '1500M']
+const ADD_GROUPS = ['유년부', '초등부', '중등부', '고등부', '일반부', '성인부']
+type AddTimeForm = {
+  name: string; team: string; ageGroup: string; gender: string; discipline: string
+  distance: string; time: string; rank: string; status: string; group: string
+  isMasters: boolean; isAdult: boolean
+}
+const addTime = reactive<{ open: boolean; saving: boolean; error: string; form: AddTimeForm }>({
+  open: false, saving: false, error: '',
+  form: { name: '', team: '', ageGroup: '', gender: 'men', discipline: 'FR', distance: '50M', time: '', rank: '', status: '', group: '', isMasters: false, isAdult: true },
+})
+function openAddTime() {
+  if (!panel.id) return
+  addTime.error = ''
+  Object.assign(addTime.form, {
+    name: '', team: '', ageGroup: '', gender: 'men', discipline: 'FR', distance: '50M', time: '', rank: '', status: '', group: '',
+    isMasters: !!panel.form.isMasters, isAdult: true,
+  } as AddTimeForm)
+  addTime.open = true
+}
+function closeAddTime() { addTime.open = false }
+async function submitAddTime() {
+  if (addTime.saving || !panel.id) return
+  const fm = addTime.form
+  if (!fm.name.trim()) { addTime.error = '선수명을 입력하세요.'; return }
+  if (!fm.time.trim() && !fm.status) { addTime.error = '기록 또는 상태를 입력하세요.'; return }
+  addTime.saving = true; addTime.error = ''
+  // competitionName/ID/datetime/sido/course/isMasters are derived server-side from the competition.
+  const row = {
+    name:       fm.name.trim(),
+    team:       fm.team.trim(),
+    ageGroup:   fm.ageGroup.trim(),
+    gender:     fm.gender,
+    discipline: fm.discipline,
+    distance:   fm.distance,
+    time:       fm.time.trim(),
+    rank:       fm.rank.trim() !== '' && !isNaN(Number(fm.rank)) ? Number(fm.rank) : null,
+    status:     fm.status,
+    group:      fm.group,
+    isMasters:  fm.isMasters,
+    isAdult:    fm.isAdult,
+    rowKey:     'manual',
+  }
+  try {
+    const res = await $fetch<{ inserted: number; skippedDuplicate: number; skippedInvalid: number }>(
+      `/api/backend/competitions/${panel.id}/times-confirm`, { method: 'POST', body: { rows: [row] } })
+    if (res.inserted) {
+      showCompToast(true, ['✓ 기록 1건 추가'])
+      closeAddTime()
+    } else if (res.skippedDuplicate) {
+      addTime.error = '이미 등재된 중복 기록입니다.'
+    } else {
+      addTime.error = '유효하지 않은 기록입니다. 입력값을 확인하세요.'
+    }
+  } catch (e: any) {
+    addTime.error = e?.statusMessage || e?.data?.statusMessage || e?.message || '추가 실패'
+  } finally {
+    addTime.saving = false
+  }
 }
 
 // preview rows sort: isMasters → isAdult → gender → ageGroup → heat → round → discipline → distance → name
@@ -767,6 +932,54 @@ onMounted(() => refresh())
 }
 .tu-confirm:hover:not(:disabled) { background: #14532d; }
 .tu-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+.tu-add {
+  height: 30px; padding: 0 12px; font-size: 12px; cursor: pointer; border-radius: 3px;
+  border: 1px solid #0a1d3a; background: #fff; color: #0a1d3a; transition: background 0.15s;
+}
+.tu-add:hover { background: #eef2f8; }
+
+/* ── 기록 단건 추가 모달 ── */
+.at-backdrop {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4);
+  display: flex; align-items: center; justify-content: center; z-index: 300;
+}
+.at-modal {
+  width: 560px; max-width: calc(100vw - 32px); max-height: calc(100vh - 64px);
+  background: #fff; border-radius: 6px; display: flex; flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3); overflow: hidden;
+}
+.at-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; background: #0a1d3a;
+}
+.at-title { font-size: 14px; font-weight: 700; color: #fff; }
+.at-meta {
+  padding: 8px 18px; font-size: 11.5px; color: #555; background: #f8f8f6;
+  border-bottom: 1px solid #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.at-meta span { color: #888; }
+.at-body {
+  flex: 1; overflow-y: auto; padding: 16px 18px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.at-field { display: flex; flex-direction: column; }
+.at-field-wide { grid-column: 1 / -1; }
+.at-field label {
+  font-size: 10.5px; font-weight: 600; color: #888;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;
+}
+.at-field .mono { font-family: var(--mono); }
+.at-error { padding: 0 18px 8px; font-size: 12px; color: #b91c1c; }
+.at-foot {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 18px; border-top: 1px solid #eee; background: #fafafa;
+}
+.at-foot .tu-confirm { margin-top: 0; }
+.btn-cancel {
+  height: 34px; padding: 0 16px; font-size: 12.5px; cursor: pointer; border-radius: 3px;
+  border: 1px solid #ddd; background: #fff; color: #555; transition: background 0.15s;
+}
+.btn-cancel:hover { background: #f0f0f0; }
 
 /* ── toast ── */
 .ct-toast {

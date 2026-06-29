@@ -38,6 +38,7 @@
       <input v-model="f.q" placeholder="Search name / meet…" class="be-search" />
       <div class="be-filter-actions">
         <button class="be-reset" @click="resetFilters">Reset</button>
+        <button class="be-add" @click="openCreate">신규 추가</button>
         <button class="be-save" @click="saveCSV">Save CSV</button>
       </div>
     </div>
@@ -98,8 +99,8 @@
       <div class="ep-panel" @click.stop>
         <div class="ep-head">
           <div>
-            <div class="ep-title">Edit Time</div>
-            <div class="ep-sub">{{ panel.id }}</div>
+            <div class="ep-title">{{ panel.id ? 'Edit Time' : '신규 기록 추가' }}</div>
+            <div class="ep-sub">{{ panel.id || 'new' }}</div>
           </div>
           <button class="ep-close" @click="closePanel">✕</button>
         </div>
@@ -111,24 +112,16 @@
               <input v-model="panel.form.name" class="ep-inp" />
             </div>
             <div class="ep-field">
-              <label>기록 · time (mm:ss.dd)</label>
-              <input v-model="panel.form.time" class="ep-inp mono" placeholder="00:00.00" />
-            </div>
-            <div class="ep-field">
-              <label>시도 · sido</label>
-              <input v-model="panel.form.sido" class="ep-inp" />
-            </div>
-            <div class="ep-field">
               <label>소속 · team</label>
               <input v-model="panel.form.team" class="ep-inp" />
             </div>
+
             <div class="ep-field">
-              <label>일자 · datetime</label>
-              <input v-model="panel.form.datetime" class="ep-inp mono" placeholder="YYYY-MM-DD" />
-            </div>
-            <div class="ep-field ep-field-wide">
-              <label>대회명 · competitionName</label>
-              <input v-model="panel.form.competitionName" class="ep-inp" />
+              <label>성인 · isAdult</label>
+              <select v-model="panel.form.isAdult" class="ep-inp">
+                <option :value="false">false</option>
+                <option :value="true">true</option>
+              </select>
             </div>
             <div class="ep-field">
               <label>성별 · gender</label>
@@ -137,12 +130,26 @@
                 <option value="women">women</option>
               </select>
             </div>
+
             <div class="ep-field">
               <label>그룹 · group</label>
               <select v-model="panel.form.group" class="ep-inp">
                 <option value=""></option>
                 <option v-for="g in ALL_GROUPS" :key="g" :value="g">{{ g }}</option>
               </select>
+            </div>
+            <div class="ep-field">
+              <label>연령대 · ageGroup</label>
+              <input v-model="panel.form.ageGroup" class="ep-inp" />
+            </div>
+            
+            <div class="ep-field">
+              <label>기록 · time (mm:ss.dd)</label>
+              <input v-model="panel.form.time" class="ep-inp mono" placeholder="00:00.00" />
+            </div>
+            <div class="ep-field">
+              <label>순위 · rank</label>
+              <input v-model="panel.form.rank" class="ep-inp mono" placeholder="" />
             </div>
             <div class="ep-field">
               <label>종목 · discipline</label>
@@ -156,6 +163,7 @@
                 <option v-for="d in DISTANCE_ORDER" :key="d" :value="d">{{ d }}</option>
               </select>
             </div>
+            
             <div class="ep-field">
               <label>코스 · course</label>
               <select v-model="panel.form.course" class="ep-inp">
@@ -169,15 +177,39 @@
                 <option :value="true">true (masters)</option>
               </select>
             </div>
+            
             <div class="ep-field">
-              <label>라운드 · round</label>
-              <input v-model="panel.form.round" class="ep-inp" />
+              <label>상태 · status</label>
+              <select v-model="panel.form.status" class="ep-inp">
+                <option value="">기록</option>
+                <option value="DNS">DNS</option>
+                <option value="DQ">DQ</option>
+                <option value="번외">번외</option>
+              </select>
+            </div>
+            <div class="ep-field">
+              <label>일자 · datetime</label>
+              <input v-model="panel.form.datetime" class="ep-inp mono" placeholder="YYYY-MM-DD" />
+            </div>
+
+            <div class="ep-field">
+              <label>시도 · sido</label>
+              <input v-model="panel.form.sido" class="ep-inp" />
+            </div>
+            <div class="ep-field">
+              <label>수영장 · pool</label>
+              <input v-model="panel.form.pool" class="ep-inp" />
+            </div>
+            <div class="ep-field ep-field-wide">
+              <label>대회명 · competitionName</label>
+              <input v-model="panel.form.competitionName" class="ep-inp" />
             </div>
           </div>
         </div>
 
         <div class="ep-actions">
-          <button class="btn-delete" @click="deleteRow">삭제</button>
+          <button v-if="panel.id" class="btn-delete" @click="deleteRow">삭제</button>
+          <div v-else></div>
           <div class="ep-actions-right">
             <button class="btn-cancel" @click="closePanel">취소</button>
             <button class="btn-save" @click="saveRow">저장</button>
@@ -217,8 +249,9 @@ watch(() => f.tier, (newTier) => {
 
 interface TimeDoc {
   id: string; gender: string; discipline: string; distance: string; course: string
-  group: string; isMasters: boolean; round: string
-  name: string; sido: string; team: string; time: string; datetime: string; competitionName: string
+  group: string; isMasters: boolean; isAdult: boolean; round: string
+  name: string; sido: string; team: string; pool: string; time: string; datetime: string; competitionName: string
+  rank: number | null; ageGroup: string; status: string
 }
 
 // All structural filters go to the server (limit 2000 reflects current slice).
@@ -238,17 +271,17 @@ const rows = computed(() => data.value ?? [])
 
 // ── edit panel ──────────────────────────────────────────────────
 type EditForm = {
-  name: string; time: string; sido: string; team: string; datetime: string; competitionName: string;
-  gender: string; group: string; discipline: string; distance: string; course: string;
-  isMasters: boolean; round: string;
+  name: string; time: string; sido: string; team: string; pool: string; datetime: string; competitionName: string;
+  gender: string; group: string; ageGroup: string; discipline: string; distance: string; course: string;
+  isMasters: boolean; isAdult: boolean; rank: string; status: string;
 }
 const panel = reactive({
   open: false,
   id:   '',
   form: {
-    name: '', time: '', sido: '', team: '', datetime: '', competitionName: '',
-    gender: '', group: '', discipline: '', distance: '', course: '',
-    isMasters: false, round: '',
+    name: '', time: '', sido: '', team: '', pool: '', datetime: '', competitionName: '',
+    gender: '', group: '', ageGroup: '', discipline: '', distance: '', course: '',
+    isMasters: false, isAdult: true, rank: '', status: '',
   } as EditForm,
 })
 
@@ -267,16 +300,37 @@ function openPanel(r: TimeDoc) {
   panel.form.discipline      = r.discipline === '—' ? '' : r.discipline
   panel.form.distance        = r.distance === '—' ? '' : r.distance
   panel.form.course          = r.course === '—' ? '' : r.course
+  panel.form.pool            = r.pool === '—' ? '' : (r.pool ?? '')
+  panel.form.ageGroup        = r.ageGroup ?? ''
   panel.form.isMasters       = r.isMasters
-  panel.form.round           = r.round === '—' ? '' : r.round
+  panel.form.isAdult         = r.isAdult
+  panel.form.rank            = r.rank == null ? '' : String(r.rank)
+  panel.form.status          = r.status ?? ''
+}
+function openCreate() {
+  panel.open = true
+  panel.id   = ''
+  Object.assign(panel.form, {
+    name: '', time: '', sido: '', team: '', pool: '', datetime: '', competitionName: '',
+    gender: 'men', group: '', ageGroup: '', discipline: 'FR', distance: '50M', course: 'LCM',
+    isMasters: false, isAdult: true, rank: '', status: '',
+  } as EditForm)
 }
 function closePanel() {
   panel.open = false
   panel.id   = ''
 }
 async function saveRow() {
-  if (!panel.id) return
-  await $fetch(`/api/backend/times/${panel.id}`, { method: 'PUT', body: { ...panel.form } })
+  const rankStr = String(panel.form.rank).trim()
+  const body = {
+    ...panel.form,
+    rank: rankStr !== '' && !isNaN(Number(rankStr)) ? Number(rankStr) : null,
+  }
+  if (panel.id) {
+    await $fetch(`/api/backend/times/${panel.id}`, { method: 'PUT', body })
+  } else {
+    await $fetch('/api/backend/times', { method: 'POST', body })
+  }
   closePanel()
   await refresh()
 }
@@ -397,6 +451,12 @@ async function saveCSV() {
   transition: background 0.15s;
 }
 .be-save:hover { background: #1a3560; }
+.be-add {
+  height: 34px; padding: 0 14px; border: 1px solid #0a1d3a; background: #fff;
+  font-size: 12px; color: #0a1d3a; cursor: pointer; border-radius: 3px;
+  transition: background 0.15s;
+}
+.be-add:hover { background: #eef2f8; }
 
 .be-empty { padding: 60px; text-align: center; color: #aaa; font-size: 14px; }
 

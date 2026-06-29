@@ -11,6 +11,7 @@ interface InRow {
   name?: string; names?: string[]; gender?: string; discipline?: string
   distance?: string; time?: string; status?: string; rank?: number | null; ageGroup?: string
   isMasters?: boolean; isAdult?: boolean; team?: string; round?: string; heat?: string; rowKey?: string
+  group?: string
 }
 
 export default defineEventHandler(async (event) => {
@@ -101,7 +102,8 @@ export default defineEventHandler(async (event) => {
       waPoints:        der.waPoints,
       rank,
       ageGroup:        String(r.ageGroup ?? ''),
-      group:           ageGroupToGroup(String(r.ageGroup ?? ''), isMasters),
+      // explicit group wins; otherwise derive from ageGroup
+      group:           String(r.group ?? '').trim() || ageGroupToGroup(String(r.ageGroup ?? ''), isMasters),
       isMasters,
       isAdult:         typeof r.isAdult === 'boolean' ? r.isAdult : true,
       team:            String(r.team ?? ''),
