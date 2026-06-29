@@ -181,7 +181,7 @@
             <div class="ep-field">
               <label>상태 · status</label>
               <select v-model="panel.form.status" class="ep-inp">
-                <option value="">기록</option>
+                <option value=""></option>
                 <option value="DNS">DNS</option>
                 <option value="DQ">DQ</option>
                 <option value="번외">번외</option>
