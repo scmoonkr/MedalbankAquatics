@@ -13,6 +13,15 @@ export default defineEventHandler(async (event) => {
   if (q.course)     match.course     = String(q.course)
   if (q.distance)   match.distance   = String(q.distance)
 
+  // free-text search on name / competitionName so matches outside the latest-2000
+  // window are still found (client list filter only sees the returned slice).
+  const term = String(q.q ?? '').trim()
+  if (term) {
+    const safe = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const rx = new RegExp(safe, 'i')
+    match.$or = [{ name: rx }, { competitionName: rx }]
+  }
+
   const db = await getDb()
   const docs = await db
     .collection('mergedTimes')

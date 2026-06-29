@@ -254,6 +254,15 @@ interface TimeDoc {
   rank: number | null; ageGroup: string; status: string
 }
 
+// The search term is sent to the server too (debounced) so matches outside the
+// latest-2000 window are still found; the client filter below just refines the slice.
+const qDebounced = ref('')
+let qTimer: ReturnType<typeof setTimeout> | null = null
+watch(() => f.q, (val: string) => {
+  if (qTimer) clearTimeout(qTimer)
+  qTimer = setTimeout(() => { qDebounced.value = val.trim() }, 300)
+})
+
 // All structural filters go to the server (limit 2000 reflects current slice).
 const serverQuery = computed(() => ({
   tier:       f.tier,
@@ -262,6 +271,7 @@ const serverQuery = computed(() => ({
   discipline: f.discipline,
   course:     f.course,
   distance:   f.distance,
+  q:          qDebounced.value,
 }))
 const { data, pending, refresh } = useFetch<TimeDoc[]>('/api/backend/times', {
   query: serverQuery,
