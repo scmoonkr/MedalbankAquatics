@@ -51,16 +51,14 @@
           <thead>
             <tr>
               <th>#</th>
-              <th>Gender</th>
-              <th>Discipline</th>
-              <th>Dist</th>
-              <th>Course</th>
-              <th>Round</th>
+              <th>Heat</th>
+              <th>Event</th>
+              <th>연령대</th>
               <th>Group</th>
               <th>Name</th>
-              <th>Sido</th>
               <th>Team</th>
               <th>Time</th>
+              <th>Rank</th>
               <th>Date</th>
               <th>Competition</th>
             </tr>
@@ -71,16 +69,14 @@
               :class="{ active: panel.open && panel.id === r.id }"
               @click="openPanel(r)">
               <td class="num">{{ (page - 1) * PER + i + 1 }}</td>
-              <td class="dim">{{ r.gender }}</td>
-              <td class="disc">{{ r.discipline }}</td>
-              <td class="mono dim">{{ r.distance }}</td>
-              <td class="mono dim">{{ r.course }}</td>
-              <td class="dim small">{{ r.round }}</td>
+              <td class="mono dim small">{{ r.heat || '—' }}</td>
+              <td class="ev">{{ eventLabel(r) }}</td>
+              <td class="dim small">{{ r.ageGroup || '—' }}</td>
               <td class="dim small">{{ r.group }}<span v-if="r.isMasters" class="masters-tag">M</span></td>
               <td class="bold">{{ r.name }}</td>
-              <td class="dim small">{{ r.sido }}</td>
               <td class="dim small">{{ r.team }}</td>
               <td class="mono bold">{{ normTime(r.time) }}</td>
+              <td class="mono dim">{{ r.rank ?? '—' }}</td>
               <td class="dim mono small">{{ r.datetime }}</td>
               <td class="meet">{{ r.competitionName }}</td>
             </tr>
@@ -249,7 +245,7 @@ watch(() => f.tier, (newTier) => {
 
 interface TimeDoc {
   id: string; gender: string; discipline: string; distance: string; course: string
-  group: string; isMasters: boolean; isAdult: boolean; round: string
+  group: string; isMasters: boolean; isAdult: boolean; round: string; heat: string
   name: string; sido: string; team: string; pool: string; time: string; datetime: string; competitionName: string
   rank: number | null; ageGroup: string; status: string
 }
@@ -362,8 +358,42 @@ const filtered = computed(() => {
   )
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / PER)))
-const paged = computed(() => filtered.value.slice((page.value - 1) * PER, page.value * PER))
+// gender/discipline/distance/course/round를 한 필드로: "men / FR / 50M / LCM / 결승".
+// 빈 값이나 '—' 플레이스홀더는 빼고 이어붙인다.
+function eventLabel(r: TimeDoc): string {
+  return [r.gender, r.discipline, r.distance, r.course, r.round]
+    .filter(v => v && v !== '—')
+    .join(' / ')
+}
+
+// 표시 정렬: heat → gender → ageGroup → discipline → distance → time.
+// discipline/distance는 사전순이 아니라 도메인 순서(FR..IM, 50M before 100M)를 따른다.
+const cmpStr = (a: string, b: string) =>
+  String(a ?? '').localeCompare(String(b ?? ''), undefined, { numeric: true })
+const orderIdx = (arr: readonly string[], v: string) => {
+  const i = arr.indexOf(v)
+  return i === -1 ? arr.length : i   // 미지의 값은 뒤로
+}
+// "00:23.55" / "23.55" → 초. 파싱 불가('—', 빈값)는 뒤로.
+function timeSec(t: string): number {
+  const m = String(t ?? '').match(/^(?:(\d+):)?(\d{1,2})\.(\d{1,2})$/)
+  if (!m) return Infinity
+  return parseInt(m[1] || '0', 10) * 60 + parseInt(m[2], 10) + parseInt((m[3] + '0').slice(0, 2), 10) / 100
+}
+
+const sorted = computed(() =>
+  [...filtered.value].sort((a, b) =>
+    cmpStr(a.heat, b.heat) ||
+    cmpStr(a.gender, b.gender) ||
+    cmpStr(a.ageGroup, b.ageGroup) ||
+    (orderIdx(DISCIPLINE_ORDER, a.discipline) - orderIdx(DISCIPLINE_ORDER, b.discipline)) ||
+    (orderIdx(DISTANCE_ORDER, a.distance) - orderIdx(DISTANCE_ORDER, b.distance)) ||
+    (timeSec(a.time) - timeSec(b.time)),
+  ),
+)
+
+const totalPages = computed(() => Math.max(1, Math.ceil(sorted.value.length / PER)))
+const paged = computed(() => sorted.value.slice((page.value - 1) * PER, page.value * PER))
 watch(filtered, () => { page.value = 1 })
 
 function resetFilters() {
@@ -488,6 +518,7 @@ td.bold  { font-weight: 600; }
 td.mono  { font-family: var(--mono); font-size: 12.5px; }
 td.small { font-size: 12px; }
 td.disc  { font-family: var(--mono); font-size: 12.5px; color: #555; white-space: nowrap; }
+td.ev    { font-family: var(--mono); font-size: 12px; color: #555; white-space: nowrap; }
 td.meet  { font-size: 12px; color: #555; max-width: 200px; }
 
 .masters-tag {

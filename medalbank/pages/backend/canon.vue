@@ -3,15 +3,25 @@
 
     <!-- Toolbar -->
     <div class="cn-bar">
-      <nav class="cn-tabs">
-        <button
-          v-for="tab in TABS"
-          :key="tab.disc"
-          class="cn-tab"
-          :class="{ active: activeDisc === tab.disc }"
-          @click="activeDisc = tab.disc"
-        >{{ tab.ko }}</button>
-      </nav>
+      <div class="cn-bar-left">
+        <nav class="cn-tabs">
+          <button
+            v-for="tab in TABS"
+            :key="tab.disc"
+            class="cn-tab"
+            :class="{ active: activeDisc === tab.disc }"
+            @click="activeDisc = tab.disc"
+          >{{ tab.ko }}</button>
+        </nav>
+        <select v-model="activeType" class="cn-sel">
+          <option value="">All Types</option>
+          <option v-for="t in typeOptions" :key="t" :value="t">{{ t }}</option>
+        </select>
+        <select v-model="activeCourse" class="cn-sel">
+          <option value="">All Courses</option>
+          <option v-for="c in courseOptions" :key="c" :value="c">{{ c }}</option>
+        </select>
+      </div>
       <div class="cn-bar-right">
         <span v-if="result" class="cn-result" :class="result.error ? 'cn-result-err' : 'cn-result-ok'">
           {{ result.msg }}
@@ -38,6 +48,7 @@
             <th>Type</th>
             <th>성별</th>
             <th>거리</th>
+            <th>코스</th>
             <th>기록</th>
             <th>이름</th>
             <th>팀</th>
@@ -48,10 +59,13 @@
         </thead>
         <tbody>
           <template v-if="filteredRecs.length">
-            <tr v-for="r in filteredRecs" :key="r.id">
+            <tr v-for="r in filteredRecs" :key="r.id"
+                class="cn-row" :class="{ active: panel.open && panel.id === r.id }"
+                @click="openPanel(r)">
               <td><span class="rt-badge">{{ r.type }}</span></td>
               <td class="td-gen">{{ r.gender === 'men' ? '남자' : '여자' }}</td>
               <td class="td-mono">{{ r.distance }}</td>
+              <td class="td-mono td-course">{{ r.course }}</td>
               <td class="td-mono td-time">{{ r.time }}</td>
               <td>{{ r.name }}</td>
               <td class="td-team">{{ r.team }}</td>
@@ -63,12 +77,97 @@
             </tr>
           </template>
           <tr v-else>
-            <td colspan="9" class="cn-empty">해당 영법 기록 없음</td>
+            <td colspan="10" class="cn-empty">해당 조건 기록 없음</td>
           </tr>
         </tbody>
       </table>
     </div>
     <div v-else class="cn-loading">불러오는 중…</div>
+
+    <!-- Edit drawer -->
+    <div v-if="panel.open" class="ep-backdrop" @click="closePanel">
+      <div class="ep-panel" @click.stop>
+        <div class="ep-head">
+          <div>
+            <div class="ep-title">기록 수정</div>
+            <div class="ep-sub">{{ panel.id }}</div>
+          </div>
+          <button class="ep-close" @click="closePanel">✕</button>
+        </div>
+
+        <div class="ep-body">
+          <div class="ep-grid">
+            <div class="ep-field">
+              <label>종류 · type</label>
+              <input v-model="panel.form.type" class="ep-inp ep-mono" placeholder="WR / KR …" />
+            </div>
+            <div class="ep-field">
+              <label>성별 · gender</label>
+              <select v-model="panel.form.gender" class="ep-inp">
+                <option value="men">men</option>
+                <option value="women">women</option>
+              </select>
+            </div>
+            <div class="ep-field">
+              <label>종목 · discipline</label>
+              <select v-model="panel.form.discipline" class="ep-inp">
+                <option v-for="t in TABS" :key="t.disc" :value="t.disc">{{ t.disc }} · {{ t.ko }}</option>
+              </select>
+            </div>
+            <div class="ep-field">
+              <label>거리 · distance</label>
+              <select v-model="panel.form.distance" class="ep-inp">
+                <option v-for="d in DISTANCES" :key="d" :value="d">{{ d }}</option>
+              </select>
+            </div>
+            <div class="ep-field">
+              <label>코스 · course</label>
+              <select v-model="panel.form.course" class="ep-inp">
+                <option value="LCM">LCM</option>
+                <option value="SCM">SCM</option>
+              </select>
+            </div>
+            <div class="ep-field">
+              <label>마스터즈 · isMasters</label>
+              <select v-model="panel.form.isMasters" class="ep-inp">
+                <option :value="false">false</option>
+                <option :value="true">true</option>
+              </select>
+            </div>
+            <div class="ep-field">
+              <label>기록 · time (mm:ss.dd)</label>
+              <input v-model="panel.form.time" class="ep-inp ep-mono" placeholder="00:00.00"
+                @blur="panel.form.time = fmtTime(panel.form.time)" />
+            </div>
+            <div class="ep-field">
+              <label>날짜 · datetime</label>
+              <input v-model="panel.form.datetime" class="ep-inp ep-mono" placeholder="YYYY-MM-DD"
+                @blur="panel.form.datetime = fmtDate(panel.form.datetime)" />
+            </div>
+            <div class="ep-field">
+              <label>이름 · name</label>
+              <input v-model="panel.form.name" class="ep-inp" />
+            </div>
+            <div class="ep-field">
+              <label>팀 · team</label>
+              <input v-model="panel.form.team" class="ep-inp" />
+            </div>
+            <div class="ep-field ep-field-wide">
+              <label>장소 · location</label>
+              <input v-model="panel.form.location" class="ep-inp" placeholder="Gwangju, KOR" />
+            </div>
+          </div>
+          <p v-if="panel.error" class="ep-error">{{ panel.error }}</p>
+        </div>
+
+        <div class="ep-actions">
+          <button class="ep-btn-cancel" :disabled="panel.saving" @click="closePanel">취소</button>
+          <button class="ep-btn-save" :disabled="panel.saving" @click="panelSave">
+            {{ panel.saving ? '저장 중…' : '저장' }}
+          </button>
+        </div>
+      </div>
+    </div>
 
   </div>
 </template>
@@ -100,17 +199,21 @@ const STYLE_TO_DISC: Record<string, string> = {
 }
 
 // ── 데이터 ───────────────────────────────────────────────────────────
+const DISTANCES = ['25M', '50M', '100M', '200M', '400M', '800M', '1500M']
+
 interface RecRow {
   id:          string
   type:        string
   gender:      string
   distance:    string
+  course:      string
   time:        string
   name:        string
   team:        string
   datetime:    string
   location:    string
   discipline:  string
+  isMasters:   boolean
   updateTimes: string | null
 }
 
@@ -125,23 +228,113 @@ async function loadRecs() {
     type:        d.type        || '—',
     gender:      d.gender      || '—',
     distance:    d.distance    || '—',
+    course:      d.course && d.course !== '—' ? d.course : 'LCM',
     time:        d.time        || '—',
     name:        d.name        || '—',
     team:        d.team        || d.nationality || '—',
     datetime:    d.datetime    || '—',
     location:    d.location    || d.pool        || '—',
     discipline:  d.discipline  || d.style       || '',
+    isMasters:   !!d.isMasters,
     updateTimes: d.updateTimes || null,
   }))
   loaded.value = true
 }
 
+const normDisc = (r: RecRow) => (r.discipline ? (STYLE_TO_DISC[r.discipline] || r.discipline) : '')
+
+// Type / Course 필터 — 옵션은 실제 데이터에서 뽑되 표준 순서를 먼저, 그 외는 뒤에 알파벳순.
+const CANON_TYPE_ORDER   = ['WR', 'OR', 'AR', 'KR', 'KMR']
+const CANON_COURSE_ORDER = ['LCM', 'SCM']
+
+function pickOptions(values: string[], order: string[]): string[] {
+  const seen = new Set(values.filter(v => v && v !== '—'))
+  const known = order.filter(v => seen.has(v))
+  const extra = [...seen].filter(v => !order.includes(v)).sort()
+  return [...known, ...extra]
+}
+
+const activeType   = ref('')
+const activeCourse = ref('')
+const typeOptions   = computed(() => pickOptions(recs.value.map(r => r.type),   CANON_TYPE_ORDER))
+const courseOptions = computed(() => pickOptions(recs.value.map(r => r.course), CANON_COURSE_ORDER))
+
+// records는 (gender · discipline · distance · course · type)당 최종 기록 1건만 유지한다.
+// 기록 경신은 drawer에서 해당 문서를 수정하는 방식이므로 time/datetime 비교는 불필요.
 const filteredRecs = computed(() =>
-  recs.value.filter(r => {
-    const disc = r.discipline ? (STYLE_TO_DISC[r.discipline] || r.discipline) : ''
-    return disc === activeDisc.value
-  })
+  recs.value.filter((r) => {
+    if (normDisc(r) !== activeDisc.value) return false
+    if (activeType.value && r.type !== activeType.value) return false
+    if (activeCourse.value && r.course !== activeCourse.value) return false
+    return true
+  }),
 )
+
+// ── Edit drawer ───────────────────────────────────────────────────────
+// '—' is the list's placeholder for an empty value — strip it so it never gets saved.
+const unDash = (v: string) => (v === '—' ? '' : v)
+
+function fmtTime(raw: string): string {
+  const d = String(raw ?? '').replace(/\D/g, '')
+  if (!d || d === '000000') return raw
+  const p = d.padStart(6, '0').slice(-6)
+  return `${p.slice(0, 2)}:${p.slice(2, 4)}.${p.slice(4, 6)}`
+}
+function fmtDate(raw: string): string {
+  const d = String(raw ?? '').replace(/\D/g, '')
+  if (d.length === 8) return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`
+  return raw
+}
+
+type CanonForm = {
+  type: string; gender: string; discipline: string; distance: string; course: string
+  time: string; name: string; team: string; datetime: string; location: string; isMasters: boolean
+}
+const panel = reactive({
+  open: false, id: '', saving: false, error: '',
+  form: {
+    type: '', gender: 'men', discipline: 'FR', distance: '50M', course: 'LCM',
+    time: '', name: '', team: '', datetime: '', location: '', isMasters: false,
+  } as CanonForm,
+})
+
+function openPanel(r: RecRow) {
+  if (!r.id) return
+  panel.open = true
+  panel.id = r.id
+  panel.error = ''
+  Object.assign(panel.form, {
+    type:       unDash(r.type),
+    gender:     unDash(r.gender) || 'men',
+    discipline: STYLE_TO_DISC[r.discipline] || r.discipline || activeDisc.value,
+    distance:   unDash(r.distance),
+    course:     r.course || 'LCM',
+    time:       unDash(r.time),
+    name:       unDash(r.name),
+    team:       unDash(r.team),
+    datetime:   unDash(r.datetime),
+    location:   unDash(r.location),
+    isMasters:  r.isMasters,
+  } as CanonForm)
+}
+function closePanel() { panel.open = false; panel.id = '' }
+
+// 기록 경신 = 해당 문서를 그대로 갱신(선수명/기록/일자/장소 등). 이력은 남기지 않는다.
+async function panelSave() {
+  if (panel.saving || !panel.id) return
+  panel.saving = true
+  panel.error = ''
+  try {
+    // timeStamp is derived from time server-side (canon sync reads records.timeStamp).
+    await $fetch(`/api/backend/records/${panel.id}`, { method: 'PUT', body: { ...panel.form } })
+    closePanel()
+    await loadRecs()
+  } catch (e: any) {
+    panel.error = e?.statusMessage || e?.data?.statusMessage || e?.message || '저장 실패'
+  } finally {
+    panel.saving = false
+  }
+}
 
 // ── Update ────────────────────────────────────────────────────────────
 const updating = ref(false)
@@ -187,7 +380,14 @@ onUnmounted(() => { if (resultTimer) clearTimeout(resultTimer) })
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 0; gap: 12px; flex-wrap: wrap;
 }
+.cn-bar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .cn-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.cn-sel {
+  height: 32px; padding: 0 10px; border: 1px solid #ddd; background: #fff;
+  font-family: var(--sans); font-size: 13px; color: #555;
+  border-radius: 3px; outline: none; cursor: pointer;
+}
+.cn-sel:focus { border-color: #0a1d3a; }
 .cn-tab {
   height: 32px; padding: 0 14px; border: 1px solid #ddd; background: #fff;
   font-size: 13px; color: #555; cursor: pointer; border-radius: 3px;
@@ -257,6 +457,7 @@ onUnmounted(() => { if (resultTimer) clearTimeout(resultTimer) })
 }
 .td-gen  { font-size: 12px; color: #666; }
 .td-mono { font-family: var(--mono); }
+.td-course { font-size: 12px; color: #666; }
 .td-time { font-weight: 600; color: #0a0a0a; }
 .td-team { font-family: var(--mono); font-size: 12px; color: #555; }
 .td-date { font-size: 12px; color: #888; }
@@ -264,4 +465,59 @@ onUnmounted(() => { if (resultTimer) clearTimeout(resultTimer) })
 .td-upd  { font-size: 12px; }
 .upd-done { color: #16a34a; }
 .upd-none { color: #bbb; }
+
+/* ── Edit drawer ── */
+.cn-row { cursor: pointer; }
+.cn-row.active { background: #eef2f8; }
+
+.ep-backdrop {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.32);
+  display: flex; justify-content: flex-end; z-index: 200;
+}
+.ep-panel {
+  width: 520px; max-width: 100%; background: #fff;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.ep-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 14px 20px; background: #0a1d3a;
+}
+.ep-title { font-size: 14px; font-weight: 700; color: #fff; }
+.ep-sub { font-size: 10.5px; color: #94a3b8; font-family: var(--mono); margin-top: 3px; word-break: break-all; }
+.ep-close {
+  border: 0; background: transparent; color: #94a3b8; font-size: 18px;
+  cursor: pointer; padding: 0; line-height: 1; flex-shrink: 0;
+}
+.ep-close:hover { color: #fff; }
+
+.ep-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.ep-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
+.ep-field { display: flex; flex-direction: column; gap: 4px; }
+.ep-field-wide { grid-column: 1 / -1; }
+.ep-field label {
+  font-size: 10.5px; font-weight: 600; color: #888;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.ep-inp {
+  height: 34px; padding: 0 10px; border: 1px solid #e0e0e0; border-radius: 3px;
+  font-family: var(--sans); font-size: 13px; color: #0a0a0a;
+  background: #fff; outline: none; box-sizing: border-box; transition: border-color 0.15s;
+}
+.ep-inp:focus { border-color: #3b82f6; }
+.ep-mono { font-family: var(--mono); }
+.ep-error { margin-top: 12px; font-size: 12px; color: #b91c1c; }
+
+.ep-actions {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 20px; border-top: 1px solid #eee; background: #fafafa;
+}
+.ep-btn-cancel, .ep-btn-save {
+  height: 34px; padding: 0 16px; font-size: 12.5px; cursor: pointer;
+  border-radius: 3px; transition: background 0.15s;
+}
+.ep-btn-cancel { border: 1px solid #ddd; background: #fff; color: #555; }
+.ep-btn-cancel:hover:not(:disabled) { background: #f0f0f0; }
+.ep-btn-save { border: 1px solid #0a1d3a; background: #0a1d3a; color: #fff; }
+.ep-btn-save:hover:not(:disabled) { background: #1e3a5f; }
+.ep-btn-cancel:disabled, .ep-btn-save:disabled { opacity: 0.55; cursor: not-allowed; }
 </style>

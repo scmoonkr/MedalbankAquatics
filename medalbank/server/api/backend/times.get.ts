@@ -41,6 +41,7 @@ export default defineEventHandler(async (event) => {
     isMasters:       !!d.isMasters,
     isAdult:         !!d.isAdult,
     round:           d.round           || '—',
+    heat:            d.heat            || '',
     name:            d.name            || '—',
     sido:            d.sido            || '—',
     team:            d.team            || '—',
