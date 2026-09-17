@@ -33,6 +33,35 @@
           <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           Errata
         </NuxtLink>
+        <div class="be-nav-sep">Breaststroke</div>
+        <NuxtLink to="/backend/athletes"     :class="{ active: route.path === '/backend/athletes'     }">
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Athletes
+        </NuxtLink>
+        <NuxtLink to="/backend/pools"        :class="{ active: route.path === '/backend/pools'        }">
+          <svg viewBox="0 0 24 24"><path d="M2 12h20"/><path d="M2 17h20"/><path d="M6 12V4l4 2"/><path d="M14 12V4l4 2"/></svg>
+          Pools
+        </NuxtLink>
+        <NuxtLink to="/backend/teams"        :class="{ active: route.path === '/backend/teams'        }">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Teams
+        </NuxtLink>
+        <NuxtLink to="/backend/stems"        :class="{ active: route.path === '/backend/stems'        }">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h10"/><path d="M4 17h7"/></svg>
+          Stems
+        </NuxtLink>
+        <NuxtLink to="/backend/timesImport"  :class="{ active: route.path === '/backend/timesImport'  }">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Import Times
+        </NuxtLink>
+        <NuxtLink to="/backend/capture"      :class="{ active: route.path === '/backend/capture'      }">
+          <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Capture
+        </NuxtLink>
+        <NuxtLink to="/backend/imagesBB"     :class="{ active: route.path === '/backend/imagesBB'     }">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Images BB
+        </NuxtLink>
         <NuxtLink to="/backend/users"        :class="{ active: route.path === '/backend/users'        }">
           <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Users
@@ -118,6 +147,10 @@ async function logout() {
   width: 14px; height: 14px; flex-shrink: 0;
   stroke: currentColor; fill: none;
   stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.be-nav-sep {
+  padding: 14px 20px 6px; font-size: 9px; font-weight: 700;
+  letter-spacing: 0.16em; color: #3a3a3a; text-transform: uppercase;
 }
 .be-nav a:hover  { background: #1a1a1a; color: #ccc; }
 .be-nav a.active {

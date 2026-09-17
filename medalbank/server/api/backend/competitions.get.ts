@@ -1,5 +1,5 @@
 // GET /api/backend/competitions
-// filter: name (regex), course, isMasters
+// filter: name (regex), competitionID, course, isMasters
 export default defineEventHandler(async (event) => {
   const q = getQuery(event)
   const db = await getDb()
@@ -8,6 +8,10 @@ export default defineEventHandler(async (event) => {
   if (q.name) {
     const safe = String(q.name).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     match.competitionName = { $regex: safe, $options: 'i' }
+  }
+  if (q.competitionID !== undefined && q.competitionID !== '') {
+    const cid = Number(q.competitionID)
+    if (Number.isFinite(cid)) match.competitionID = cid
   }
   if (q.course)     match.course     = String(q.course)
   if (q.isMasters !== undefined && q.isMasters !== '')

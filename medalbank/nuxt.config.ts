@@ -21,6 +21,8 @@ export default defineNuxtConfig({
     allowedNaverIds:   process.env.ALLOWED_NAVER_IDS   || '',
     uploadDir:         process.env.UPLOAD_DIR          || '',
     downloadDir:       process.env.DOWNLOAD_DIR        || '',
+    // 기록지 엑셀이 저장된 미디어 서버 경로 (mediaServer.path 의 기준 디렉토리)
+    timesDir:          process.env.TIMES_DIR           || '/backup/ImageMedalBank',
     nvidiaApiKey:      process.env.NVIDIA_API_KEY       || '',
     nvidiaModelName:   process.env.NVIDIA_MODEL_NAME    || 'meta/llama-3.1-8b-instruct',
     // nuxt-auth-utils: NUXT_SESSION_PASSWORD는 런타임에서만 읽히므로 빌드 시 bake
@@ -33,6 +35,8 @@ export default defineNuxtConfig({
     },
     public: {
       naverFormInsert: process.env.NAVER_FORM_INSERT || '',
+      // backend/imagesBB 의 ImgBB 업로드 키 (브라우저에 노출되는 공개 키)
+      imgbbKey:        process.env.IMGBB_KEY || '',
     },
   },
 
