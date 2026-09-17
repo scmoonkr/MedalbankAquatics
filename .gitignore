@@ -1,6 +1,7 @@
 .env
 **/node_modules
 **/.nuxt
+**/.output
 **/dist
 .claude/worktrees
 .claude/settings.local.json

@@ -29,31 +29,32 @@ npm run build
 echo "=== [5/6] PM2 재시작 ==="
 cd "$PROJECT_DIR"
 
-if pm2 list | grep -q "medalbank-aquatics-api"; then
-  pm2 restart medalbank-aquatics-api
+if pm2 list | grep -q "medalbank-node"; then
+  pm2 restart medalbank-node
 else
-  pm2 start "$PROJECT_DIR/server/index.js" --name medalbank-aquatics-api --cwd "$PROJECT_DIR/server"
+  pm2 start "$PROJECT_DIR/server/index.js" --name medalbank-node --cwd "$PROJECT_DIR/server"
 fi
 
-if pm2 list | grep -q "medalbank-aquatics-nuxt"; then
-  pm2 restart medalbank-aquatics-nuxt
+if pm2 list | grep -q "medalbank-aquatics"; then
+  pm2 restart medalbank-aquatics
 else
   PORT=6631 pm2 start "$PROJECT_DIR/aquatics/.output/server/index.mjs" \
-    --name medalbank-aquatics-nuxt --cwd "$PROJECT_DIR/aquatics" --env production
+    --name medalbank-aquatics --cwd "$PROJECT_DIR/aquatics" --env production
 fi
 
-if pm2 list | grep -q "medalbank-aquatics-registry"; then
-  pm2 restart medalbank-aquatics-registry
+if pm2 list | grep -q "medalbank-medalbank"; then
+  pm2 restart medalbank-medalbank
 else
   PORT=6632 pm2 start "$PROJECT_DIR/medalbank/.output/server/index.mjs" \
-    --name medalbank-aquatics-registry --cwd "$PROJECT_DIR/medalbank" --env production
+    --name medalbank-medalbank --cwd "$PROJECT_DIR/medalbank" --env production
 fi
 
-if pm2 list | grep -q "medalbank-aquatics-sse"; then
-  pm2 restart medalbank-aquatics-sse
+# swimming stock exchange
+if pm2 list | grep -q "medalbank-sse"; then
+  pm2 restart medalbank-sse
 else
-  PORT=6632 pm2 start "$PROJECT_DIR/sse/.output/server/index.mjs" \
-    --name medalbank-aquatics-sse --env production
+  PORT=6634 pm2 start "$PROJECT_DIR/sse/.output/server/index.mjs" \
+    --name medalbank-sse --env production
 fi
 
 echo "=== [6/6] PM2 저장 ==="
