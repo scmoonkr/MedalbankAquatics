@@ -1,0 +1,329 @@
+/* assets/css/default.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/****************************************************
+ * 0. 스페이서
+ ****************************************************/
+
+.spacer {
+    height: 2rem;
+}
+
+.spacer-xs {
+    height: 0.5rem;
+}
+
+.spacer-sm {
+    height: 1rem;
+}
+
+.spacer-lg {
+    height: 4rem;
+}
+
+.spacer-xl {
+    height: 8rem;
+}
+.spacer-huge {
+    height: 100vh;
+}
+
+
+/****************************************************
+ * 0. 패딩
+ ****************************************************/
+
+.padding-unified {
+    padding: 1rem 1.4rem!important;
+    font-size: 16px!important;
+    line-height: 1.5!important;
+    font-weight: 500!important;
+}
+
+
+/****************************************************
+ * 0. 텍스트
+ ****************************************************/
+
+.text-title {
+    @apply text-2xl text-gray-800;
+}
+
+.text-subtitle {
+    @apply text-gray-600 mt-2;
+}
+
+@media (max-width: 992px) {
+    .text-title {
+        font-size: 24px;
+    }
+    .text-subtitle {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .text-title {
+        font-size: 20px;
+    }
+    .text-subtitle {
+        font-size: 14px;
+    }
+}
+
+.color-unregistered {
+    @apply text-gray-200;
+}
+
+
+/****************************************************
+ * 0. 버튼(필터)
+ ****************************************************/
+
+.button-group-filters {
+    @apply flex flex-wrap gap-2 items-center !important;
+}
+
+.button-group-filters button,
+.button-group-filters a {
+    @apply text-sm border rounded-full transition-all px-4 py-2 !important;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.button-group-filters button[style] {
+    animation: fadeInScale 0.15s ease-out;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.button-group-filters button.button-group-filters-selected,
+.button-group-filters a.button-group-filters-selected {
+    @apply bg-black text-white border-black !important;
+}
+
+.button-group-filters button.button-group-filters-unselected {
+    @apply bg-white text-black border-gray-300 hover:bg-gray-100 !important;
+}
+
+
+/****************************************************
+ * 0. 버튼(메인페이지)
+ ****************************************************/
+.button-main-page {
+        @apply w-[200px] h-[200px] flex justify-center items-center cursor-pointer transition-colors duration-200 text-[18px];
+        background-color: rgba(0, 0, 0, 0.03);
+        color: rgba(0, 0, 0, 0.3);
+}
+
+.button-main-page:hover {
+    background-color: rgba(0, 0, 0, 0.045);
+    color: rgba(0, 0, 0, 0.45);
+}
+
+.button-main-page-text {
+    @apply text-center leading-[1.4] text-[16px] font-medium;
+}
+
+/****************************************************
+ * 0. 섹션
+ ****************************************************/
+
+.section {
+    width: 100%;
+    margin: auto;
+    /* background-image: linear-gradient(180deg, #fbfbfb, #ffffff); */
+    background: #ffffff;
+}
+
+
+/* .section:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+.section:nth-child(even) {
+    background-image: linear-gradient(45deg, #ffffff, #f8f8f8);
+} */
+
+.section .section-child {
+    @apply container max-w-screen-xl mx-auto px-4;
+}
+
+
+
+
+/* 1. 데스크탑 이상 (1280px~) */
+
+@media (min-width: 1280px) {
+    .section .section-child {
+        @apply pt-24;
+    }
+    .section-spacer {
+        @apply pt-24;
+    }
+}
+
+
+/* 2. 태블릿 (768px ~ 1279px) */
+
+@media (min-width: 768px) and (max-width: 1279px) {
+    .section .section-child {
+        @apply pt-16;
+    }
+    .section-spacer {
+        @apply pt-16;
+    }
+}
+
+
+/* 3. 모바일 (최대 767px) */
+
+@media (max-width: 767px) {
+    .section .section-child {
+        @apply pt-8;
+    }
+    .section-spacer {
+        @apply pt-8;
+    }
+}
+
+.section-narrow {
+    @apply py-0 !important; /* ✅ 좁은 패딩 */
+}
+
+
+/****************************************************
+ * 0.애슬릿츠뷰
+ ****************************************************/
+
+.athlete-view div{
+    width: 200px!important;
+    height: 250px!important;
+    background: none;
+    
+}
+.athlete-view div img {
+    width: 200px!important;
+    height: 250px!important;
+    object-fit: cover;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    border: 0;
+}
+
+/****************************************************
+ * 0. 테이블
+ ****************************************************/
+
+/* 1) 긴 테이블은 가로 스크롤 */
+.markdown-content {
+  overflow-x: auto!important;
+}
+
+/* 2) prose 기본값(테이블 100%) 무력화 */
+.markdown-content :deep(table) {
+  width: max-content !important;   /* ⭐ 핵심 */
+  max-width: none !important;
+  table-layout: auto!important;
+  display: table!important;
+}
+
+/* (선택) 셀 줄바꿈 정책 */
+.markdown-content :deep(th),
+.markdown-content :deep(td) {
+  white-space: nowrap!important;             /* 한 줄 유지(원하면) */
+}
+
+.markdown-content,
+.markdown-content table,
+.markdown-content table thead,
+.markdown-content table thead tr,
+.markdown-content table thead tr th,
+.markdown-content table tbody,
+.markdown-content table tbody tr,
+.markdown-content table tbody tr td {
+    @apply text-xs sm:text-sm;
+}
+
+.markdown-content table thead tr th,
+.markdown-content table tbody tr td {
+    @apply p-0;
+}
+.markdown-content img,
+table img {
+    @apply w-[40px] sm:w-[50px] aspect-[5/4];
+    object-fit: cover!important;
+    margin: 0!important;
+    padding: 0!important;
+    border-radius: 0!important;
+    border: 0!important;
+}
+
+.leaderboards-page .markdown-content th:nth-child(4),
+.leaderboards-page .markdown-content td:nth-child(4)  {
+    @apply hidden sm:table-cell;
+}
+
+
+/****************************************************
+ * 0. 툴팁
+ ****************************************************/
+
+/* 오버레이 전체 화면 */
+.tooltip-dialog-overlay {
+    @apply fixed inset-0 bg-black/40 flex items-center justify-center z-[1000];
+  }
+  
+  /* 모달 박스 */
+  .tooltip-dialog-box {
+    @apply bg-white px-6 py-5 w-[90%] max-w-[320px];
+  }
+
+  .tooltip-dialog-box h1 {
+    @apply text-lg mb-5;
+  }
+
+  .tooltip-dialog-box p {
+    @apply mb-5;
+  }
+
+  .tooltip-dialog-box p span {
+    @apply text-sm text-black/50 mb-4;
+  }
+
+  /* 안내 문구 */
+  .tooltip-dialog-message {
+    @apply text-[15px] text-[#333] mb-4;
+  }
+  
+  /* 확인 버튼 */
+  .button-default.button-confirm {
+    @apply w-full py-[10px] text-[14px] bg-[#0d4fad] text-white rounded-[8px] cursor-pointer transition-colors duration-200;
+  }
+  
+  .button-default.button-confirm:hover {
+    @apply bg-[#0b3f96];
+  }
+  
+  /* 페이드 효과 */
+  .fade-enter-active,
+  .fade-leave-active {
+    @apply transition-opacity duration-200;
+  }
+  
+  .fade-enter-from,
+  .fade-leave-to {
+    @apply opacity-0;
+  }

@@ -1,0 +1,186 @@
+<!-- pages/leaderboard/leaderboard_table.vue -->
+<template>
+  <!-- DataTable 컴포넌트 -->
+  <DataTable :columns="columns" :data="tableData" :pagination="false" :totalPage="props.totalPages" :currentPage="currentPage" :itemsPerPage="rowsPerPage" :search="false" :isLoading="isLoading" :serverSide="true" :alternateRowColors="true" @sort-column="sortColumnChanged" @click-cell="clickTableCell" @page-change="pageChanged">
+
+
+    <template #column-time="slotProps">
+      <CellTime :time="(slotProps.row as any).time ?? ''" :unregistered="!(slotProps.row as any).athleteID" />
+    </template>
+
+    <template #column-photo="slotProps">
+      <CellAthletePhoto :image="getImageURL((slotProps.row as any).thumbnail)" :name="(slotProps.row as any).name ?? ''" :id="(slotProps.row as any).athleteID ?? 0" :text="(slotProps.row as any).team ?? ''" :unregistered="!(slotProps.row as any).athleteID" />
+    </template>
+
+    <template #column-name="slotProps">
+      <CellAthleteText :name="(slotProps.row as any).name ?? ''" :id="(slotProps.row as any).athleteID ?? 0" :text="(slotProps.row as any).team ?? ''" :unregistered="!(slotProps.row as any).athleteID" />
+
+    </template>
+
+
+    <template #column-competition="slotProps">
+      <CellTextTextText :text1="formatKoreanDateWithDay((slotProps.row as any).datetime ?? '')" :text2="(slotProps.row as any).competitionName ?? ''" :text3="(slotProps.row as any).pool ?? ''" :unregistered="!(slotProps.row as any).athleteID" />
+    </template>
+
+  </DataTable>
+
+  <TheTooltipDialog :show="showTooltip" message="아직 등록하지 않은 선수입니다." @click="showTooltip = false" />
+
+</template>
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
+
+import UI_CONFIG from '~/config/ui';
+import type { Gender, SwimCourse, SwimStyle, Individual } from '~/types/common';
+import { isValidStyle, SortDirection } from '~/types/common';
+import { LeaderboardSortField } from '~/types/leaderboard';
+import type { LeaderboardFilter, TimeRecord } from '~/types/leaderboard';
+
+import { useLeaderboardStore } from '~/stores/leaderboard';
+
+
+
+import CellText from '~/components/common/cells/CellText.vue'
+import CellNumber from '~/components/common/cells/CellNumber.vue'
+import CellTextText from '~/components/common/cells/CellTextText.vue'
+import CellDiscipline from '~/components/common/cells/CellDiscipline.vue'
+import CellNumberText from '~/components/common/cells/CellNumberText.vue'
+import CellTime from '~/components/common/cells/CellTime.vue'
+import CellTimeAthlete from '~/components/common/cells/CellTimeAthlete.vue'
+import CellAthletePhoto from '~/components/common/cells/CellAthletePhoto.vue'
+import CellAthleteText from '~/components/common/cells/CellAthleteText.vue'
+import CellTextTextText from '~/components/common/cells/CellTextTextText.vue'
+
+import DataTable from '~/components/common/DataTable.vue';
+
+import TheTooltipDialog from '~/components/common/TheTooltipDialog.vue';
+const showTooltip = ref(false);
+
+const router = useRouter();
+const leaderboardStore = useLeaderboardStore();
+
+// 상태 관리
+const isLoading = ref(false);
+const rowsPerPage = UI_CONFIG.rowsPerPage;
+// const currentPage = ref(1);
+
+const props = defineProps({
+  times: {
+    type: Array as () => TimeRecord[],
+    default: () => [] as TimeRecord[],
+  },
+  totalPages: {
+    type: Number,
+    default: 1,
+  },
+  page: {
+    type: Number,
+    default: 1,
+  },
+});
+
+// DataTable 설정 - 기록 위주 컬럼
+const columns = [
+  { key: 'rank', label: '순위', sortable: false },
+  { key: 'photo', label: '', sortable: false },
+  { key: 'name', label: '선수', sortable: false },
+  { key: 'time', label: '결과', sortable: false },
+  { key: 'competition', label: '대회/장소', sortable: false, class: 'flex-grow' },
+];
+
+const currentPage = computed(() => props.page);
+
+// 테이블 데이터 계산 속성 - 안전하게 처리
+const tableData = computed(() => {
+  return props.times || [];
+});
+
+// 정렬 변경 처리
+const sortColumnChanged = async (column: string) => {
+  leaderboardStore.filter.sortField = column as LeaderboardSortField;
+  leaderboardStore.filter.sortDirection =
+    leaderboardStore.filter.sortDirection === SortDirection.ASC ? SortDirection.DESC : SortDirection.ASC;
+
+  isLoading.value = true;
+  try {
+    await leaderboardStore.fetchLeaderboardList("Breaststroke", 1, rowsPerPage);
+  } catch (error) {
+    console.error("정렬 적용 중 오류:", error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// 페이지 변경 처리
+const pageChanged = async (page: number) => {
+  emit('page-change', page);
+};
+
+const emit = defineEmits([
+  'page-change',
+]);
+
+// 테이블 셀 클릭 처리
+const clickTableCell = (item: TimeRecord, column: string) => {
+  switch (column) {
+    case "rank":
+      break;
+    case "time":
+      router.push(`/time/${(item as any).timeID}`)
+      break;
+    case "name":
+      if ((item as any).athleteID) {
+        router.push(`/athlete/${(item as any).athleteID}`)
+      } else {
+        showTooltip.value = true;
+      }
+      break;
+    case "competition":
+      if ((item as any).competitionID) {
+        router.push(`/competition/${(item as any).competitionID}`)
+      }
+      break;
+  }
+};
+
+// 이미지 로드 실패 처리
+const handleImageError = (event: Event): void => {
+  (event.target as HTMLImageElement).src = '/images/not_found.jpg';
+};
+
+// 날짜 양식 변경
+function formatKoreanDateWithDay(dateString: string): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+  const dayName = days[date.getDay()];
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${year}년 ${month}월 ${day}일 ${dayName}`;
+}
+</script>
+
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
+<style scoped></style>

@@ -1,0 +1,68 @@
+
+
+..................................
+leaderboard: /leaderboardNew
+timeID
+athleteID
+name
+ageGroup
+thumbnail
+style
+course
+distance
+time
+datetime
+competitionID, name
+poolId, name
+
+
+..................................
+search: /timesNew/searchNames
+name
+athleteIDmedals: gold, silver, bronze
+bestTime: [{}]
+style,
+gender,
+course,
+distance,
+time
+rank
+ageGroup
+datetime
+team
+competitionName
+
+
+..................................
+- competitions
+list: /competitionsNew
+competitionid, name
+dateStart
+isMasters
+isAdult
+athleteCount
+
+view: /competitionsNew/view
+
+..................................
+- teams
+list: /teamsNew/search
+view: /teamsNew/view
+
+
+..................................
+- main
+/staticstics/main
+
+
+..................................
+- ootd
+list
+view
+
+
+..................................
+- items
+list: /items
+view: /items/:itemID
+

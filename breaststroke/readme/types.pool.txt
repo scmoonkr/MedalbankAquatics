@@ -1,0 +1,179 @@
+
+..................................
+- pools
+list: /poolsNew
+{
+  "count": 10,
+  "message": "",
+  "data": [
+    {
+      "poolID": 1011,
+      "name": "인천광역시장애인국민체육센터수영장",
+      "fullname": "인천광역시장애인국민체육센터수영장",
+      "sido": "인천",
+      "course": "",
+      "info": {
+        "addressDRM": "인천 연수구 경원대로 526",
+        "phone": "032-719-4825",
+        "website": "http://ic-sports.or.kr/",
+        "lengthUnit": "M",
+        "depthUnit": "M"
+      },
+      "bestTimes": [],
+      "competitions": [],
+      "competitionCount": 0,
+      "uploadTimes": 0
+    },
+  ]
+}
+
+view: /poolsNew/names
+{
+  data: [
+    {
+      poolID: 1,
+      name: "",
+      sido: "",
+      course: ""
+    },
+  ]
+}
+
+view: /poolsNew/view
+{
+  "message": "",
+  "data": {
+    "poolID": 433,
+    "name": "문학박태환수영장",
+    "fullname": "문학박태환수영장",
+    "sido": "인천",
+    "addressDRM": "인천 미추홀구 문학동 515",
+    "poolname": "",
+    "nickname": "",
+    "address": "",
+    "addressDetails": "",
+    "phone": "032-715-4224~5",
+    "email": "",
+    "website": "http://www.icmha.or.kr/",
+    "lengths": 50,
+    "lengthUnit": "M",
+    "lanes": 10,
+    "depthShallowEnd": 0,
+    "depthDeepEnd": 3.5,
+    "depthUnit": "M",
+    "coordinateX": 0,
+    "coordinateY": 0,
+    "searchKeywords": "",
+    "notes": "",
+    "info": {},
+    "competitionCount": 3,
+    "uploadTimes": 3450,
+    "course": "LCM",
+    "featured": "/cms/images/pools/433/f",
+    "thumbnail": "/cms/images/pools/433/t",
+    "images": [
+      { "0": "" },
+      { "1": "" },
+      { "2": "" },
+      { "3": "" },
+      { "4": "" },
+      { "5": "" },
+      { "K": "" },
+    ],
+    "extraInfo": {
+      "competitions": [
+        {
+          "competitionID": 4,
+          "fullname": "2019 아레나 코리아 마스터즈",
+          "dateStart": "2019-12-21",
+          "athleteCount": 815
+        },
+      ],
+      "latest": [
+        {
+          "athleteID": 1033,
+          "name": "권두성",
+          "style": "freestyle",
+          "datetime": "2024-10-26"
+        }
+      ],
+      "timeTimes": [
+        {
+          "timeID": 100000,
+          "ageGroup": "3그룹(30-34)",
+          "athleteID": 1002,
+          "course": "LCM",
+          "datetime": "2025-01-13",
+          "distance": "50M",
+          "gender": "women",
+          "name": "장소연",
+          "poolID": 433,
+          "style": "freestyle",
+          "time": "01:00.00",
+          "timeStamp": 0.0006944444444444445,
+          "type": "time"
+        },
+      ],
+      "bestEvent": [
+        {
+          "gender": "men",
+          "style": "butterfly",
+          "course": "LCM",
+          "distance": "50M",
+          "timeID": 73391,
+          "name": "이강해",
+          "time": "26.06",
+          "timeStamp": 0.0003016203703703704,
+          "rank": 1,
+          "datetime": "2024-05-25",
+          "ageGroup": "S1 그룹",
+          "poolID": 433,
+          "teamID": 124,
+          "competitionID": 1373,
+          "rankGroup": 0,
+          "diffs": "0.00"
+        },
+      ],
+      "bestTime": [
+        {
+          "gender": "women",
+          "style": "freestyle",
+          "course": "LCM",
+          "distance": "50M",
+          "timeID": 100000,
+          "name": "장소연",
+          "time": "01:00.00",
+          "timeStamp": 0.0006944444444444445,
+          "rank": 1,
+          "datetime": "2025-01-13",
+          "athleteID": 1002,
+          "ageGroup": "3그룹(30-34)",
+          "poolID": 433,
+          "rankGroup": 0,
+          "diffs": "0.00"
+        },
+      ]
+    },
+    "compression": {
+      "teams": [
+        {
+          "teamID": 10088,
+          "name": ""
+        }
+      ],
+      "pools": [
+        {
+          "poolID": 433,
+          "name": ""
+        }
+      ],
+      "competitions": [
+        {
+          "competitionID": 1705,
+          "name": ""
+        }
+      ]
+    }
+  }
+}
+

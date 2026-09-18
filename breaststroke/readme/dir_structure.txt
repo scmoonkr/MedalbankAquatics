@@ -1,0 +1,137 @@
+project-root/
+│
+├── assets/               # 전역 스타일, 이미지 등
+│   └── styles/
+│       └── main.css
+│
+├── components/           # 공통 컴포넌트
+│   ├── common/           # 공통 UI 컴포넌트
+│   │   ├── BaseButton.vue
+│   │   ├── BaseInput.vue
+│   │   ├── BaseTable.vue
+│   │   ├── Pagination.vue
+│   │   └── ...
+│   │
+│   ├── layout/           # 레이아웃 관련 컴포넌트
+│   │   ├── Navbar.vue
+│   │   ├── Sidebar.vue
+│   │   └── Footer.vue
+│   │
+│   ├── times/            # 도메인별 컴포넌트
+│   │   ├── TimeForm.vue
+│   │   ├── TimeTable.vue
+│   │   └── TimeCard.vue
+│   │
+│   ├── athletes/
+│   │   ├── AthleteForm.vue
+│   │   └── ...
+│   │
+│   ├── competitions/
+│   │   └── ...
+│   │
+│   ├── pools/
+│   │   └── ...
+│   │
+│   └── teams/
+│       └── ...
+│
+├── composables/          # 재사용 가능한 컴포저블
+│   ├── useTime.ts
+│   ├── useAthlete.ts
+│   ├── useCompetition.ts
+│   ├── usePool.ts
+│   ├── useTeam.ts
+│   ├── usePagination.ts
+│   └── useForm.ts
+│
+├── layouts/              # 페이지 레이아웃
+│   ├── default.vue
+│   ├── admin.vue
+│   └── auth.vue
+│
+├── middleware/           # 라우트 미들웨어
+│   ├── auth.ts
+│   └── admin.ts
+│
+├── models/               # 데이터 모델
+│   ├── time.model.ts
+│   ├── athlete.model.ts
+│   ├── competition.model.ts
+│   ├── pool.model.ts
+│   └── team.model.ts
+│
+├── pages/                # 페이지 컴포넌트 (Nuxt 라우팅)
+│   ├── index.vue         # 대시보드 또는 홈페이지
+│   │
+│   ├── times/
+│   │   ├── index.vue     # 목록 페이지
+│   │   ├── [id].vue      # 상세 보기 페이지
+│   │   └── edit/
+│   │       ├── index.vue # 새로운 시간 기록 생성
+│   │       └── [id].vue  # 기존 시간 기록 편집
+│   │
+│   ├── athletes/
+│   │   ├── index.vue
+│   │   ├── [id].vue
+│   │   └── edit/
+│   │       ├── index.vue
+│   │       └── [id].vue
+│   │
+│   ├── competitions/
+│   │   └── ...           # 위와 동일한 구조
+│   │
+│   ├── pools/
+│   │   └── ...           # 위와 동일한 구조
+│   │
+│   └── teams/
+│       └── ...           # 위와 동일한 구조
+│
+├── plugins/              # Vue 플러그인
+│   ├── api.ts
+│   └── auth.ts
+│
+├── public/               # 정적 파일
+│   ├── favicon.ico
+│   └── ...
+│
+├── server/               # 서버 미들웨어 및 API (Nuxt 3)
+│   ├── api/
+│   │   └── time.api.ts
+│   └── middleware/
+│       ├── 01-logger.ts
+│       ├── 02-cors.ts
+│       ├── 03-auth.ts
+│       └── 04-error-handler.ts
+│
+├── services/             # API 서비스
+│   ├── http.ts           # HTTP 클라이언트 설정
+│   ├── time.service.ts
+│   ├── athlete.service.ts
+│   ├── competition.service.ts
+│   ├── pool.service.ts
+│   └── team.service.ts
+│
+├── store/                # Pinia 스토어
+│   ├── time.store.ts
+│   ├── athlete.store.ts
+│   ├── competition.store.ts
+│   ├── pool.store.ts
+│   └── team.store.ts
+│
+├── types/                # TypeScript 타입 정의
+│   ├── common.ts         # 공통 타입 정의
+│   ├── time.dto.ts
+│   ├── athlete.dto.ts
+│   ├── competition.dto.ts
+│   ├── pool.dto.ts
+│   └── team.dto.ts
+│
+├── utils/                # 유틸리티 함수
+│   ├── date.ts
+│   ├── format.ts
+│   └── validation.ts
+│
+├── app.vue               # 앱 진입점
+├── nuxt.config.ts        # Nuxt 설정
+├── tsconfig.json         # TypeScript 설정
+└── package.json          # 프로젝트 의존성

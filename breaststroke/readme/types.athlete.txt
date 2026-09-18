@@ -1,0 +1,22 @@
+ athletes
+list: /athletesNew/list
+athleteID
+name
+ageGroup
+thumbnail
+bestTime: [{style,distance,course,time,datetime}]
+first datetime
+latest datetime
+
+
+..................................
+view: /athletesNew/viewTimes
+athleteID
+name
+featured
+thumbnail
+searchNames
+주종목: 자유형 50, 접영 50
+medals gold, silver, bronze
+bestTimes [{style, course,distance,time}]
+

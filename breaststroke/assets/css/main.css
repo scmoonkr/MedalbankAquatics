@@ -1,0 +1,107 @@
+/* assets/css/main.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ */
+
+
+/* 0. 폰트 */
+
+
+/* ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ */
+
+@font-face {
+    font-family: Apple;
+    src: url(@/assets/fonts/AppleSDGothicNeoL.ttf);
+}
+
+@font-face {
+    font-family: AppleM;
+    src: url(@/assets/fonts/AppleSDGothicNeoM.ttf);
+}
+
+@font-face {
+    font-family: AppleB;
+    src: url(@/assets/fonts/AppleSDGothicNeoB.ttf);
+}
+
+@font-face {
+    font-family: AppleEB;
+    src: url(@/assets/fonts/AppleSDGothicNeoEB.ttf);
+}
+
+@font-face {
+    font-family: AppleH;
+    src: url(@/assets/fonts/AppleSDGothicNeoH.ttf);
+}
+
+.font-apple {
+    font-family: Apple!important;
+}
+
+.font-apple-m {
+    font-family: AppleM!important;
+}
+
+.font-apple-b {
+    font-family: AppleB!important;
+}
+
+.font-apple-eb {
+    font-family: AppleEB!important;
+}
+
+.font-apple-h {
+    font-family: AppleH!important;
+}
+
+.font-mono {
+    font-family: 'Roboto Mono', 'Courier New', Courier, monospace!important;
+    font-weight: 700;
+}
+
+
+/****************************************************
+ * 0. 폰트
+ ****************************************************/
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: Apple!important;
+}
+
+body {
+    @apply text-gray-800;
+    min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: AppleB!important;
+}
+
+p,
+span,
+a,
+button,
+li,
+div,
+label,
+input,
+textarea,
+thead, tbody, tr, td {
+    font-family: Apple!important;
+}
+
+#__nuxt {
+    min-height: 100vh;
+}

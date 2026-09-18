@@ -1,0 +1,45 @@
+{
+  "name": "nuxt-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "start": "node .output/server/index.mjs"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@pinia/nuxt": "^0.10.1",
+    "axios": "^1.11.0",
+    "chart.js": "^4.5.1",
+    "chartjs-plugin-datalabels": "^2.2.0",
+    "d3": "^7.9.0",
+    "dom-to-image": "^2.6.0",
+    "git": "^0.1.5",
+    "highlight.js": "^11.11.1",
+    "html2canvas": "^1.4.1",
+    "http-proxy-middleware": "^3.0.3",
+    "jspdf": "^4.0.0",
+    "marked": "^17.0.1",
+    "mermaid": "^11.12.2",
+    "nuxt": "^3.16.1",
+    "pinia": "^3.0.1",
+    "tailwind": "^4.0.0",
+    "vue": "^3.3.4",
+    "vue-easy-lightbox": "^1.19.0",
+    "vue-router": "^4.5.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@nuxtjs/tailwindcss": "^6.13.1",
+    "@types/dom-to-image": "^2.6.7",
+    "@typescript-eslint/eslint-plugin": "^8.26.0",
+    "@typescript-eslint/parser": "^8.26.0",
+    "eslint": "^9.22.0",
+    "eslint-plugin-vue": "^10.0.0",
+    "prettier": "^3.5.3"
+  }
+}

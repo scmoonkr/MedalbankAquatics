@@ -1,0 +1,38 @@
+
+..................................
+- times
+list: /timesNew
+timeID
+athleteID
+name
+ageGroup
+thumbnail
+gender
+style
+course
+distance
+time
+rank
+datetime
+competitionid, name
+poolid, name
+
+view: /timesNew/view/:timeID/:userID
+timeID
+athleteID
+name
+ageGroup
+featured
+thumbnail
+style
+course
+distance
+time
+datetime
+competitionID, name
+poolId, name
+team, teamid
+개인최고 time, stroke, breath, kick
+평균
+시즌최고
+시즌평균
