@@ -27,6 +27,7 @@ token=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
 | API 서버 (Express) | `server/` | 공통 API | 6630 |
 | aquatics (Nuxt 3) | `aquatics/` | medalbankaquatics.com | 6631 |
 | medalbank (Nuxt 3) | `medalbank/` | medalbank.com | 6632 |
+| sse (Nuxt 3) | `medalbank/` | medalbank.com | 6634 |
 
 ### 1) API 서버 (Express)
 
@@ -55,7 +56,7 @@ cd C:\Develop\MedalbankAquatics\medalbank
 npm run dev
 ```
 
-→ http://localhost:6632
+→ http://localhost:6632 
 
 > 참고: 두 Nuxt 앱은 `/images/`, `/data/` 등 정적/API 요청을 6630(API 서버)으로 프록시하므로,
 > 프론트엔드를 띄우기 전에 API 서버를 먼저 실행해 두는 것이 좋다.

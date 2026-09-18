@@ -7,7 +7,7 @@ dotenv.config({ path: resolve(__dirname, '../.env') })
 
 export default defineNuxtConfig({
   devtools: { enabled: false },
-  devServer: { port: 6632 },
+  devServer: { port: 6631 },
   modules: ['nuxt-auth-utils'],
 
   runtimeConfig: {

@@ -9,18 +9,25 @@ module.exports = {
       env_file: '../.env',
     },
     {
-      name:     'medalbank-aquatics-nuxt',
-      script:   './aquatics/.output/server/index.mjs',
-      cwd:      './aquatics',
-      env_file: '../.env',
-      env: { PORT: '6631', NODE_ENV: 'production' },
-    },
-    {
       name:     'medalbank-aquatics-registry',
       script:   './medalbank/.output/server/index.mjs',
       cwd:      './medalbank',
       env_file: '../.env',
+      env: { PORT: '6631', NODE_ENV: 'production' },
+    },
+    {
+      name:     'medalbank-aquatics-nuxt',
+      script:   './aquatics/.output/server/index.mjs',
+      cwd:      './aquatics',
+      env_file: '../.env',
       env: { PORT: '6632', NODE_ENV: 'production' },
+    },
+    {
+      name:     'medalbank-aquatics-breaststroke',
+      script:   './breaststroke/.output/server/index.mjs',
+      cwd:      './breaststroke',
+      env_file: '../.env',
+      env: { PORT: '6633', NODE_ENV: 'production' },
     },
     {
       name:     'medalbank-aquatics-sse',

@@ -9,7 +9,7 @@ export default defineNuxtConfig({
     },
   },
 
-  devServer: { port: 6631 },
+  devServer: { port: 6632 },
 
   css: ['~/assets/css/shared.css'],
 

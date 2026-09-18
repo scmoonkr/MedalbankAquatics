@@ -7,7 +7,7 @@ dotenv.config({ path: resolve(__dirname, '../.env') })
 
 export default defineNuxtConfig({
   devtools: { enabled: false },
-  devServer: { port: 6633 },
+  devServer: { port: 6634 },
 
   runtimeConfig: {
     mongoAddr: process.env.MONGODB_ADDR    || '221.143.48.153:4529',
