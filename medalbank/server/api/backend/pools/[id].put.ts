@@ -4,7 +4,7 @@ import { ObjectId } from 'mongodb'
 export default defineEventHandler(async (event) => {
   const id   = getRouterParam(event, 'id')!
   const body = await readBody(event)
-  const { id: _1, _id: _2, poolID: _3, ...doc } = body
+  const { id: _1, _id: _2, poolD: _3, ...doc } = body
   const db = await getDb()
   await db.collection('pools').updateOne(
     { _id: new ObjectId(id) },

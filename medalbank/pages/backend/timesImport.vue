@@ -312,7 +312,7 @@ async function parsePicked() {
 // Upload.xls — 선택한 엑셀을 올려 분석한다.
 const clickUpload = () => parsePicked()
 
-// Read — 서버에 이미 올라가 있는 이 대회의 기록지를 읽는다 (로컬 파일 선택 불필요).
+// Read — Upload.xls 로 timesImport 에 저장해 둔 이 대회의 파싱 결과를 다시 읽는다 (로컬 파일 선택 불필요).
 async function clickRead() {
   if (!comp.id) { error.value = 'cid 를 먼저 입력하세요.'; return }
   parsing.value = true
@@ -366,7 +366,7 @@ function clickDelete() {
 }
 
 // ── 페이지네이션 ──────────────────────────────────────────────────
-const perPage = ref(10)   // 원본 UI_CONFIG.rowsPerPage 와 동일
+const perPage = ref(100)   // 100개씩 표시, 넘어가면 페이지네이션
 const page    = ref(1)
 
 const totalPages = computed(() =>

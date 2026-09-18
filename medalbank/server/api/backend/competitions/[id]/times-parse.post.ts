@@ -39,6 +39,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 422, statusMessage: `엑셀 파싱 실패: ${e?.message ?? e}` })
   }
 
+  // 업로드한 파일의 파싱 결과를 timesImport 스테이징 컬렉션에 저장한다.
+  // 같은 대회 데이터가 이미 있으면 지우고 새로 넣는다. Read 는 여기서 다시 읽는다.
+  if (ctx.competitionID != null) {
+    const staging = db.collection('timesImport')
+    await staging.deleteMany({ competitionID: ctx.competitionID })
+    if (parsed.length) {
+      await staging.insertMany(parsed.map(r => ({ ...r, competitionID: ctx.competitionID })))
+    }
+  }
+
   const { rows, summary } = await buildPreview(db, ctx, parsed)
 
   return { ok: true, competition: ctx, rows, summary }

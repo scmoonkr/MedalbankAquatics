@@ -8,9 +8,9 @@ export default defineEventHandler(async (event) => {
   if (q.name) {
     const safe = safeRegex(q.name)
     match.$or = [
-      { pool:  { $regex: safe, $options: 'i' } },
-      { name:  { $regex: safe, $options: 'i' } },
-      { names: { $regex: safe, $options: 'i' } },
+      { pool:     { $regex: safe, $options: 'i' } },
+      { poolname: { $regex: safe, $options: 'i' } },
+      { fullname: { $regex: safe, $options: 'i' } },
     ]
   }
   if (q.sido)   match.sido   = String(q.sido)
@@ -23,15 +23,28 @@ export default defineEventHandler(async (event) => {
     .limit(500)
     .toArray()
 
-  return docs.map(d => ({
-    id:           String(d._id),
-    poolID:       d.poolID ?? 0,
-    // 이 컬렉션의 수영장명 필드는 pool 이다. name 이 있는 문서도 있어 둘 다 받는다.
-    pool:         d.pool || d.name || '',
-    names:        Array.isArray(d.names) ? d.names : [],
-    sido:         d.sido         || '',
-    course:       d.course       || '',
-    lane:         d.lane         || '',
-    depthDeepEnd: d.depthDeepEnd || '',
-  }))
+  return docs.map(d => {
+    const pi = d.poolInfo || {}
+    return {
+      id:         String(d._id),
+      poolD:      d.poolD ?? 0,
+      pool:       d.pool || d.fullname || '',
+      poolname:   d.poolname   || '',
+      fullname:   d.fullname   || '',
+      sido:       d.sido       || '',
+      course:     d.course     || '',
+      addressDRM: d.addressDRM || '',
+      phone:      d.phone      || '',
+      website:    d.website    || '',
+      notes:      d.notes      || '',
+      poolInfo: {
+        lengths:         pi.lengths         ?? '',
+        lengthUnit:      pi.lengthUnit      ?? '',
+        lanes:           pi.lanes           ?? '',
+        depthShallowEnd: pi.depthShallowEnd ?? '',
+        depthDeepEnd:    pi.depthDeepEnd    ?? '',
+        depthUnit:       pi.depthUnit       ?? '',
+      },
+    }
+  })
 })

@@ -34,9 +34,10 @@
               <th>시도</th>
               <th>코스</th>
               <th>수영장</th>
+              <th>주소</th>
+              <th>전화</th>
               <th>레인</th>
               <th>수심</th>
-              <th>names</th>
             </tr>
           </thead>
           <tbody>
@@ -45,13 +46,14 @@
               :class="{ active: panel.open && panel.id === r.id }"
               @click="openPanel(r)"
             >
-              <td class="td-mono td-dim">{{ r.poolID }}</td>
+              <td class="td-mono td-dim">{{ r.poolD }}</td>
               <td class="td-dim">{{ r.sido }}</td>
               <td><span v-if="r.course" class="c-tag">{{ r.course }}</span></td>
               <td class="td-name">{{ r.pool }}</td>
-              <td class="td-mono td-dim">{{ r.lane }}</td>
-              <td class="td-mono td-dim">{{ r.depthDeepEnd }}</td>
-              <td class="td-dim td-ellipsis">{{ (r.names || []).join(', ') }}</td>
+              <td class="td-dim td-ellipsis">{{ r.addressDRM }}</td>
+              <td class="td-mono td-dim">{{ r.phone }}</td>
+              <td class="td-mono td-dim">{{ r.poolInfo.lanes }}</td>
+              <td class="td-mono td-dim">{{ r.poolInfo.depthDeepEnd }}</td>
             </tr>
           </tbody>
         </table>
@@ -64,7 +66,7 @@
           <div class="ep-head">
             <div>
               <div class="ep-title">{{ panel.id ? (panel.form.pool || '—') : '새 수영장' }}</div>
-              <div class="ep-sub">{{ panel.id ? `poolID ${panel.form.poolID}` : '수동 등록' }}</div>
+              <div class="ep-sub">{{ panel.id ? `poolD ${panel.form.poolD}` : '수동 등록' }}</div>
             </div>
             <button class="ep-close" @click="closePanel">✕</button>
           </div>
@@ -73,12 +75,22 @@
             <div class="ep-row">
               <div class="ep-field" style="flex: 0 0 90px;">
                 <label>pid</label>
-                <input :value="panel.form.poolID || '자동'" class="ep-inp ep-inp-mono ep-readonly" readonly />
+                <input :value="panel.form.poolD || '자동'" class="ep-inp ep-inp-mono ep-readonly" readonly />
               </div>
               <div class="ep-field ep-field-half">
                 <label>수영장명 <span class="ep-req">*</span></label>
                 <input v-model="panel.form.pool" class="ep-inp" placeholder="수영장명" />
               </div>
+            </div>
+
+            <div class="ep-field">
+              <label>정식명칭 <span class="ep-hint">fullname</span></label>
+              <input v-model="panel.form.fullname" class="ep-inp" placeholder="정식 명칭" />
+            </div>
+
+            <div class="ep-field">
+              <label>관용명 <span class="ep-hint">poolname</span></label>
+              <input v-model="panel.form.poolname" class="ep-inp" placeholder="관용/약칭" />
             </div>
 
             <div class="ep-row">
@@ -98,22 +110,62 @@
               </div>
             </div>
 
+            <div class="ep-field">
+              <label>주소 <span class="ep-hint">addressDRM</span></label>
+              <input v-model="panel.form.addressDRM" class="ep-inp" placeholder="도로명/지번 주소" />
+            </div>
+
             <div class="ep-row">
               <div class="ep-field ep-field-half">
-                <label>레인</label>
-                <input v-model="panel.form.lane" class="ep-inp ep-inp-mono" placeholder="8" />
+                <label>전화</label>
+                <input v-model="panel.form.phone" class="ep-inp ep-inp-mono" placeholder="02-000-0000" />
               </div>
               <div class="ep-field ep-field-half">
-                <label>수심</label>
-                <input v-model="panel.form.depthDeepEnd" class="ep-inp ep-inp-mono" placeholder="1.8" />
+                <label>웹사이트</label>
+                <input v-model="panel.form.website" class="ep-inp" placeholder="https://" />
               </div>
+            </div>
+
+            <div class="ep-divider"></div>
+            <div class="ep-section">Pool Info</div>
+
+            <div class="ep-row">
+              <div class="ep-field ep-field-half">
+                <label>길이 <span class="ep-hint">lengths</span></label>
+                <input v-model="panel.form.poolInfo.lengths" class="ep-inp ep-inp-mono" placeholder="50" />
+              </div>
+              <div class="ep-field ep-field-half">
+                <label>길이 단위</label>
+                <input v-model="panel.form.poolInfo.lengthUnit" class="ep-inp ep-inp-mono" placeholder="M" />
+              </div>
+            </div>
+
+            <div class="ep-field">
+              <label>레인 <span class="ep-hint">lanes</span></label>
+              <input v-model="panel.form.poolInfo.lanes" class="ep-inp ep-inp-mono" placeholder="8" />
+            </div>
+
+            <div class="ep-row">
+              <div class="ep-field ep-field-half">
+                <label>수심(얕은쪽)</label>
+                <input v-model="panel.form.poolInfo.depthShallowEnd" class="ep-inp ep-inp-mono" placeholder="1.2" />
+              </div>
+              <div class="ep-field ep-field-half">
+                <label>수심(깊은쪽)</label>
+                <input v-model="panel.form.poolInfo.depthDeepEnd" class="ep-inp ep-inp-mono" placeholder="1.8" />
+              </div>
+            </div>
+
+            <div class="ep-field ep-field-half">
+              <label>수심 단위</label>
+              <input v-model="panel.form.poolInfo.depthUnit" class="ep-inp ep-inp-mono" placeholder="M" />
             </div>
 
             <div class="ep-divider"></div>
 
             <div class="ep-field">
-              <label>Names <span class="ep-hint">한 줄에 하나</span></label>
-              <textarea v-model="namesText" class="ep-inp ep-area" rows="6" placeholder="별칭"></textarea>
+              <label>메모 <span class="ep-hint">notes</span></label>
+              <textarea v-model="panel.form.notes" class="ep-inp ep-area" rows="4" placeholder="비고"></textarea>
             </div>
           </div>
 
@@ -136,19 +188,35 @@
 definePageMeta({ layout: 'backend' })
 useHead({ title: 'Pools — 메달뱅크 Backend' })
 
+interface PoolInfo {
+  lengths:         number | string
+  lengthUnit:      string
+  lanes:           number | string
+  depthShallowEnd: number | string
+  depthDeepEnd:    number | string
+  depthUnit:       string
+}
 interface PoolRow {
-  id:           string
-  poolID:       number
-  pool:         string
-  names:        string[]
-  sido:         string
-  course:       string
-  lane:         string
-  depthDeepEnd: string
+  id:         string
+  poolD:      number
+  pool:       string
+  poolname:   string
+  fullname:   string
+  sido:       string
+  course:     string
+  addressDRM: string
+  phone:      string
+  website:    string
+  notes:      string
+  poolInfo:   PoolInfo
 }
 
+const emptyPoolInfo = (): PoolInfo => ({
+  lengths: '', lengthUnit: '', lanes: '', depthShallowEnd: '', depthDeepEnd: '', depthUnit: '',
+})
 const emptyForm = (): PoolRow => ({
-  id: '', poolID: 0, pool: '', names: [], sido: '', course: '', lane: '', depthDeepEnd: '',
+  id: '', poolD: 0, pool: '', poolname: '', fullname: '', sido: '', course: '',
+  addressDRM: '', phone: '', website: '', notes: '', poolInfo: emptyPoolInfo(),
 })
 
 // ── 필터 ──────────────────────────────────────────────────────────
@@ -174,30 +242,43 @@ async function refresh() {
 }
 
 // ── Panel ─────────────────────────────────────────────────────────
-const panel     = reactive({ open: false, id: '', saving: false, form: emptyForm() })
-const namesText = ref('')
+const panel = reactive({ open: false, id: '', saving: false, form: emptyForm() })
 
 function openPanel(r: PoolRow) {
   panel.open = true
   panel.id   = r.id
   panel.saving = false
-  panel.form = { ...emptyForm(), ...r }
-  namesText.value = (r.names || []).join('\n')
+  panel.form = { ...emptyForm(), ...r, poolInfo: { ...emptyPoolInfo(), ...(r.poolInfo || {}) } }
 }
 function openNew() {
   panel.open = true
   panel.id   = ''
   panel.saving = false
   panel.form = emptyForm()
-  namesText.value = ''
 }
 function closePanel() {
   panel.open = false
   panel.id   = ''
 }
 function clearForm() {
-  panel.form = { ...emptyForm(), id: panel.form.id, poolID: panel.form.poolID }
-  namesText.value = ''
+  panel.form = { ...emptyForm(), id: panel.form.id, poolD: panel.form.poolD }
+}
+
+// 숫자 필드는 값이 있으면 number 로, 비어있으면 제거해 깔끔하게 저장한다.
+function cleanPoolInfo(pi: PoolInfo) {
+  const num = (v: unknown) => {
+    if (v === '' || v == null) return undefined
+    const n = Number(v)
+    return Number.isNaN(n) ? v : n
+  }
+  const out: Record<string, unknown> = {}
+  const lengths = num(pi.lengths);                 if (lengths !== undefined)         out.lengths = lengths
+  if (pi.lengthUnit)                                                                  out.lengthUnit = pi.lengthUnit
+  const lanes = num(pi.lanes);                     if (lanes !== undefined)           out.lanes = lanes
+  const dShallow = num(pi.depthShallowEnd);        if (dShallow !== undefined)        out.depthShallowEnd = dShallow
+  const dDeep = num(pi.depthDeepEnd);              if (dDeep !== undefined)           out.depthDeepEnd = dDeep
+  if (pi.depthUnit)                                                                   out.depthUnit = pi.depthUnit
+  return out
 }
 
 async function saveRow() {
@@ -205,8 +286,8 @@ async function saveRow() {
   if (!panel.form.pool) { alert('수영장명을 입력하세요.'); return }
   panel.saving = true
   try {
-    const { id, poolID, ...rest } = panel.form
-    const payload = { ...rest, names: namesText.value.split('\n').map(s => s.trim()).filter(Boolean) }
+    const { id, poolD, ...rest } = panel.form
+    const payload = { ...rest, poolInfo: cleanPoolInfo(panel.form.poolInfo) }
     if (panel.id) await $fetch(`/api/backend/pools/${panel.id}`, { method: 'PUT', body: payload })
     else          await $fetch('/api/backend/pools', { method: 'POST', body: payload })
     closePanel()
@@ -297,6 +378,7 @@ onMounted(() => refresh())
 .ep-row   { display: flex; gap: 12px; }
 .ep-field-half { flex: 1; min-width: 0; }
 .ep-divider    { border-top: 1px solid #f0f0f0; margin: 4px 0 16px; }
+.ep-section    { font-size: 11px; font-weight: 700; color: #0a1d3a; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 12px; }
 .ep-field > label {
   display: block; font-size: 10.5px; font-weight: 600; color: #888;
   text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 5px;
