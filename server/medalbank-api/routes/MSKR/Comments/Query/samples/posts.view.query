@@ -1,0 +1,100 @@
+var userID = 1
+db.getCollection('posts').aggregate([
+
+{ $match: { postID: 1 } },
+{ $lookup: {
+    from      : "comments",
+    let       : { post_id: '$postID' },
+    pipeline  : [
+      { $match: {
+          $expr: {
+            $and: [
+              { $eq: ["$dbType", "post"] },
+              { $eq: ["$dbID", "$$post_id"] }
+            ]
+          }
+        }
+      },
+      { $count: "commentCount" }
+    ],
+    as: "commentData"
+  }
+},
+// { $unwind: { path: "$commentData", preserveNullAndEmptyArrays: true } },
+{ $lookup: {
+    from    : "reactions",
+    let     : { post_id: "$postID" },
+    pipeline: [
+      { $match: {
+          $expr: {
+            $and: [
+              { $eq: ["$dbType", "post"] },
+              { $eq: ["$dbID", "$$post_id"] }
+            ]
+          }
+        }
+      },
+      { $group: {
+            _id: { dbType: "$dbType", dbID: "$dbID" },
+            likes     	: { $sum: "$likes" 	  		},
+            dislikes  	: { $sum: "$dislikes" 	  },
+            blinds    	: { $sum: "$blinds" 	  	},
+            pins      	: { $sum: "$pins" 	  		},
+            captures  	: { $sum: "$captures" 	  },
+            shares    	: { $sum: "$shares" 	  	},
+            views     	: { $sum: "$views" 	  		},
+            follows     : { $sum: "$follows" 	    },
+            followedBys	: { $sum: "$followedBys"	},
+          
+            pizzas    	: { $avg: "$pizzas" 	  	},
+            ratings   	: { $avg: "$ratings" 	    },
+          }
+        }
+    ],
+    as: "reactionData"
+  }
+},
+{ $unwind: { path: "$reactionData", preserveNullAndEmptyArrays: true } },
+{ $lookup: {
+      from    : "reactions",
+      let     : { post_id: "$postID", user_id: userID },
+      pipeline: [
+          { $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$dbType", "post"] },
+                  { $eq: ["$dbID", "$$post_id"] },
+                  { $eq: ["$userID", "$$user_id"] }
+                ]
+              }
+            }
+          },
+          { $group: {
+              // _id: "$userID",
+              _id: { dbType: "$dbType", dbID: "$dbID" },
+              likes     	: { $sum: "$likes" 	  		},
+              dislikes  	: { $sum: "$dislikes" 	  },
+              blinds    	: { $sum: "$blinds" 	  	},
+              pins      	: { $sum: "$pins" 	  		},
+              captures  	: { $sum: "$captures" 	  },
+              shares    	: { $sum: "$shares" 	  	},
+              views     	: { $sum: "$views" 	  		},
+              follows     : { $sum: "$follows" 	    },
+              followedBys	: { $sum: "$followedBys"	},
+            
+              pizzas    	: { $avg: "$pizzas" 	  	},
+              ratings   	: { $avg: "$ratings" 	    },
+            }
+          }
+      ],
+      as: "myReactionData"
+  }
+},
+{ $unwind: { path: "$myReactionData", preserveNullAndEmptyArrays: true } },
+
+
+
+
+
+
+])

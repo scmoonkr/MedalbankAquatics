@@ -1,0 +1,280 @@
+db.getCollection('replies').aggregate(
+
+
+[
+  {
+    "$match": {
+      "commentID": 1
+    }
+  },
+  {
+    "$lookup": {
+      "from": "reactions",
+      "let": {
+        "dbID": "$replyID"
+      },
+      "pipeline": [
+        {
+          "$match": {
+            "$expr": {
+              "$and": [
+                {
+                  "$eq": [
+                    "$dbType",
+                    "reply"
+                  ]
+                },
+                {
+                  "$eq": [
+                    "$dbID",
+                    "$$dbID"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "as": "reactions"
+    }
+  },
+  {
+    "$group": {
+      "_id": {
+        "replyID": "$replyID",
+        "likes": {
+          "$ifNull": [
+            {
+              "$sum": "$reactions.likes"
+            },
+            0
+          ]
+        },
+        "dislikes": {
+          "$ifNull": [
+            {
+              "$sum": "$reactions.dislikes"
+            },
+            0
+          ]
+        },
+        "blinds": {
+          "$ifNull": [
+            {
+              "$sum": "$reactions.blinds"
+            },
+            0
+          ]
+        },
+        "pins": {
+          "$ifNull": [
+            {
+              "$sum": "$reactions.pins"
+            },
+            0
+          ]
+        },
+        "captures": {
+          "$ifNull": [
+            {
+              "$sum": "$reactions.captures"
+            },
+            0
+          ]
+        },
+        "shares": {
+          "$ifNull": [
+            {
+              "$sum": "$reactions.shares"
+            },
+            0
+          ]
+        },
+        "views": {
+          "$ifNull": [
+            {
+              "$sum": "$reactions.views"
+            },
+            0
+          ]
+        },
+        "follows": {
+          "$ifNull": [
+            {
+              "$sum": "$reactions.follows"
+            },
+            0
+          ]
+        },
+        "followedBys": {
+          "$ifNull": [
+            {
+              "$sum": "$reactions.followedBys"
+            },
+            0
+          ]
+        },
+        "pizzas": {
+          "$ifNull": [
+            {
+              "$avg": "$reactions.pizzas"
+            },
+            0
+          ]
+        },
+        "ratings": {
+          "$ifNull": [
+            {
+              "$avg": "$reactions.ratings"
+            },
+            0
+          ]
+        }
+      },
+      "replyID": {
+        "$first": "$replyID"
+      },
+      "commentID": {
+        "$first": "$commentID"
+      },
+      "dbType": {
+        "$first": "$dbType"
+      },
+      "dbID": {
+        "$first": "$dbID"
+      },
+      "userNo": {
+        "$first": "$userNo"
+      },
+      "nickname": {
+        "$first": "$nickname"
+      },
+      "avatar": {
+        "$first": "$avatar"
+      },
+      "status": {
+        "$first": "$status"
+      },
+      "isVerified": {
+        "$first": "$isVerified"
+      },
+      "title": {
+        "$first": "$title"
+      },
+      "excerpt": {
+        "$first": "$excerpt"
+      },
+      "content": {
+        "$first": "$content"
+      },
+      "categories": {
+        "$first": "$categories"
+      },
+      "tags": {
+        "$first": "$tags"
+      },
+      "featured": {
+        "$first": "$featured"
+      },
+      "images": {
+        "$first": "$images"
+      },
+      "created": {
+        "$first": "$created"
+      },
+      "updated": {
+        "$first": "$updated"
+      },
+      "deleted": {
+        "$first": "$deleted"
+      }
+    }
+  },
+  {
+    "$project": {
+      "replyID": 1,
+      "commentID": 1,
+      "dbType": 1,
+      "dbID": 1,
+      "userNo": 1,
+      "nickname": 1,
+      "avatar": 1,
+      "status": 1,
+      "isVerified": 1,
+      "title": 1,
+      "excerpt": 1,
+      "content": 1,
+      "categories": 1,
+      "tags": 1,
+      "featured": 1,
+      "images": 1,
+      "created": 1,
+      "updated": 1,
+      "deleted": 1,
+      "reactions": "$_id",
+      "_id": 0
+    }
+  },
+  {
+    "$lookup": {
+      "from": "reactions",
+      "let": {
+        "dbID": "$replyID"
+      },
+      "pipeline": [
+        {
+          "$match": {
+            "$expr": {
+              "$and": [
+                {
+                  "$eq": [
+                    "$dbType",
+                    "reply"
+                  ]
+                },
+                {
+                  "$eq": [
+                    "$dbID",
+                    "$$dbID"
+                  ]
+                },
+                {
+                  "$eq": [
+                    "$userNo",
+                    null
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "as": "myReactions"
+    }
+  },
+  {
+    "$project": {
+      "_id": 0
+    }
+  },
+  {
+    "$unwind": {
+      "path": "$myReactions",
+      "preserveNullAndEmptyArrays": true
+    }
+  },
+  {
+    "$sort": {
+      "replyID": -1
+    }
+  },
+  {
+    "$skip": 0
+  },
+  {
+    "$limit": 20
+  }
+]
+
+
+)

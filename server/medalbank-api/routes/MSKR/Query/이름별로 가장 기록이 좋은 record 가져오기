@@ -1,0 +1,78 @@
+db.times_MSKR.aggregate([
+  { $match: { gender: 'men', style: 'freestyle', course: 'LCM', distance: '50M', timeStamp:{$gt:0} } },
+  {
+    $facet: {
+      totalRowCount: [
+        { $count: "count" } // 전체 row 개수 계산
+      ],
+      
+      data: [
+        // 1. timeStamp로 정렬
+        { $sort: { timeStamp: 1 } },
+        // 2. 이름별로 첫 번째 레코드(가장 좋은 기록) 선택
+        { $group: {
+            _id: "$name",
+            bestRecord: { $first: "$$ROOT" }
+          }
+        },
+        // 3. 결과 구조 정리
+        { $project: {
+            _id: 0,
+            timeID: "$bestRecord.timeID",
+            name: "$bestRecord.name",
+            time: "$bestRecord.time",
+            timeStamp: "$bestRecord.timeStamp",
+            style: "$bestRecord.style",
+            gender: "$bestRecord.gender",
+            course: "$bestRecord.course",
+            distance: "$bestRecord.distance",
+            rank: "$bestRecord.rank"
+          }
+        },
+        // 4. 기록 순으로 정렬
+        { $sort: { timeStamp: 1 } },
+        { $skip: 0 },
+        { $limit: 10 }
+      ]
+    }
+  },
+
+  // 7. totalRowCount 값을 result와 병합
+  {
+    $project: {
+      count	: { $arrayElemAt: ["$totalRowCount.count", 0] },
+      data	: 1
+    }
+  }    
+])
+
+
+db.times_MSKR.aggregate([
+  { $match: { gender: 'men', style: 'freestyle', course: 'LCM', distance: '50M', timeStamp:{$gt:0} } },
+  // 1. timeStamp로 정렬
+  { $sort: { timeStamp: 1 } },
+  // 2. 이름별로 첫 번째 레코드(가장 좋은 기록) 선택
+  { $group: {
+      _id: "$name",
+      bestRecord: { $first: "$$ROOT" }
+    }
+  },
+  // 3. 결과 구조 정리
+  { $project: {
+      _id: 0,
+      timeID: "$bestRecord.timeID",
+      name: "$bestRecord.name",
+      time: "$bestRecord.time",
+      timeStamp: "$bestRecord.timeStamp",
+      style: "$bestRecord.style",
+      gender: "$bestRecord.gender",
+      course: "$bestRecord.course",
+      distance: "$bestRecord.distance",
+      rank: "$bestRecord.rank"
+    }
+  },
+  // 4. 기록 순으로 정렬
+  { $sort: { timeStamp: 1 } },
+  { $skip: 20 },
+  { $limit: 10 }
+])

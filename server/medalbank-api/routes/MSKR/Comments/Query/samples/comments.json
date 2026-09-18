@@ -1,0 +1,142 @@
+db.comments.aggregate([
+  {
+    $match: { "commentID" : 1 }
+  },
+  {
+    $lookup: {
+      from: "replies",
+      localField: "commentID",
+      foreignField: "commentID",
+      as: "replies"
+    }
+  },
+  { $unwind: { path: "$replies", "preserveNullAndEmptyArrays": true } }, 
+//   {
+//     $lookup: {
+//       from: "reactions",
+//       localField: "replies.replyID",
+//       foreignField: "dbID",
+//       as: "replies.reactions"
+//     }
+//   },
+  {
+    $lookup: {
+      from: "reactions",
+      let: { replyId: "$replies.replyID" }, // 여기서 사용자 ID 지정
+      pipeline: [
+        { 
+          $match: { 
+            $expr: { 
+              $and: [
+                { $eq: ["$dbType", "reply"] },
+                { $eq: ["$dbID", "$$replyId"] }
+              ]
+            } 
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            dislikes: { $sum: "$dislikes" },
+            ratings: { $avg: "$ratings" },
+            blinds: { $sum: "$blinds" },
+            views: { $sum: "$views" }
+          }
+        }
+      ],
+      as: "replies.reactions"
+    }
+  },
+  {
+    $lookup: {
+      from: "reactions",
+      let: { replyId: "$replies.replyID", userId: 1 }, // 여기서 사용자 ID 지정
+      pipeline: [
+        { 
+          $match: { 
+            $expr: { 
+              $and: [
+                { $eq: ["$dbType", "reply"] },
+                { $eq: ["$dbID", "$$replyId"] },
+                { $eq: ["$userID", "$$userId"] }
+              ]
+            } 
+          }
+        }
+      ],
+      as: "replies.myReactions"
+    }
+  },
+  {
+    $group: {
+      _id: "$_id",
+      data: { $first: "$$ROOT" },
+      replies: { $push: "$replies" }
+    }
+  },
+  {
+    $addFields: {
+      "data.replies": "$replies"
+    }
+  },
+  {
+    $replaceRoot: { newRoot: "$data" }
+  },
+  {
+    $lookup: {
+      from: "reactions",
+      let: { commentId: "$commentID", userId: 1 }, // 여기서 사용자 ID 지정
+      pipeline: [
+        { 
+          $match: { 
+            $expr: { 
+              $and: [
+                { $eq: ["$dbType", "comment"] },
+                { $eq: ["$dbID", "$$commentId"] },
+                { $eq: ["$userID", "$$userId"] }
+              ]
+            } 
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            dislikes: { $sum: "$dislikes" },
+            ratings: { $avg: "$ratings" },
+            blinds: { $sum: "$blinds" },
+            views: { $sum: "$views" }
+          }
+        }
+      ],
+      as: "myReactions"
+    }
+  },
+  {
+    $lookup: {
+      from: "reactions",
+      let: { commentId: "$commentID" }, // 여기서 사용자 ID 지정
+      pipeline: [
+        { 
+          $match: { 
+            $expr: { 
+              $and: [
+                { $eq: ["$dbType", "comment"] },
+                { $eq: ["$dbID", "$$commentId"] }
+              ]
+            } 
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            dislikes: { $sum: "$dislikes" },
+            ratings: { $avg: "$ratings" },
+            blinds: { $sum: "$blinds" },
+            views: { $sum: "$views" }
+          }
+        }
+      ],
+      as: "reactions"
+    }
+  }
+])

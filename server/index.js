@@ -2,6 +2,7 @@ import { config } from 'dotenv'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { execSync } from 'child_process'
+import { createRequire } from 'module'
 config({ path: resolve(dirname(fileURLToPath(import.meta.url)), '../.env') })
 import express from 'express'
 import { connectDB } from './db.js'
@@ -42,6 +43,16 @@ imagesRoute(app)
 consentRoute(app)
 requestsRoute(app)
 uploadRoute(app)
+
+// ── medalbank-api (c:\develop\node\medalbank 백엔드 이식) ─────────────
+// breaststroke 프론트가 쓰는 /BR/*, /statistics, /leaderboardNew, /poolsNew,
+// /teamsNew, /stems, /simulation, /usersNew, /times… 라우터를 CJS 서브앱으로 마운트.
+try {
+  const require = createRequire(import.meta.url)
+  app.use(require('./medalbank-api/app.cjs'))
+} catch (e) {
+  console.error('[medalbank-api] mount failed:', e?.message || e)
+}
 
 connectDB().then(async () => {
   await ensureIndexes()

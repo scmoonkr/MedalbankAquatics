@@ -1,0 +1,74 @@
+var dbType = "post"
+var dbID = 5
+var userID = 1
+db.getCollection('comments').aggregate([
+  { $match: { dbType: dbType, dbID: dbID } },
+  { $lookup: {
+        from: "reactions",
+        let: { commentId: "$commentID", userId: userID }, // 여기서 사용자 ID 지정
+        pipeline: [
+            { $match:
+              { $expr:
+                { $and: [
+                    { $eq: ["$dbType", "comment"] },
+                    { $eq: ["$dbID", "$$commentId"] },
+                    { $eq: ["$userID", "$$userId"] }
+                  ]
+                }
+              } 
+            },
+            { $group: {
+                _id: null,
+                likes     	: { $sum: "$likes" 	  		},
+                dislikes  	: { $sum: "$dislikes" 	  },
+                blinds    	: { $sum: "$blinds" 	  	},
+                pins      	: { $sum: "$pins" 	  		},
+                captures  	: { $sum: "$captures" 	  },
+                shares    	: { $sum: "$shares" 	  	},
+                views     	: { $sum: "$views" 	  		},
+                follows     : { $sum: "$follows" 	    },
+                followedBys	: { $sum: "$followedBys"	},
+              
+                pizzas    	: { $avg: "$pizzas" 	  	},
+                ratings   	: { $avg: "$ratings" 	    },
+              }
+            }
+        ],
+        as: "myReactions"
+    }
+  },
+  {
+    $lookup: {
+        from: "reactions",
+      let: { commentId: "$commentID" }, // 여기서 사용자 ID 지정
+      pipeline: [
+          { $match:
+            { $expr:
+              { $and: [
+                  { $eq: ["$dbType", "comment"] },
+                  { $eq: ["$dbID", "$$commentId"] }
+                ]
+              }
+            } 
+          },
+          { $group: {
+            _id: null,
+                likes     	: { $sum: "$likes" 	  		},
+                dislikes  	: { $sum: "$dislikes" 	  },
+                blinds    	: { $sum: "$blinds" 	  	},
+                pins      	: { $sum: "$pins" 	  		},
+                captures  	: { $sum: "$captures" 	  },
+                shares    	: { $sum: "$shares" 	  	},
+                views     	: { $sum: "$views" 	  		},
+                follows     : { $sum: "$follows" 	    },
+                followedBys	: { $sum: "$followedBys"	},
+              
+                pizzas    	: { $avg: "$pizzas" 	  	},
+                ratings   	: { $avg: "$ratings" 	    },
+          }
+        }
+      ],
+      as: "reactions"
+    }
+  }
+])

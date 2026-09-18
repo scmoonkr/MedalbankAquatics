@@ -1,0 +1,18 @@
+# 런타임(마운트된 데이터 라우트)은 .js 코드만 필요 — 데이터 덤프는 추적하지 않는다.
+# (원본 백엔드의 크롤러/임포트/모델링 산출물이라 MongoDB 조회와 무관)
+*.csv
+*.xls
+*.xlsx
+*.hwp
+*.docx
+*.pdf
+*.png
+*.jpg
+*.gpx
+*.fit
+*.dart
+routes/Work/msword/
+routes/Work/modeling/
+routes/Crawler/**/*.json
+routes/Crawler/**/*.txt
+routes/**/*.txt
