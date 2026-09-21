@@ -42,8 +42,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // 서버 사이드에서만 접근 가능한 환경 변수
     public: {
-      serverBase: process.env.NUXT_PUBLIC_SERVER_BASE,
-      apiBase: process.env.NUXT_PUBLIC_API_BASE,
+      // env 미설정(운영 기본) 시 공개 API 도메인을 사용한다. 브라우저에서 호출되므로 localhost는 안 됨.
+      // 로컬 개발은 .env 의 NUXT_PUBLIC_API_BASE=http://localhost:6630 으로 덮어쓴다.
+      serverBase: process.env.NUXT_PUBLIC_SERVER_BASE || 'https://api.medalbank.com',
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://api.medalbank.com',
       imageBbApiKey: process.env.ImgBBKey,
     }
   },

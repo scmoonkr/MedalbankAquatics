@@ -8,7 +8,7 @@ import type { TimeModel } from '~/models/times';
 const _URL = "/leaderboardNew";
 export const createLeaderboardApi = () => {
   const config = useRuntimeConfig();
-  const apiBase = config.public.apiBase || 'http://localhost:6600';
+  const apiBase = config.public.apiBase || 'https://api.medalbank.com';
 
   // Axios 인스턴스 생성
   const apiClient = axios.create({

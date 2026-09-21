@@ -10,7 +10,7 @@ const _URL = "/BR/competitions";
 // 팩토리 함수로 변경
 export const createCompetitionApi = () => {
   const config = useRuntimeConfig();
-  const apiBase = config.public.apiBase || 'http://localhost:6600';
+  const apiBase = config.public.apiBase || 'https://api.medalbank.com';
 
   // Axios 인스턴스 생성
   const apiClient = axios.create({

@@ -7,7 +7,7 @@ export const useApiClient = () => {
   const createClient = (): AxiosInstance => {
     const apiBase = typeof config.public.apiBase === 'string'
       ? config.public.apiBase
-      : 'http://localhost:6700';
+      : 'https://api.medalbank.com';
 
     const client = axios.create({
       baseURL: apiBase,

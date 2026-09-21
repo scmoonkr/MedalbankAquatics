@@ -5,7 +5,7 @@ import type { LoginRequest, AuthResponse, RegisterRequest, PasswordChangeRequest
 // 팩토리 함수로 변경
 export const createAuthApi = () => {
   const config = useRuntimeConfig();
-  const apiBase = config.public.apiBase || 'http://localhost:6600';
+  const apiBase = config.public.apiBase || 'https://api.medalbank.com';
 
   // Axios 인스턴스 생성
   const apiClient = axios.create({

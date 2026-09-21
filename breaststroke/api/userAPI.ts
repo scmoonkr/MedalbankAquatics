@@ -35,7 +35,7 @@ const _URL = '/usersNew';
 // API 베이스 URL을 가져오는 헬퍼 함수
 const getApiBase = () => {
   const config = useRuntimeConfig();
-  return config.public.apiBase || 'http://localhost:6600';
+  return config.public.apiBase || 'https://api.medalbank.com';
 };
 
 // Axios 인스턴스를 생성하는 팩토리 함수

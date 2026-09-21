@@ -8,7 +8,7 @@ import type { AthleteModel } from '~/models/athletes';
 // 팩토리 함수로 변경
 export const createAthleteApi = () => {
   const config = useRuntimeConfig();
-  const apiBase = config.public.apiBase || 'http://localhost:6600';
+  const apiBase = config.public.apiBase || 'https://api.medalbank.com';
 
   const _url = "/athletesNew";
   const _url_BR = "/BR/athletes";

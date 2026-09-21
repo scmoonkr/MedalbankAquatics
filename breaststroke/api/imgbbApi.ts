@@ -7,7 +7,7 @@ const _url = "/images";
 // 팩토리 함수로 변경
 export const useImageUploadApi = () => {
   const config = useRuntimeConfig();
-  const apiBase = config.public.apiBase || 'http://localhost:6600';
+  const apiBase = config.public.apiBase || 'https://api.medalbank.com';
   const imageBbApiKey = config.public.imageBbApiKey || '';
 
   // Axios 인스턴스 생성
