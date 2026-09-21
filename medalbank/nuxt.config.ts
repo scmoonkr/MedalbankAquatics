@@ -34,6 +34,9 @@ export default defineNuxtConfig({
       },
     },
     public: {
+      // 공유 API 엔드포인트 (루트 .env). 미설정 시 운영 도메인.
+      apiBase:    process.env.NUXT_PUBLIC_API_BASE    || 'https://api.medalbank.com',
+      serverBase: process.env.NUXT_PUBLIC_SERVER_BASE || 'https://api.medalbank.com',
       naverFormInsert: process.env.NAVER_FORM_INSERT || '',
       // backend/imagesBB 의 ImgBB 업로드 키 (브라우저에 노출되는 공개 키)
       imgbbKey:        process.env.IMGBB_KEY || '',

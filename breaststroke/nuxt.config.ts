@@ -1,4 +1,12 @@
 // nuxt.config.ts
+import dotenv from 'dotenv'
+import { fileURLToPath } from 'url'
+import { resolve, dirname } from 'path'
+
+// 루트 .env(모든 앱 공유)에서 NUXT_PUBLIC_API_BASE 등을 읽는다.
+const __dirname = dirname(fileURLToPath(import.meta.url))
+dotenv.config({ path: resolve(__dirname, '../.env') })
+
 export default defineNuxtConfig({
   ssr: true,
   modules: [

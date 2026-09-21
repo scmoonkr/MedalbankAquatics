@@ -1,4 +1,9 @@
 import { fileURLToPath } from 'url'
+import { resolve, dirname } from 'path'
+import dotenv from 'dotenv'
+
+// 루트 .env(모든 앱 공유)에서 NUXT_PUBLIC_API_BASE 등을 읽는다.
+dotenv.config({ path: resolve(dirname(fileURLToPath(import.meta.url)), '../.env') })
 
 export default defineNuxtConfig({
   devtools: { enabled: false },
@@ -6,6 +11,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       cloudPublicUrl: process.env.CLOUD_PUBLIC_URL ?? '',
+      // 공유 API 엔드포인트 (루트 .env). 미설정 시 운영 도메인.
+      apiBase:    process.env.NUXT_PUBLIC_API_BASE    || 'https://api.medalbank.com',
+      serverBase: process.env.NUXT_PUBLIC_SERVER_BASE || 'https://api.medalbank.com',
     },
   },
 

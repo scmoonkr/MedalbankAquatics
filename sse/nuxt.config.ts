@@ -15,6 +15,9 @@ export default defineNuxtConfig({
     mongoPwd:  process.env.MONGO_PWD       || '~Mscadmin',
     mongoDb:   process.env.MONGO_DBNAME_BR || 'Breaststroke',
     public: {
+      // 공유 API 엔드포인트 (루트 .env). 미설정 시 운영 도메인.
+      apiBase:    process.env.NUXT_PUBLIC_API_BASE    || 'https://api.medalbank.com',
+      serverBase: process.env.NUXT_PUBLIC_SERVER_BASE || 'https://api.medalbank.com',
       naverFormInsert: process.env.NAVER_FORM_INSERT || '',
     },
   },
