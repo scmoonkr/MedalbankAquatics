@@ -5,6 +5,11 @@
 const express = require('express')
 const router = express.Router()
 
+// 원본 app.js 가 세팅하던 전역 — CMS 이미지 서빙(/cms)이 이 디렉토리에서 파일을 읽는다.
+// 서버 이미지 저장 경로 (원본: /backup/ImageMedalBank). 환경변수로 override 가능.
+global.uploadPath = process.env.IMAGE_PATH || global.uploadPath || '/backup/ImageMedalBank'
+global.imagePath  = process.env.IMAGE_PATH || global.imagePath  || '/backup/ImageMedalBank'
+
 const mounted = []
 const failed = []
 
@@ -40,6 +45,9 @@ mount('/timesNew',        './routes/MSKR/Services/times/times.routes')
 mount('/times',           './routes/MSKR/Services/times/times.routes')
 mount('/usersNew',        './routes/MSKR/Services/users/users.routes.js')
 mount('/competitionsNew', './routes/MSKR/Services/competitions/competitions.routes')
+
+// ── CMS 이미지 서빙 (/cms/images/athletes/<id>/<t|f>) — breaststroke 선수 사진 ──
+mount('/cms',             './routes/MSKR/CMS/media')
 
 console.log('[medalbank-api] mounted:', mounted.join(', ') || '(none)')
 if (failed.length) {
