@@ -49,6 +49,13 @@ else
     --name medalbank-medalbank --cwd "$PROJECT_DIR/medalbank" --env production
 fi
 
+if pm2 list | grep -q "medalbank-breaststroke"; then
+  pm2 restart medalbank-breaststroke
+else
+  PORT=6633 pm2 start "$PROJECT_DIR/breaststroke/.output/server/index.mjs" \
+    --name medalbank-breaststroke --cwd "$PROJECT_DIR/breaststroke" --env production
+fi
+
 # swimming stock exchange
 if pm2 list | grep -q "medalbank-sse"; then
   pm2 restart medalbank-sse
