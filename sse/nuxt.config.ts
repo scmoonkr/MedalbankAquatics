@@ -3,7 +3,11 @@ import { resolve, dirname } from 'path'
 import dotenv from 'dotenv'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+// PORT 는 API 서버(6630) 전용이라 Nuxt 프로세스에는 넘기지 않는다 (dev 가 6630 에 떠서 충돌)
+const shellPort = process.env.PORT
 dotenv.config({ path: resolve(__dirname, '../.env') })
+if (shellPort === undefined) delete process.env.PORT
+else process.env.PORT = shellPort
 
 export default defineNuxtConfig({
   devtools: { enabled: false },

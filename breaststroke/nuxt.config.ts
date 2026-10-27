@@ -4,8 +4,12 @@ import { fileURLToPath } from 'url'
 import { resolve, dirname } from 'path'
 
 // 루트 .env(모든 앱 공유)에서 NUXT_PUBLIC_API_BASE 등을 읽는다.
+// 단 PORT 는 API 서버(6630) 전용이라, 읽어 들이면 Nuxt dev 가 6630 에 떠서 서버와 충돌한다.
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const shellPort = process.env.PORT
 dotenv.config({ path: resolve(__dirname, '../.env') })
+if (shellPort === undefined) delete process.env.PORT
+else process.env.PORT = shellPort
 
 export default defineNuxtConfig({
   ssr: true,
