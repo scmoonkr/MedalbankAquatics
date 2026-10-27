@@ -1,0 +1,13 @@
+{
+  "name": "medalbank-aquatics",
+  "private": true,
+  "description": "루트에서 각 앱의 개발 서버를 실행하는 스크립트 모음 (의존성은 각 앱 폴더에서 설치)",
+  "scripts": {
+    "server": "npm --prefix server run dev",
+    "aquatics": "npm --prefix aquatics run dev",
+    "medalbank": "npm --prefix medalbank run dev",
+    "breaststroke": "npm --prefix breaststroke run dev",
+    "sse": "npm --prefix sse run dev",
+    "install:all": "npm --prefix server install && npm --prefix aquatics install && npm --prefix medalbank install && npm --prefix breaststroke install && npm --prefix sse install"
+  }
+}
