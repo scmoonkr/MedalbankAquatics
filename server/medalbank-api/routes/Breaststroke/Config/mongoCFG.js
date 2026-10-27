@@ -23,6 +23,7 @@ exports.Breaststroke = {
 	// times					: "times",
 	items					: "items",
 	youtube				: "youtube",
+	records				: "records",
 	mediaServer		: "mediaServer",
 
 	users					: "users",

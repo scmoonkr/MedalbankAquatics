@@ -45,6 +45,7 @@ const menus = [
   { label: '선수',     url: '/backend/athletes',     icon: 'fa-user' },
   { label: '기록',     url: '/backend/times',        icon: 'fa-stopwatch' },
   { label: '기록등록', url: '/backend/timesImport',  icon: 'fa-file-import' },
+  { label: 'Records',  url: '/backend/records',      icon: 'fa-medal' },
   { label: '수영장',   url: '/backend/pools',        icon: 'fa-water' },
   { label: '팀',       url: '/backend/teams',        icon: 'fa-users' },
   { label: 'Stem',     url: '/backend/stems',        icon: 'fa-list' },

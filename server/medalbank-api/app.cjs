@@ -41,6 +41,7 @@ mount('/BR/statistics',   './routes/Breaststroke/Services/statistics/statistics.
 mount('/leaderboardNew',  './routes/Breaststroke/Services/leaderboards/leaderboard.routes')
 mount('/BR/items',        './routes/Breaststroke/Services/items/items.routes')
 mount('/BR/youtube',      './routes/Breaststroke/Services/youtube/youtube.routes')
+mount('/BR/records',      './routes/Breaststroke/Services/records/records.routes')
 mount('/BR/magazine',     './routes/Breaststroke/Services/magazine/magazine.routes')
 mount('/BR/importTimes',  './routes/Breaststroke/Services/importTimes')
 mount('/BR/images',       './routes/Breaststroke/Services/media')
