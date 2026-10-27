@@ -8,6 +8,8 @@ import type { TimeModel } from '~/models/times';
 // const _URL = "/timesNew";
 const _URL = "/BR/times";
 const _URL_IMPORT_TIMES = "/BR/importTimes";
+// timesImport 스테이징 데이터를 한 번에 받는 행 수 (서버 기본값은 100)
+const IMPORT_PAGE_SIZE = 10000;
 
 // 서버 응답 타입 정의
 interface ServerResponse<T> {
@@ -337,6 +339,33 @@ export const createTimeApi = () => {
       }
     },
 
+    // 기록 엑셀을 파싱해 timesImport(스테이징)에 적재. read 는 여기서 적재된 데이터를 읽는다.
+    async uploadTimes(id: number, file: File): Promise<ListResponse<any>> {
+      try {
+        const formData = new FormData();
+        formData.append('id', id.toString());
+        formData.append('page_size', IMPORT_PAGE_SIZE.toString());
+        formData.append('files', file);
+        const response = await apiClient.post(`${_URL_IMPORT_TIMES}/uploadTimes`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 120000,
+        });
+        const responseData = response.data as ServerListResponse<any>;
+        return {
+          message: responseData.message || '',
+          count: responseData.count || 0,
+          data: responseData.data || []
+        };
+      } catch (error: any) {
+        console.error('uploadTimes 오류:', error);
+        return {
+          message: error.response?.data?.message || '엑셀 업로드에 실패했습니다.',
+          count: 0,
+          data: []
+        };
+      }
+    },
+
     // 업로드된 파일 읽기
     async readUploadedFile(category: string, type: string, id: number): Promise<ListResponse<any>> {
       try {
@@ -344,6 +373,7 @@ export const createTimeApi = () => {
           category: category,
           type: type,
           id: id.toString(),
+          page_size: IMPORT_PAGE_SIZE,
         };
         const response = await apiClient.post(`${_URL_IMPORT_TIMES}/read`, params);
 console.log("readUploadedFile response:", response.data);        
@@ -394,6 +424,7 @@ console.log("readUploadedFile response:", response.data);
       try {
         const params = {
           competitionID: competitionID.toString(),
+          page_size: IMPORT_PAGE_SIZE,
         };
         const response = await apiClient.post(`${_URL_IMPORT_TIMES}/check`, params);
         
@@ -418,6 +449,7 @@ console.log("readUploadedFile response:", response.data);
       try {
         const params = {
           competitionID: competitionID.toString(),
+          page_size: IMPORT_PAGE_SIZE,
         };
         const response = await apiClient.post(`${_URL_IMPORT_TIMES}/importTimes`, params);
         
@@ -598,6 +630,11 @@ export const timeApi = {
     return api.deleteTime(timeId);
   },
     
+  uploadTimes: async (id: number, file: File): Promise<ApiResponse<any>> => {
+    const api = createTimeApi();
+    return api.uploadTimes(id, file);
+  },
+
   readUploadedFile: async (category: string, type: string, id: number): Promise<ApiResponse<any>> => {
     const api = createTimeApi();
     return api.readUploadedFile(category, type, id);

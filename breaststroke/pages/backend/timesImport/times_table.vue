@@ -4,7 +4,7 @@
   <DataTable
     :columns="tableColumns"
     :data="tableData"
-    :pagination="true"
+    :pagination="false"
     :totalPage="totalPages"
     :currentPage="currentPage"
     :itemsPerPage="UI_CONFIG.rowsPerPage"

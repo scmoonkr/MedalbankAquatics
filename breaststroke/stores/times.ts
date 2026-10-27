@@ -27,6 +27,8 @@ export const useTimeStore = defineStore('time', () => {
     const imageUploadError = ref<string | null>(null);
     const rowsPerPage = ref<number | null>(5);
     const filter = ref<any>({});
+    // backend 조회 버튼으로 실행한 마지막 조회 조건 (페이지 이동/정렬에서 유지)
+    const searchQuery = ref<any>(null);
     const sortField = ref<any>({});
     const sortDirection = ref<any>("asc");
     const pagination = ref<PaginationOptions>({
@@ -256,7 +258,9 @@ export const useTimeStore = defineStore('time', () => {
         }
     }
 
-    async function fetchTimeList(page = 1, limit = 20): Promise<void> {
+    // query 를 주면 filter 대신 그 조건으로 조회하고, 정렬/페이지 이동에서 같은 조건을 쓰도록 searchQuery 에 보관한다.
+    async function fetchTimeList(page = 1, limit = 20, query?: any): Promise<void> {
+        if (query) searchQuery.value = query;
         try {
             isLoading.value = true;
             error.value = null;
@@ -270,7 +274,8 @@ export const useTimeStore = defineStore('time', () => {
             const response = await timeApi.getTimeList({
                 page,
                 limit,
-                ...filter.value,
+                maxRows: limit,
+                ...(query ?? filter.value),
                 sortField: sortField.value,
                 sortDirection: sortDirection.value
             });
@@ -374,6 +379,16 @@ export const useTimeStore = defineStore('time', () => {
                 currentTime.value = TimeModel.fromJson(response.data);
             } else {
                 error.value = response.message || '시간 기록을 불러오는데 실패했습니다.';
+            }
+
+            // 엑셀이면 파싱해서 timesImport 에 적재 (이후 Read 가 이 데이터를 읽는다)
+            if (/\.xlsx?$/i.test(file.name)) {
+                const staged = await timeApi.uploadTimes(id, file);
+                if (staged.data && staged.data.length > 0) {
+                    timeList.value = staged.data.map((item: any) => TimeModel.fromJson(item));
+                } else {
+                    error.value = staged.message || '엑셀에서 기록을 읽지 못했습니다.';
+                }
             }
         } catch (err: any) {
             error.value = err.message || '시간 기록을 불러오는데 실패했습니다.';
@@ -504,6 +519,7 @@ console.log("readUploadedFile=", response.data);
         isLoading,
         error,
         filter,
+        searchQuery,
         rowsPerPage,
         sortField,
         sortDirection,

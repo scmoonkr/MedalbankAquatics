@@ -8,7 +8,7 @@
 
     
     <Header
-      @change-filter="onChangeFilter"
+      @search="onSearch"
     /> 
 
     <!----------------------->
@@ -106,30 +106,18 @@ const form = ref<Partial<TimeModel>>(TimeModel.initialize());
 ///########################################################
 /// 컴포넌트 로딩 시 데이터 가져오기
 ///########################################################
+// 초기 로딩에서는 필터 버튼 기본값만 세팅하고 API 는 호출하지 않는다 (조회 버튼에서만 호출)
 async function loadServerData() {
-  isLoading.value = true;
-  try {
-    isLoading.value = true;
-    timeStore.filter = {
-      name: '',
-    };
-    timeStore.pagination.rowsPerPage = UI_CONFIG.rowsPerPage;
-    timeStore.pagination.rowsPerPage = 100;
-    timeStore.filter.isMasters = true;
-    timeStore.filter.isAdult = true;
-    timeStore.filter.gender = 'women';
-    timeStore.filter.discipline = 'BA';
-    timeStore.filter.course = 'LCM';
-    timeStore.filter.distance = '50M';
-    timeStore.filter.type = 'event';
-    
-    await timeStore.fetchTimeList(1, timeStore.pagination.rowsPerPage);
-    isLoading.value = false;
-  } catch (error) {
-    console.error("데이터 로드 오류:", error);
-  } finally {
-    isLoading.value = false;
-  }
+  timeStore.filter = {
+    isMasters: true,
+    isAdult: true,
+    gender: 'women',
+    style: 'breaststroke',
+    course: 'LCM',
+    distance: '50M',
+    type: 'event',
+  };
+  timeStore.pagination.rowsPerPage = UI_CONFIG.backendRowsLimit;
 }
 
 // 컴포저블 함수 사용
@@ -143,38 +131,52 @@ const clickCell = async (item: TimeModel) => {
   form.value = JSON.parse(JSON.stringify(item));
   // await timeStore.fetchTeamListBackend(currentPage.value, timeStore.pagination.rowsPerPage);
 };
-// 부모 컴포넌트에 추가
+// 페이지 이동: 마지막 조회 조건(searchQuery)을 그대로 유지한다
 const handlePageChange = async (page: number) => {
+  if (!timeStore.searchQuery) return;
   currentPage.value = page;
-  await timeStore.fetchTimeList(currentPage.value, timeStore.pagination.rowsPerPage);
+  await timeStore.fetchTimeList(page, UI_CONFIG.backendRowsLimit, timeStore.searchQuery);
 };
 //======================================================================
 // Button
 //======================================================================
+const DISCIPLINE_CODE: Record<string, string> = {
+  freestyle: 'FR',
+  backstroke: 'BA',
+  breaststroke: 'BR',
+  butterfly: 'FL',
+  individualMedley: 'IM',
+};
 
-const onChangeFilter = async (value: any, field: string) => {
+// 필터 버튼 상태 + 입력값 → 서버 조회 조건
+const buildQuery = (inputs: { competitionID: string; timeID: string; time: string; name: string }) => {
+  if (inputs.timeID) return { timeID: Number(inputs.timeID) };
+  const f = timeStore.filter ?? {};
+  const query: Record<string, any> = {
+    gender: f.gender,
+    discipline: f.discipline ?? DISCIPLINE_CODE[f.style],
+    course: f.course,
+    distance: f.distance,
+    isMasters: f.isMasters,
+    adult: f.isAdult ? '성인' : '학생',
+    includeNoTime: true, // time 이 없는 기록(DQ/DNS 등)도 backend 에서는 모두 보여준다
+  };
+  if (f.isMasters && f.type) query.typeTime = f.type === 'event' ? 'eventResult' : 'timeResult';
+  if (inputs.competitionID) query.competitionID = Number(inputs.competitionID);
+  if (inputs.time) query.time = inputs.time;
+  if (inputs.name) query.name = inputs.name;
+  return query;
+};
 
-  if (field == 'time') timeStore.filter.time = value[field];
-  if (field == 'name') timeStore.filter.name = value[field];
-  if (field == 'competitionID') timeStore.filter.competitionID = Number(value[field]);
-  if (field == 'discipline') timeStore.filter.discipline = value[field];
-  if (field == 'gender') timeStore.filter.gender = value[field];
-  if (field == 'course') timeStore.filter.course = value[field];
-  if (field == 'distance') timeStore.filter.distance = value[field];
-  if (field == 'masters') timeStore.filter.isMasters = value[field] == "비등록";
-  if (field == 'adult') timeStore.filter.isAdult = value[field] == "성인";
-  if (field == 'type') timeStore.filter.type = value[field];
-  if (field == 'timeID') timeStore.filter = { timeID : Number(value[field]) };
-  await timeStore.fetchTimeList(1, timeStore.pagination.rowsPerPage);
-  console.log("onChangeFilter, field, value, timeStore.filter=", field, value, timeStore.timeList); 
-  timeStore.filter.name = "";
-  timeStore.filter.competitionID = 0;
-
-  // if (value.length < 2) return;
-
-  // timeStore.filter.name = value;
-  // await timeStore.fetchTeamListBackend(currentPage.value, timeStore.pagination.rowsPerPage);
-}
+const onSearch = async (inputs: { competitionID: string; timeID: string; time: string; name: string }, source = 'button') => {
+  // 입력 조건이 모두 비어 있으면 조회하지 않는다 (필터 버튼에서는 조용히 무시)
+  if (!inputs.competitionID && !inputs.timeID && !inputs.time && !inputs.name) {
+    if (source === 'button') alert('조회 조건(cid, timeID, time, 선수명 중 하나)을 입력해주세요.');
+    return;
+  }
+  currentPage.value = 1;
+  await timeStore.fetchTimeList(1, UI_CONFIG.backendRowsLimit, buildQuery(inputs));
+};
 
 
 const onSaveForm = async (form: TimeModel) => {

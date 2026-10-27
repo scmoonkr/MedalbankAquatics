@@ -29,6 +29,7 @@ export class TimeModel {
     sido?: Sido;
     timeORG?: string;
     round?: string;
+    heat?: string;
     teamID?: number;
     poolID?: number;
     stemID?: number;
@@ -77,6 +78,7 @@ export class TimeModel {
         this.sido = undefined;
         this.timeORG = undefined;
         this.round = undefined;
+        this.heat = undefined;
         this.teamID = undefined;
         this.pool = undefined;
         this.poolID = undefined;
@@ -135,6 +137,7 @@ export class TimeModel {
         time.status = json.status;
         time.timeORG = json.timeORG;
         time.round = json.round;
+        time.heat = json.heat;
         time.teamID = json.teamID;
         time.pool = json.pool;
         time.poolID = json.poolID;
@@ -188,6 +191,7 @@ export class TimeModel {
             type: this.type,
             sido: this.sido,
             round: this.round,
+            heat: this.heat,
             datetime: this.datetime,
             teamID: this.teamID,
             team: this.team,

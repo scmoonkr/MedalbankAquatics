@@ -163,10 +163,10 @@ const onFileChange = (event: Event) => {
     selectedFile.value = file;
   }
 };
-const clickUploadTimesExcel = () => {
+const clickUploadTimesExcel = async () => {
   if (selectedFile.value) {
-    timeStore.uploadFile('times', 'times', competitionID.value, selectedFile.value);
-		alert("Upload 완료되었습니다. Read 버튼을 눌러 기록을 확인하세요.");
+    await timeStore.uploadFile('times', 'times', competitionID.value, selectedFile.value);
+		alert(timeStore.error ? `Upload 실패: ${timeStore.error}` : "Upload 완료되었습니다. Read 버튼을 눌러 기록을 확인하세요.");
 	} else {
 		alert("업로드할 파일을 선택해주세요.");
   }

@@ -37,7 +37,7 @@
 				type="button"
 				@click="clickSearch"
 				class="upload-button w-[70px]"
-				title="선수명 조회"
+				title="조회"
 			>
         <strong>조회</strong>
       </button>
@@ -72,10 +72,10 @@ const timeStore = useTimeStore();
 
 
 const emit = defineEmits([
-  'change-filter',
+  'search',
 ]);
 
-// 상태 관리
+// 상태 관리 (조회 후에도 지우지 않는다)
 const name = ref('');
 const time = ref('');
 const competitionID = ref('');
@@ -83,28 +83,19 @@ const timeID = ref('');
 
 ///########################################################
 ///########################################################
-const onFilterChange = (options: any, field: string) => {
+const currentInputs = () => ({
+  competitionID: competitionID.value.trim(),
+  timeID: timeID.value.trim(),
+  time: time.value.trim(),
+  name: name.value.trim(),
+});
+// 필터 버튼: 조건을 바꾸고 바로 조회한다 (입력 조건이 비어 있으면 index 에서 조회하지 않음)
+const onFilterChange = (options: any) => {
   timeStore.filter = options;
-  if (JSON.stringify(timeStore.filter) !== JSON.stringify(options)) {
-    timeStore.filter = options;
-  }
-	emit('change-filter', options, field);
+  emit('search', currentInputs(), 'filter');
 }
 const clickSearch = () => {
-  if (timeID.value != "") {
-  	onFilterChange({ timeID: timeID.value }, 'timeID');
-    competitionID.value  = "";
-  } else if (competitionID.value != "") {
-  	onFilterChange({ competitionID: competitionID.value }, 'competitionID');
-    competitionID.value  = "";
-  } else if (time.value != "") {
-  	onFilterChange({ time: time.value }, 'time');
-    time.value  = "";
-  } else {
-  	onFilterChange({ name: name.value }, 'name');
-    name.value = "";
-  }
-	console.log("clickSearch, ", timeStore.filter);
+  emit('search', currentInputs(), 'button');
 }
 </script>
 

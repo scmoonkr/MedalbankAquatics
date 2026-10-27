@@ -1,6 +1,7 @@
 <!-- pages/times/list.vue -->
 <template>
 
+  <div class="times-table-scroll">
   <DataTable
     :columns="columns"
     :data="tableData"
@@ -21,6 +22,7 @@
     @edit="editRecord"
     @delete="confirmDelete" @goto-view-page="viewRecordDetails">
   </DataTable>
+  </div>
   <!----------------------->
   <!----------------------->
   <!----------------------->
@@ -118,6 +120,7 @@ const columns = [
   { key: 'name', label: '이름', width: '100px', sortable: true },
   { key: 'ageGroup', label: '연령대', width: '150px', sortable: true },
   { key: 'gender', label: '성별', options: ["men", "women", "mixed"], width: '100px', sortable: true },
+  { key: 'round', label: 'round', width: '80px', sortable: true },
   { key: 'discipline', label: '종목', options: ["FR", "BA", "BR", "FL", "IM"], width: '100px', sortable: true },
   { key: 'course', label: '코스', options: ["LCM", "SCM"], width: '60px', sortable: true },
   { key: 'distance', label: '거리', width: '60px', sortable: true },
@@ -135,7 +138,9 @@ const showDeleteButton = computed(() => selectedItems.value.length > 0);
 const sortColumnChanged = async (column: string) => {
   timeStore.sortField = column as any;
   timeStore.sortDirection = timeStore.sortDirection === SortDirection.ASC ? SortDirection.DESC : SortDirection.ASC;
-  await timeStore.fetchTimeList(1, rowsPerPage);
+  // 조회한 적이 없으면 호출하지 않고, 있으면 마지막 조회 조건을 유지한다
+  if (!timeStore.searchQuery) return;
+  await timeStore.fetchTimeList(1, UI_CONFIG.backendRowsLimit, timeStore.searchQuery);
 };
 
 const clickTableCell = async (item: TimeModel, column: string) => {
@@ -290,6 +295,18 @@ const closeDetailDialog = () => {
 <!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
 <!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
 <style scoped>
+/* 페이지가 아니라 table 영역에서만 스크롤 (헤더 고정, 페이지네이션은 아래에 유지) */
+.times-table-scroll :deep(.overflow-x-auto) {
+  max-height: calc(100vh - 280px);
+  overflow: auto;
+}
+.times-table-scroll :deep(.datatable thead th) {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: #e5e7eb; /* gray-200 */
+}
+
 .main-container {
   display: flex;
   flex: 1;

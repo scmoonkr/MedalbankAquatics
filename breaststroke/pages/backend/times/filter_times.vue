@@ -58,7 +58,7 @@ const filtersORG = ref<FilterItem[]>([
   { field: 'masters', selected: '비등록', options: ['등록', '비등록'] },
   { field: 'adult', selected: '성인', options: ['성인', '학생'] },
   { field: 'gender', selected: '여자', options: ['남자', '여자'] },
-  { field: 'style', selected: '평영', options: ['자유형', '배영', '평영', '접영', '개인혼영'] },
+  { field: 'discipline', selected: '평영', options: ['자유형', '배영', '평영', '접영', '개인혼영'] },
   { field: 'distance', selected: '50M', options: ['25M', '50M', '100M', '200M', '400M', '800M', '1500M'] },
   { field: 'course', selected: 'LCM', options: ['LCM', 'SCM'] },
   { field: 'type', selected: '대회기록', options: ['훈련기록', '대회기록'] },
@@ -193,7 +193,7 @@ const onFilterChange = async (field: string, value: string) => {
     
     // 필드별 값 변환 및 업데이트
     switch (field) {
-      case 'style':
+      case 'discipline': // TheFiltersTimes 가 종목 필터를 'discipline' 필드로 찾는다
         options.value.style = getStyleEngByKor(value) as SwimStyle;
         break;
       case 'gender':

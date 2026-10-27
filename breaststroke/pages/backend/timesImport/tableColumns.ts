@@ -6,7 +6,8 @@ export const tableColumns = [
   { key: 'isAdult', label: 'adult', width: '30px', type: "checkbox", sortable: false },
   { key: 'name', label: '이름', width: '100px', sortable: true },
   { key: 'team', label: '팀명', width: '150px', sortable: true },
-  { key: 'ageGroup', label: '연령대', width: '250px', sortable: true },
+  { key: 'ageGroup', label: '연령대', width: '120px', sortable: true },
+  { key: 'heat', label: 'heat', width: '80px', sortable: false },
 
   // type: select options
   {

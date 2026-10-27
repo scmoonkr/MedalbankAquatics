@@ -70,8 +70,10 @@ class timeServices {
 					query = {
 						$or: [ {status: ""}, { status: { $exists: false }}],
 						discipline: { $in: ["FR", "BA", "BR", "FL", "IM"]},
-						timeStamp	: { $gt: 0 }, 
+						timeStamp	: { $gt: 0 },
 					};
+					// query 를 새로 만들면서 위에서 세팅한 gender 가 사라지지 않게 유지
+					if (body.gender) query.gender = body.gender;
 					if (Array.isArray(body.competitionID)) {
 						if (body.competitionID.indexOf(0) < 0) {
 							query.competitionID = { $in: body.competitionID };
@@ -102,6 +104,11 @@ class timeServices {
 				if (body.eventCode  )  query.heatCode = body.heatCode;
 				if (body.data       )	query.name      = new RegExp("^" + body.data.trim());
 				if (body.ageGroup	  )	query.ageGroup  = body.ageGroup;
+			}
+			// backend 조회: time 이 없는 기록(DQ/DNS 등)과 status 가 있는 기록도 포함
+			if (body.includeNoTime) {
+				delete query.timeStamp;
+				if (Array.isArray(query.$or) && query.$or.some(c => c.status !== undefined)) delete query.$or;
 			}
 			if (body.timeID		  )	{
 				query = { timeID: Number(body.timeID) };

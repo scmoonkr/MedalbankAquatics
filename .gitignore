@@ -10,3 +10,6 @@ textbooks
 ankor
 deploy.sh
 **/html
+
+server/uploads
+server/medalbank-api/routes/Breaststroke/Services/importTimes/data

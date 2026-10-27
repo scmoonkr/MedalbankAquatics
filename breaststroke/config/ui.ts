@@ -1,5 +1,6 @@
 export const UI_CONFIG = {
   rowsPerPage: 10,
+  backendRowsLimit: 3000, // backend 목록 조회 시 한 번에 가져오는 최대 행 수
   paginationSizes: [10, 20, 50, 100],
   dateFormat: 'YYYY-MM-DD',
   timeFormat: 'HH:mm:ss.SS',

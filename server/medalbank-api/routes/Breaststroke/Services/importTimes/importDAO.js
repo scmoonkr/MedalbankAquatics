@@ -17,6 +17,7 @@ const { Config }  = require('./importUTIL/config');
 const uploadTeamsDAO  = require('./uploadTeamsDAO.js');
 
 const timesDAO = require('../times/times.custom.js');
+const { normalizeTime } = require('./utilImport');
 const athletesDAO = require('../athletes/athletes.custom.js');
 
 
@@ -68,6 +69,7 @@ const athletesDAO = require('../athletes/athletes.custom.js');
 																		data.datetime = data.datetime || competition.data.datetime || competition.data.dateStart;
 																		data.competitionName = data.competitionName || competition.data.competitionName || competition.data.fullname;
 																		data.norm = utilLibrary.normalizeMSKR(data.name);															data.norm = data.name
+																		data.time = normalizeTime(data.time); // 8자리 MM:SS.hh 유지
 																		arr.push(timesDAO.customizing(data));
 																		return arr;
 																	}, []);

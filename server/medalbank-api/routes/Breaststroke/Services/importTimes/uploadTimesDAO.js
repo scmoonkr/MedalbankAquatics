@@ -91,6 +91,7 @@ exports.uploadTimes = async (body, src) => {
 
 //-----> write uploaded file to local data dir
 	const dataDir = `${__dirname}/data`;
+	fs.mkdirSync(dataDir, { recursive: true });
 	const filename = `${dataDir}/${file_meta.name}`;
 	console.log("########################", competitionID, file_meta.name, filename);
 	fs.writeFileSync(`${filename}`, buffer);

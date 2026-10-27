@@ -259,7 +259,9 @@ class TimeModel {
 
 	// find times
 	static async list(query, body) {
-		const limit = timsLimit; // body.limit ? Number(body.limit) : timsLimit;
+		// body.limit 는 다른 화면이 보내도 무시해 왔으므로, 명시한 maxRows 만 timsLimit 이하로 허용
+		const maxRows = Number(body.maxRows);
+		const limit = maxRows > 0 ? Math.min(maxRows, timsLimit) : timsLimit;
 		let skip = (Number(body.page??1)-1)	* limit;
 		skip = skip < 0 ? 0 : skip;
 		const sort = {};

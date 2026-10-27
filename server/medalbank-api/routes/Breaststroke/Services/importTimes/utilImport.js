@@ -8,6 +8,19 @@ const Customizing = require('../times/times.custom');
 const timesBackup = "times_20230829";
 
 //-------------------------------------------
+//	기록 문자열을 8자리 "MM:SS.hh" 로 맞춘다.
+//	"29.74" -> "00:29.74", "1:23.4" -> "01:23.40", "01:23.45" -> 그대로
+//	형식을 알 수 없거나 시간 단위가 있는 값은 원본을 그대로 둔다.
+//-------------------------------------------
+exports.normalizeTime = (time) => {
+	if (typeof time !== 'string') return time;
+	const m = time.trim().match(/^(?:(\d{1,2}):)?(\d{1,2})\.(\d{1,3})$/);
+	if (!m) return time;
+	const pad2 = (v) => v.toString().padStart(2, '0');
+	return `${pad2(m[1] ?? 0)}:${pad2(m[2])}.${(m[3] + '00').slice(0, 2)}`;
+};
+
+//-------------------------------------------
 //	rank: gender-discipline-distance
 //-------------------------------------------
 exports.customTime = (time) => {
