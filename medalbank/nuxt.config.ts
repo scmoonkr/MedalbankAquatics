@@ -40,6 +40,9 @@ export default defineNuxtConfig({
       naverFormInsert: process.env.NAVER_FORM_INSERT || '',
       // backend/imagesBB 의 ImgBB 업로드 키 (브라우저에 노출되는 공개 키)
       imgbbKey:        process.env.IMGBB_KEY || '',
+      // server(6630) — medalbank-api 가 마운트된 Express. backend/timesImport 의
+      // Read/Check/Save/load/Delete 가 /BR/importTimes/* 를 직접 호출한다.
+      mbApiBase:       process.env.NUXT_PUBLIC_MB_API_BASE || 'http://localhost:6630',
     },
   },
 

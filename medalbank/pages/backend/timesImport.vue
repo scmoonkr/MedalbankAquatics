@@ -32,7 +32,7 @@
       <button class="ti-btn ti-green" :disabled="!comp.id || parsing" @click="clickUpload">Upload.xls</button>
       <button class="ti-btn ti-green" :disabled="!comp.id || parsing" @click="clickRead">Read</button>
       <button class="ti-btn ti-green" :disabled="!rows.length"        @click="clickCheck">Check</button>
-      <button class="ti-btn ti-blue"  :disabled="!keepCount || confirming" @click="confirmTimes">Save to DB</button>
+      <button class="ti-btn ti-blue"  :disabled="!total || confirming" @click="confirmTimes">Save to DB</button>
       <button class="ti-btn ti-blue"  :disabled="!comp.id || parsing" @click="clickLoadFromDb">load from DB</button>
       <button class="ti-btn ti-red"   :disabled="!rows.length"        @click="clickDelete">Delete</button>
 
@@ -60,13 +60,10 @@
       </div>
     </div>
 
-    <div v-if="summary && showCheck" class="ti-summary">
-      총 <strong>{{ summary.total }}</strong> ·
-      등재가능 <strong class="ok">{{ keepCount }}</strong> ·
-      DB중복 {{ summary.duplicateInDb }} ·
-      파일중복 {{ summary.duplicateInFile }} ·
-      제외 {{ summary.flagged }}
-      <span v-if="summary.sheets.length" class="ti-sheets">· 시트: {{ summary.sheets.join(', ') }}</span>
+    <div v-if="rows.length && showCheck" class="ti-summary">
+      총 <strong>{{ total }}</strong> ·
+      이 페이지 {{ rows.length }}건 중 등재가능 <strong class="ok">{{ keepCount }}</strong>
+      <span v-if="comp.competitionID" class="ti-sheets">· cid {{ comp.competitionID }}</span>
     </div>
 
     <!-- ── Table ────────────────────────────────────────────── -->
@@ -79,8 +76,8 @@
         </thead>
         <tbody>
           <tr
-            v-for="(row, i) in pagedRows" :key="row.rowKey"
-            :class="[i % 2 === 1 ? 'alt-row' : '', !row.insertable ? 'ti-skip' : '', row.dup !== 'none' ? 'ti-dup' : '']"
+            v-for="(row, i) in rows" :key="row.seqno ?? row.timeID ?? i"
+            :class="[i % 2 === 1 ? 'alt-row' : '', !canKeep(row) ? 'ti-skip' : '', row.dup === 'db' ? 'ti-dup' : '']"
           >
             <td class="c-chk"><input type="checkbox" :checked="row.isMasters" disabled /></td>
             <td class="c-chk"><input type="checkbox" :checked="row.isAdult"   disabled /></td>
@@ -95,9 +92,8 @@
             <td class="mono">{{ row.rank ?? '' }}</td>
             <td class="alt-col ti-flags">
               <span v-if="row.status" class="ti-badge" :class="statusClass(row.status)">{{ row.status }}</span>
-              <span v-if="row.dup === 'db'"   class="ti-badge amber">DB중복</span>
-              <span v-if="row.dup === 'file'" class="ti-badge amber">파일중복</span>
-              <span v-for="fl in row.flags" :key="fl" class="ti-badge" :class="flagClass(fl)">{{ flagKo(fl) }}</span>
+              <span v-for="fl in (row.flags || [])" :key="fl" class="ti-badge" :class="flagClass(fl)">{{ flagKo(fl) }}</span>
+              <span v-if="row.note" class="ti-badge grey">{{ row.note }}</span>
             </td>
             <td class="c-act">
               <button class="act edit" title="기록 수정" @click="openEdit(row)">✎</button>
@@ -113,12 +109,12 @@
 
       <!-- pagination -->
       <div v-if="totalPages > 1" class="ti-pager">
-        <button :disabled="page === 1" @click="page = 1">«</button>
-        <button :disabled="page === 1" @click="page--">‹</button>
+        <button :disabled="page === 1 || parsing" @click="goPage(1)">«</button>
+        <button :disabled="page === 1 || parsing" @click="goPage(page - 1)">‹</button>
         <span class="ti-pager-now">{{ page }} / {{ totalPages }}</span>
-        <button :disabled="page === totalPages" @click="page++">›</button>
-        <button :disabled="page === totalPages" @click="page = totalPages">»</button>
-        <span class="ti-pager-cnt">{{ rows.length }}건</span>
+        <button :disabled="page === totalPages || parsing" @click="goPage(page + 1)">›</button>
+        <button :disabled="page === totalPages || parsing" @click="goPage(totalPages)">»</button>
+        <span class="ti-pager-cnt">{{ total }}건</span>
       </div>
     </div>
 
@@ -171,9 +167,15 @@
 definePageMeta({ layout: 'backend' })
 useHead({ title: 'Import Times — 메달뱅크 Backend' })
 
-// 데이터는 이 프로젝트 API 를 쓴다 (competitions.vue 드로어와 동일).
-//   POST /api/backend/competitions/:id/times-parse   (multipart, field=file) → 미리보기 행
-//   POST /api/backend/competitions/:id/times-confirm ({ rows })              → mergedTimes 등재
+// 데이터 흐름:
+//   Upload.xls  Nitro  POST /api/backend/competitions/:id/times-parse (multipart)
+//                      엑셀을 파싱해 timesImport 스테이징에 적재
+//   그 외        server(6630, medalbank-api) 의 /BR/importTimes/* 를 그대로 호출
+//                      read              timesImport 페이지 조회
+//                      check             팀·선수 매칭 후 timesImport 갱신
+//                      importTimes       timesImport → mergedTimes 등재
+//                      readImportedTimes 등재된 기록 조회
+//                      deleteTime        timesImport 단건 삭제
 // 화면 구성(필터·컬럼·액션)은 Breaststroke/pages/backend/timesImport 와 맞췄다.
 
 interface Competition {
@@ -181,21 +183,33 @@ interface Competition {
   datetime: string; course: string; isMasters: boolean
 }
 
+// Express(/BR/importTimes/*) 가 돌려주는 timesImport / mergedTimes 행.
+// flags·dup 은 Nitro 미리보기에만 있던 것이라 선택 필드로 둔다.
 interface PreviewRow {
-  rowKey: string
-  name: string; names?: string[]; gender: string
-  discipline: string; distance: string; time: string
-  status: string; rank: number | null; ageGroup: string; group?: string
-  isMasters: boolean; isAdult: boolean
-  team: string; round: string; heat: string; waPoints: number
-  flags: string[]; dup: 'none' | 'file' | 'db'; insertable: boolean
+  seqno?:     number
+  timeID?:    number
+  name:       string
+  names?:     string[]
+  gender:     string
+  discipline: string
+  distance:   string
+  course?:    string
+  time:       string
+  status?:    string
+  rank?:      number | null
+  ageGroup:   string
+  isMasters:  boolean
+  isAdult:    boolean
+  team:       string
+  teamID?:    number
+  round?:     string
+  heat?:      string
+  note?:      string
+  flags?:     string[]
+  dup?:       'none' | 'file' | 'db'
   [k: string]: any
 }
 
-interface Summary {
-  total: number; insertable: number; duplicateInDb: number
-  duplicateInFile: number; flagged: number; sheets: string[]
-}
 
 // 원본 tableColumns.ts 와 동일한 순서·라벨·폭
 const COLUMNS = [
@@ -261,12 +275,28 @@ const compLine = computed(() => [
   comp.id ? (comp.isMasters ? '마스터즈' : '일반') : '',
 ].filter(Boolean).join(' · '))
 
-// ── 파싱 ──────────────────────────────────────────────────────────
+// ── 6630(server/medalbank-api) 호출 ──────────────────────────────
+// Upload.xls 만 Nitro times-parse 로 timesImport 를 채우고,
+// Read/Check/Save/load/Delete 는 /BR/importTimes/* 를 그대로 쓴다.
+const mbApi = useRuntimeConfig().public.mbApiBase as string
+
+interface MbResponse {
+  message?:   string
+  data?:      PreviewRow[]
+  count?:     number
+  page?:      number
+  page_size?: number
+}
+
+async function callMb(path: string, body: Record<string, any>): Promise<MbResponse> {
+  return await $fetch<MbResponse>(`${mbApi}/BR/importTimes/${path}`, { method: 'POST', body })
+}
+
 const fileRef    = ref<HTMLInputElement | null>(null)
 const picked     = ref<File | null>(null)
 const fileName   = ref('')
 const rows       = ref<PreviewRow[]>([])
-const summary    = ref<Summary | null>(null)
+const total      = ref(0)
 const parsing    = ref(false)
 const confirming = ref(false)
 const error      = ref('')
@@ -274,114 +304,145 @@ const showCheck  = ref(true)
 const toast      = reactive<{ ok: boolean; lines: string[] }>({ ok: true, lines: [] })
 
 function resetRows() {
-  rows.value     = []
-  summary.value  = null
-  error.value    = ''
-  page.value     = 1
+  rows.value  = []
+  total.value = 0
+  error.value = ''
+  page.value  = 1
 }
 
-// 파일 선택만 기억해 둔다. 분석은 Upload.xls / Read 가 수행한다.
 function onFilePick(ev: Event) {
   const file = (ev.target as HTMLInputElement).files?.[0] ?? null
   picked.value = file
   fileName.value = file?.name ?? ''
 }
 
-async function parsePicked() {
+// 응답을 표에 반영. 서버가 페이지 단위로 주므로 count 를 총건수로 쓴다.
+function apply(res: MbResponse) {
+  rows.value  = Array.isArray(res.data) ? res.data : []
+  total.value = res.count ?? rows.value.length
+}
+
+// Upload.xls — 로컬 엑셀을 파싱해 timesImport 에 적재 (Nitro)
+async function clickUpload() {
   if (!comp.id)      { error.value = 'cid 를 먼저 입력하세요.'; return }
-  if (!picked.value) { error.value = '업로드할 파일을 선택하세요. (서버에 이미 올린 기록지는 Read 를 쓰세요)'; return }
+  if (!picked.value) { error.value = '업로드할 파일을 선택하세요. (이미 올린 대회는 Read)'; return }
   parsing.value = true
   error.value   = ''
-  rows.value    = []
-  summary.value = null
+  resetRows()
   try {
     const fd = new FormData()
     fd.append('file', picked.value)
-    const res = await $fetch<{ rows: PreviewRow[]; summary: Summary }>(
-      `/api/backend/competitions/${comp.id}/times-parse`, { method: 'POST', body: fd })
-    rows.value    = res.rows
-    summary.value = res.summary
-    page.value    = 1
+    await $fetch(`/api/backend/competitions/${comp.id}/times-parse`, { method: 'POST', body: fd })
+    await clickRead()
   } catch (e: any) {
-    error.value = e?.statusMessage || e?.data?.statusMessage || e?.message || '파싱 실패'
+    error.value = e?.statusMessage || e?.data?.statusMessage || e?.message || '업로드 실패'
   } finally {
     parsing.value = false
   }
 }
 
-// Upload.xls — 선택한 엑셀을 올려 분석한다.
-const clickUpload = () => parsePicked()
-
-// Read — Upload.xls 로 timesImport 에 저장해 둔 이 대회의 파싱 결과를 다시 읽는다 (로컬 파일 선택 불필요).
+// Read — timesImport 에 적재된 이 대회의 기록을 페이지 단위로 읽는다
 async function clickRead() {
-  if (!comp.id) { error.value = 'cid 를 먼저 입력하세요.'; return }
+  if (!comp.competitionID) { error.value = 'cid 를 먼저 입력하세요.'; return }
   parsing.value = true
   error.value   = ''
-  rows.value    = []
-  summary.value = null
   try {
-    const res = await $fetch<{ rows: PreviewRow[]; summary: Summary; file?: string }>(
-      `/api/backend/competitions/${comp.id}/times-read`, { method: 'POST' })
-    rows.value     = res.rows
-    summary.value  = res.summary
-    fileName.value = res.file || ''
-    page.value     = 1
-    if (!res.rows.length) error.value = '읽어올 기록이 없습니다.'
+    const res = await callMb('read', {
+      category: 'times', type: 'times', id: String(comp.competitionID),
+      page: page.value, page_size: perPage.value || 100000,
+    })
+    apply(res)
+    if (!rows.value.length) error.value = res.message?.trim() || '읽어올 기록이 없습니다. Upload.xls 로 먼저 올리세요.'
   } catch (e: any) {
-    error.value = e?.statusMessage || e?.data?.statusMessage || e?.message || '읽기 실패'
+    error.value = e?.data?.message || e?.message || '읽기 실패'
   } finally {
     parsing.value = false
   }
 }
 
-// Check — 검사 요약(총/등재가능/중복/제외)을 켜고 끈다.
-function clickCheck() { showCheck.value = !showCheck.value }
+// Check — 팀/선수 매칭과 연령대 순위를 붙여 timesImport 를 갱신한다
+async function clickCheck() {
+  if (!comp.competitionID) return
+  if (!confirm('기록 확인을 실행하시겠습니까? 팀 매칭 결과가 timesImport 에 반영됩니다.')) return
+  parsing.value = true
+  error.value   = ''
+  try {
+    const res = await callMb('check', {
+      competitionID: String(comp.competitionID), page: page.value, page_size: perPage.value || 100000,
+    })
+    apply(res)
+    showCheck.value = true
+    toast.ok = true
+    toast.lines = [`✓ check 완료 · ${res.count ?? rows.value.length}건`, ...(res.message ? [res.message] : [])]
+  } catch (e: any) {
+    toast.ok = false
+    toast.lines = [`check 실패: ${e?.data?.message || e?.message || e}`]
+  } finally {
+    parsing.value = false
+  }
+}
 
-// load from DB — 이 대회에 이미 등재된 mergedTimes 기록을 같은 표로 불러온다.
+// Save to DB — timesImport 를 mergedTimes 로 등재한다
+async function confirmTimes() {
+  if (!comp.competitionID || confirming.value) return
+  if (!confirm(`'${comp.competitionName}' 의 기록 ${total.value}건을 등재하시겠습니까?
+같은 대회의 기존 기록은 삭제 후 다시 등재됩니다.`)) return
+  confirming.value = true
+  try {
+    const res = await callMb('importTimes', {
+      competitionID: String(comp.competitionID), page: page.value, page_size: perPage.value || 100000,
+    })
+    apply(res)
+    toast.ok = true
+    toast.lines = [`✓ ${res.count ?? 0}건 등재`, ...(res.message ? [`매칭된 선수:
+${res.message}`] : [])]
+  } catch (e: any) {
+    toast.ok = false
+    toast.lines = [`등재 실패: ${e?.data?.message || e?.message || e}`]
+  } finally {
+    confirming.value = false
+  }
+}
+
+// load from DB — 이미 등재된 mergedTimes 기록을 불러온다
 async function clickLoadFromDb() {
-  if (!comp.id) return
+  if (!comp.competitionID) return
   parsing.value = true
   error.value   = ''
-  rows.value    = []
-  summary.value = null
   try {
-    const res = await $fetch<{ rows: PreviewRow[]; summary: Summary }>(
-      `/api/backend/competitions/${comp.id}/times`)
-    rows.value     = res.rows
-    summary.value  = res.summary
+    const res = await callMb('readImportedTimes', { competitionID: String(comp.competitionID) })
+    apply(res)
     fileName.value = ''
-    page.value     = 1
-    if (!res.rows.length) error.value = '이 대회로 등재된 기록이 없습니다.'
+    if (!rows.value.length) error.value = '이 대회로 등재된 기록이 없습니다.'
   } catch (e: any) {
-    error.value = e?.statusMessage || e?.data?.statusMessage || e?.message || '불러오기 실패'
+    error.value = e?.data?.message || e?.message || '불러오기 실패'
   } finally {
     parsing.value = false
   }
 }
 
-// Delete — 화면의 분석 결과를 비운다 (DB 는 건드리지 않는다).
+// Delete — 화면의 목록을 비운다 (DB 는 건드리지 않는다)
 function clickDelete() {
   if (!confirm('표의 내용을 비우시겠습니까? DB 기록은 삭제되지 않습니다.')) return
   resetRows()
 }
 
-// ── 페이지네이션 ──────────────────────────────────────────────────
-const perPage = ref(100)   // 100개씩 표시, 넘어가면 페이지네이션
+// ── 페이지네이션 — 서버가 잘라서 준다 ────────────────────────────
+const perPage = ref(100)   // 0 이면 전체
 const page    = ref(1)
 
 const totalPages = computed(() =>
-  perPage.value === 0 ? 1 : Math.max(1, Math.ceil(rows.value.length / perPage.value)))
-const pagedRows = computed(() =>
-  perPage.value === 0 ? rows.value
-    : rows.value.slice((page.value - 1) * perPage.value, page.value * perPage.value))
+  perPage.value === 0 ? 1 : Math.max(1, Math.ceil(total.value / perPage.value)))
 
-watch([perPage, () => rows.value.length], () => {
-  if (page.value > totalPages.value) page.value = totalPages.value
-})
+async function goPage(p: number) {
+  if (p < 1 || p > totalPages.value || p === page.value) return
+  page.value = p
+  await clickRead()
+}
+watch(perPage, async () => { page.value = 1; if (rows.value.length) await clickRead() })
 
-// ── 행 상태 ───────────────────────────────────────────────────────
-const keepCount = computed(() => rows.value.filter(r => r.insertable).length)
-
+// ── 행 표시 ───────────────────────────────────────────────────────
+// Express 응답은 timesImport/mergedTimes 원본 모양이라 flags/dup 이 없다.
 const FLAG_KO: Record<string, string> = {
   'unmapped-style': '영법인식불가', 'unmapped-distance': '거리인식불가',
   'no-basetime': '기준기록없음', 'no-name': '이름없음',
@@ -390,14 +451,31 @@ function flagKo(f: string)      { return FLAG_KO[f] ?? f }
 function flagClass(f: string)   { return f === 'no-basetime' ? 'grey' : 'red' }
 function statusClass(s: string) { return s === 'DQ' ? 'red' : s === '번외' ? 'amber' : 'grey' }
 
-// 유효한 종목이고 중복이 아니면 등재 대상. DNS/DQ 처럼 기록이 비어도 상태가 있으면 남긴다.
+// 등재 대상으로 볼 수 있는 행인지 — 요약 표시에만 쓴다.
 function canKeep(r: PreviewRow): boolean {
   return !!r.name && DISCIPLINES.includes(r.discipline) &&
-    DISTANCES.includes((r.distance || '').toUpperCase()) &&
-    (!!r.time || !!r.status) && r.dup === 'none'
+    DISTANCES.includes(String(r.distance || '').toUpperCase()) &&
+    (!!r.time || !!r.status)
 }
-function removeRow(r: PreviewRow) {
-  rows.value = rows.value.filter(x => x.rowKey !== r.rowKey)
+const keepCount = computed(() => rows.value.filter(canKeep).length)
+
+// 행 삭제 — timesImport 에서 { competitionID, seqno } 단건 삭제
+async function removeRow(r: PreviewRow) {
+  if (r.seqno === undefined || r.seqno === null) {
+    // 등재 결과(load from DB)처럼 seqno 가 없으면 화면에서만 제거
+    rows.value = rows.value.filter(x => x !== r)
+    return
+  }
+  if (!confirm(`'${r.name}' 기록을 timesImport 에서 삭제하시겠습니까?`)) return
+  try {
+    await callMb('deleteTime', {
+      competitionID: String(comp.competitionID), seqno: String(r.seqno),
+    })
+    rows.value = rows.value.filter(x => x !== r)
+    total.value = Math.max(0, total.value - 1)
+  } catch (e: any) {
+    alert(`삭제 실패: ${e?.data?.message || e?.message || e}`)
+  }
 }
 
 // ── 수정 / 상세 모달 ──────────────────────────────────────────────
@@ -417,9 +495,8 @@ function saveEdit() {
     if (c.key === 'rank') r.rank = edit.form.rank === '' || edit.form.rank == null ? null : Number(edit.form.rank)
     else r[c.key] = edit.form[c.key]
   }
-  r.waPoints   = 0            // 등재 시 서버가 다시 계산한다
-  r.insertable = canKeep(r)
-  edit.open    = false
+  // 화면 표시만 바꾼다. timesImport 를 고치려면 Check 를 다시 돌린다.
+  edit.open = false
 }
 function openView(r: PreviewRow) { view.target = r; view.open = true }
 function editFromView() {
@@ -440,31 +517,6 @@ function viewValue(key: string) {
   }
 }
 
-// ── 등재 ──────────────────────────────────────────────────────────
-async function confirmTimes() {
-  if (confirming.value || !comp.id) return
-  const keep = rows.value.filter(r => r.insertable)
-  if (!keep.length) return
-  if (!confirm(`${keep.length}건을 '${comp.competitionName}' 기록으로 등재하시겠습니까?`)) return
-
-  confirming.value = true
-  try {
-    const res = await $fetch<{ inserted: number; skippedDuplicate: number; skippedInvalid: number }>(
-      `/api/backend/competitions/${comp.id}/times-confirm`, { method: 'POST', body: { rows: keep } })
-    toast.ok = true
-    toast.lines = [
-      `✓ ${res.inserted}건 등재`,
-      res.skippedDuplicate ? `⊘ 중복 ${res.skippedDuplicate}건` : '',
-      res.skippedInvalid   ? `⚠ 제외 ${res.skippedInvalid}건`   : '',
-    ].filter(Boolean)
-    resetRows()
-  } catch (e: any) {
-    toast.ok = false
-    toast.lines = [`등재 실패: ${e?.statusMessage || e?.data?.statusMessage || e?.message || e}`]
-  } finally {
-    confirming.value = false
-  }
-}
 </script>
 
 <style scoped>

@@ -1,5 +1,5 @@
 // 엑셀 파싱 결과에 중복/플래그 판정을 붙여 미리보기 행을 만든다.
-// times-parse(업로드한 파일)와 times-read(서버에 저장된 파일)가 같은 규칙을 쓰도록 여기로 모았다.
+// times-parse 가 쓰는 판정 로직. (times-read 는 6630 /BR/importTimes/read 로 옮겨가 제거됨)
 import type { Db } from 'mongodb'
 import { dedupKey, isDedupable, type CompetitionCtx, type ParsedRow } from '~/server/utils/importTimes'
 

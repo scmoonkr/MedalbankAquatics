@@ -56,6 +56,16 @@ cd C:\Develop\MedalbankAquatics\medalbank
 npm run dev
 ```
 
+### 3) breaststroke.club
+→ http://localhost:6632 
+```bash
+cd C:\Develop\MedalbankAquatics\breaststroke
+npm run dev
+
+http://localhost:6632/backend
+https://breaststroke.club/backend
+```
+
 → http://localhost:6632 
 
 > 참고: 두 Nuxt 앱은 `/images/`, `/data/` 등 정적/API 요청을 6630(API 서버)으로 프록시하므로,

@@ -11,6 +11,10 @@ echo "=== [2/6] Express 패키지 설치 ==="
 cd "$PROJECT_DIR/server"
 npm install --omit=dev
 
+# medalbank-api(마운트되는 CJS 서브앱)는 자체 package.json 을 쓴다
+cd "$PROJECT_DIR/server/medalbank-api"
+npm install --omit=dev
+
 echo "=== [3/6] Aquatics 패키지 설치 & 빌드 ==="
 cd "$PROJECT_DIR/aquatics"
 npm install
