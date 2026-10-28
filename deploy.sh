@@ -25,6 +25,11 @@ cd "$PROJECT_DIR/medalbank"
 npm install
 npm run build
 
+echo "=== [4/6] Breaststroke 패키지 설치 & 빌드 ==="
+cd "$PROJECT_DIR/breaststroke"
+npm install
+npm run build
+
 echo "=== [4/6] SSE 패키지 설치 & 빌드 ==="
 cd "$PROJECT_DIR/sse"
 npm install
