@@ -62,9 +62,11 @@ https:// medalbankaquatics.com/backend/leaderboard
 ```bash
 cd C:\Develop\MedalbankAquatics\medalbank
 npm run dev
+→ http://localhost:6631 
+https:// medalbank.com
 ```
 
-### 3) https://medalbankaquatics.com
+### 4) https://medalbankaquatics.com
 → http://localhost:6632 
 https://medalbankaquatics.com
 → http://localhost:6632/backend/meets
@@ -73,8 +75,14 @@ https://medalbankaquatics.com/backend/meets
 
 ```bash
 
+### 5) https://breaststroke.club
+→ http://localhost:6632 
+https://https://breaststroke.club
+→ http://localhost:6632/backend/competitions
+https://https://breaststroke.club/backend/competitions
 
-### sse(swimming stock exchange)
+
+### 6) sse(swimming stock exchange)
 → http://localhost:6634
 https://medalbank.com:6634
 ```
