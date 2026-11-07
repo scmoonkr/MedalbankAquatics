@@ -45,7 +45,10 @@
       <button type="button" class="upload-button w-[70px]" title="조회" @click="search">
         <strong>조회</strong>
       </button>
-      <span class="text-sm text-gray-500">{{ totalCount }}건</span>
+      <span class="text-sm text-gray-500">
+        {{ totalCount.toLocaleString() }}건
+        <template v-if="totalPages > 1"> · {{ currentPage }} / {{ totalPages }} 페이지 (페이지당 최대 {{ UI_CONFIG.backendRowsLimit.toLocaleString() }}건)</template>
+      </span>
       <button
         type="button"
         class="manual-button ml-auto"
@@ -75,11 +78,14 @@
       </button>
     </div>
 
-    <div class="records-table-scroll">
+    <div>
       <DataTable
         :columns="columns"
         :data="records"
-        :pagination="false"
+        :pagination="true"
+        :totalPage="totalPages"
+        :currentPage="currentPage"
+        :itemsPerPage="UI_CONFIG.backendRowsLimit"
         :search="false"
         :isLoading="isLoading"
         :serverSide="true"
@@ -88,6 +94,7 @@
         :rowClickable="true"
         :cellClickable="true"
         @click-cell="openEdit"
+        @page-change="loadPage"
       />
     </div>
 
@@ -155,11 +162,16 @@ const mastersFilter = ref('');
 const records = ref<any[]>([]);
 const totalCount = ref(0);
 const isLoading = ref(false);
+const currentPage = ref(1);
+const totalPages = computed(() => Math.ceil(totalCount.value / UI_CONFIG.backendRowsLimit));
 
-async function search() {
+// 조회 조건이 바뀌면 1페이지부터 (이벤트 객체가 page 로 넘어가지 않게 별도 함수로 감싼다)
+const search = () => loadPage(1);
+
+async function loadPage(page: number) {
   isLoading.value = true;
   try {
-    const params: Record<string, any> = { maxRows: UI_CONFIG.backendRowsLimit };
+    const params: Record<string, any> = { maxRows: UI_CONFIG.backendRowsLimit, page };
     for (const [key, value] of Object.entries(filter.value)) {
       if (value) params[key] = typeof value === 'string' ? value.trim() : value;
     }
@@ -168,6 +180,7 @@ async function search() {
     const response = await recordApi.getRecordList(params);
     records.value = response.data ?? [];
     totalCount.value = response.count ?? 0;
+    currentPage.value = page;
   } finally {
     isLoading.value = false;
   }
@@ -213,7 +226,7 @@ async function applyExternal(keys: string[]) {
     }
     alert(`${response.count}건 업데이트했습니다.`);
     showUpdateModal.value = false;
-    await search();
+    await loadPage(currentPage.value);
   } finally {
     isApplying.value = false;
   }
@@ -235,7 +248,7 @@ function openEdit(row: Record<string, any>) {
 
 async function onDrawerDone() {
   showDrawer.value = false;
-  await search();
+  await loadPage(currentPage.value);
 }
 
 onMounted(search);
@@ -303,16 +316,5 @@ onMounted(search);
 .upload-button:hover {
   background-color: #d0d0d0;
 }
-
-/* 페이지가 아니라 table 영역에서만 스크롤 (헤더 고정) */
-.records-table-scroll :deep(.overflow-x-auto) {
-  max-height: calc(100vh - 280px);
-  overflow: auto;
-}
-.records-table-scroll :deep(.datatable thead th) {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background-color: #e5e7eb; /* gray-200 */
-}
+/* table 안쪽 스크롤 없이 모든 행을 펼치고, 스크롤은 페이지 전체에서만 한다 */
 </style>

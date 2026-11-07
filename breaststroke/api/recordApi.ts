@@ -13,6 +13,7 @@ export interface RecordFilter {
   isMasters?: boolean;
   name?: string;
   maxRows?: number;
+  page?: number;
 }
 
 export interface RecordKey { type: string; gender: string; discipline: string; course: string; distance: string }
