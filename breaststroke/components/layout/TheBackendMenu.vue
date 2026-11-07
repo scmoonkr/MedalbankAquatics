@@ -1,7 +1,7 @@
 <!-- components/layout/TheBackendMenu.vue -->
 <template>
   <!-- 백엔드 좌측 메뉴 -->
-  <aside class="backend-menu bg-gray-50 border-r border-gray-200 w-[180px] shrink-0 min-h-screen">
+  <aside class="backend-menu bg-gray-50 border-r border-gray-200 w-[180px] shrink-0 self-stretch">
     <div class="sticky top-0 py-5">
       <h2 class="px-5 mb-4 text-xs font-bold tracking-widest text-gray-400 uppercase">Backend</h2>
 

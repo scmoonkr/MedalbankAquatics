@@ -1,16 +1,16 @@
 <!-- layouts/backend.vue -->
 <template>
-  <div class="min-h-screen">
+  <div class="min-h-screen flex flex-col">
     <!-- 헤더 영역 -->
     <div>
       <TheHeader />
     </div>
 
-    <!-- 메인 컨텐츠 영역 (좌측메뉴 + 컨텐츠) -->
-    <div class="flex items-start">
+    <!-- 메인 컨텐츠 영역 (좌측메뉴 + 컨텐츠). 남는 높이를 채워 메뉴가 화면 아래까지 이어지되, 헤더 + 100vh 로 스크롤이 생기지 않게 한다 -->
+    <div class="flex flex-1 items-start">
       <TheBackendMenu />
 
-      <main class="flex-1 min-w-0">
+      <main class="flex-1 min-w-0 pb-24">
         <slot />
       </main>
     </div>
