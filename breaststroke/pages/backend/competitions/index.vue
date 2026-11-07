@@ -85,6 +85,7 @@ const menus = [
 ];
 
 const router = useRouter();
+const toast = useToast();
 
 const authStore = useAuthStore();
 const competitionStore = useCompetitionStore();
@@ -167,12 +168,20 @@ const onChangeFilter = async (field: string, value: string) => {
 }
 
 const onSaveForm = async (form: CompetitionModel) => {
-  await competitionStore.updateCompetition(form);
-  const index = competitionStore.competitionList.findIndex(el => el.poolID === form.poolID);
+  const saved = await competitionStore.updateCompetition(form);
+  if (!saved) {
+    toast.error('대회 저장 실패', competitionStore.error ?? '', { duration: 3000, showProgress: true });
+    return;
+  }
+  // 새 대회(competitionID 0)는 서버가 정한 번호를 받는다
+  if (!form.competitionID && competitionStore.currentCompetition) {
+    form.competitionID = competitionStore.currentCompetition.competitionID;
+  }
+  toast.success('저장했습니다.', `${form.fullname} (cid ${form.competitionID})`, { duration: 1500, showProgress: true });
+  const index = competitionStore.competitionList.findIndex(el => el.competitionID === form.competitionID);
   if (index !== -1) {
     competitionStore.competitionList[index] = form;
   } else {
-    form.competitionID = competitionStore.currentCompetition!.competitionID;
     competitionStore.competitionList.splice(0, 0, form)
   }
 }

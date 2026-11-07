@@ -50,6 +50,7 @@ exports.field = (data) => {
 	if (data.note) 							value.note = data.note;
 
 	value.extraInfo = data.extraInfo || {};
+	if (!value.extraInfo.info) value.extraInfo.info = {};
 
 	if (data.entryFeePerPerson) value.extraInfo.info.entryFeePerPerson = data.entryFeePerPerson
 	if (data.entryFeePerRelay	) value.extraInfo.info.entryFeePerRelay	= data.entryFeePerRelay

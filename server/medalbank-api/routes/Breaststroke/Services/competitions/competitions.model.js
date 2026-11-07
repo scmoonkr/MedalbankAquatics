@@ -498,13 +498,8 @@ class CompetitionModel {
 		const value = {};
 
 		// Determine the competition ID.
-		if (!body.competitionID || body.competitionID == 0) {
-				// If competitionID is 0 or not provided, generate a new ID.
-				value.competitionID = await mongodb.max(mongoCFG.Breaststroke.competitions, "competitionID", {}) + 1;
-		} else {
-				// Use the provided competitionID.
-				value.competitionID = Number(body.competitionID);
-		}
+		// If competitionID is 0 or not provided, generate a new ID (max+1).
+		value.competitionID = await this.nextCompetitionID(body.competitionID);
 
 		// --------------------------------------------------------------
 		// Save the featured image if a source path is provided.
@@ -1030,13 +1025,20 @@ console.log("query:", query);
 	static getByYear		 = (async (body) => await this.list({ year: Number(body.year) }, body));
 	static getByName		 = (async (body) => await this.list({ name: Number(body.year) }, body));
 
+	// competitionID 가 0 이거나 없으면 max(competitionID)+1 (MongoDB.max 가 이미 +1 을 돌려준다), 아니면 그대로
+	static async nextCompetitionID(competitionID) {
+		const id = Number(competitionID);
+		if (id) return id;
+		return await mongodb.max(mongoCFG.Breaststroke.competitions, "competitionID", {});
+	}
+
 	// insert
 	static async insert(body) {
 		console.log(body.dateStart);
 		const value = Customizing.field(body);
 		console.log(body.dateStart, value.dateStart);
 		//----------------------------------------------------------------
-		value.competitionID = await mongodb.max(mongoCFG.Breaststroke.competitions, "competitionID", {}); // query, db
+		value.competitionID = await this.nextCompetitionID(body.competitionID);
 		console.log(">>>>>>>>>>>>>> competitions.insert.value=", value);
 		 await mongodb.insertOne(mongoCFG.Breaststroke.competitions, value);
 		 return { message: '', data: { competitionID: value.competitionID } };
@@ -1047,18 +1049,23 @@ console.log("query:", query);
 	static async update(body) {
 		console.log("======> competitions.update.body.", body);
 		const value = Customizing.field(body);
-		if (!body.competitionID) {
-			value.competitionID = await mongodb.max(mongoCFG.Breaststroke.competitions, "competitionID", {}); // query, db
+		if (!Number(body.competitionID)) {
 			value.created = new Date();
 		} else {
 			value.update = new Date();
+			// 기존 대회는 body 에 없는 항목을 기본값으로 덮어쓰지 않는다
+			if (!body.extraInfo) delete value.extraInfo;
+			if (body.timeCount === undefined) delete value.timeCount;
+			if (body.athleteCount === undefined) delete value.athleteCount;
 		}
+		value.competitionID = await this.nextCompetitionID(body.competitionID);
 
 		const query = { competitionID: value.competitionID };
 
 		console.log("competition.update=", query, value);
 		//----------------------------------------------------------------
-		await mongodb.updateOne(mongoCFG.Breaststroke.competitions, query, value);
+		const result = await mongodb.updateOne(mongoCFG.Breaststroke.competitions, query, value);
+		if (result.message) return { message: result.message, data: {} }; // DB 오류를 숨기지 않는다
 		return { message: '', data: value };
 		//----------------------------------------------------------------
 	}

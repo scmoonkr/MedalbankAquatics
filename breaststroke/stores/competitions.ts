@@ -122,21 +122,23 @@ export const useCompetitionStore = defineStore('competition', () => {
         }
     }
     
-    async function updateCompetition(competition: CompetitionModel): Promise<void> {
+    // 저장 성공이면 true. 실패하면 false 로 돌려주고 error 에 이유를 남긴다.
+    async function updateCompetition(competition: CompetitionModel): Promise<boolean> {
         try {
             isLoading.value = true;
             error.value = null;
 
             const response = await competitionApi.updateCompetition(competition);
 
-            if (response.data && typeof response.data === 'object') {
+            if (!response.message && response.data && typeof response.data === 'object' && response.data.competitionID) {
                 currentCompetition.value = CompetitionModel.fromJson(response.data);
-            } else {
-                error.value = response.message || '대회 목록을 불러오는데 실패했습니다.';
+                return true;
             }
-
+            error.value = response.message || '대회를 저장하는데 실패했습니다.';
+            return false;
         } catch (err: any) {
-            error.value = err.message || '대회 목록을 불러오는데 실패했습니다.';
+            error.value = err.message || '대회를 저장하는데 실패했습니다.';
+            return false;
         } finally {
             isLoading.value = false;
         }
