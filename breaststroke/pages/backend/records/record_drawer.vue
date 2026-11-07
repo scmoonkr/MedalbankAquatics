@@ -107,7 +107,7 @@
               <table>
                 <thead><tr><th>필드</th><th>필수</th><th>값</th></tr></thead>
                 <tbody>
-                  <tr><td>type</td><td>O</td><td>WR(세계) · OR(올림픽) · AR(아시아) · KR(한국)</td></tr>
+                  <tr><td>type</td><td>O</td><td>WR(세계) · OR(올림픽) · AR(아시아) · KR(한국) · WMR(세계 마스터즈) · KMR(한국 마스터즈)</td></tr>
                   <tr><td>gender</td><td>O</td><td>men · women · mixed</td></tr>
                   <tr><td>discipline</td><td>O</td><td>FR BA BR FL IM FRR(계영) MR(혼계영)</td></tr>
                   <tr><td>course</td><td>O</td><td>LCM · SCM</td></tr>
@@ -178,6 +178,8 @@ const typeOptions = [
   { value: 'OR', label: 'OR (올림픽)' },
   { value: 'AR', label: 'AR (아시아)' },
   { value: 'KR', label: 'KR (한국)' },
+  { value: 'WMR', label: 'WMR (세계 마스터즈)' },
+  { value: 'KMR', label: 'KMR (한국 마스터즈)' },
 ];
 const disciplineOptions = [
   { value: 'FR', label: '자유형' },
@@ -220,10 +222,10 @@ const previewItems = ref<any[]>([]);
 const pendingPayload = ref<unknown>(null); // 확인한 입력 (체크한 것만 반영할 때 다시 보냄)
 
 const isEdit = computed(() => !!props.record);
-// 전문체육(WR/OR/AR/KR) 기록만 입력/수정할 수 있다. 마스터즈 기록은 보기만.
+// WR/OR/AR/KR/WMR/KMR 기록만 입력/수정할 수 있다. 그 외(ER 등)는 보기만.
 const readonlyReason = computed(() =>
-  props.record && props.record.isMasters
-    ? '마스터즈 기록(KMR/WMR/ER)은 이 화면에서 수정할 수 없습니다. (전문체육 WR/OR/AR/KR 기록만 수정 가능)'
+  props.record && !typeOptions.some((o) => o.value === props.record!.type)
+    ? `${props.record.type} 기록은 이 화면에서 수정할 수 없습니다. (WR/OR/AR/KR/WMR/KMR 기록만 수정 가능)`
     : '');
 const locked = computed(() => !!readonlyReason.value);
 const originalKeyText = computed(() =>

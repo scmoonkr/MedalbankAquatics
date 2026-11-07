@@ -28,7 +28,7 @@ const recordKey = (r) => [r.gender, r.discipline, r.course, r.distance, r.type].
 //-------------------------------------------------------------
 async function loadExisting(types) {
 	const result = await mongodb.find(mongoCFG.Breaststroke.records, {
-		query: { isMasters: false, type: { $in: types } },
+		query: { type: { $in: types } }, // type 이 곧 전문체육/마스터즈를 가른다
 		projection: { _id: 0 },
 		limit: 20000,
 		skip: 0,
@@ -77,7 +77,7 @@ async function applyItems(items, keys) {
 		const { record, previous } = item;
 		if (previous) {
 			await mongodb.deleteMany(mongoCFG.Breaststroke.records, {
-				isMasters: false, gender: record.gender, discipline: record.discipline,
+				gender: record.gender, discipline: record.discipline,
 				course: record.course, distance: record.distance, type: record.type,
 			});
 		}
@@ -95,7 +95,8 @@ async function applyItems(items, keys) {
 // 직접 입력(JSON): 형식 검증 -> 이상 없으면 같은 key 기록을 입력한 내용으로 교체/추가
 //-------------------------------------------------------------
 const MANUAL = {
-	types:       ['WR', 'OR', 'AR', 'KR'],
+	types:       ['WR', 'OR', 'AR', 'KR', 'WMR', 'KMR'],
+	mastersTypes: ['WMR', 'KMR'],
 	genders:     ['men', 'women', 'mixed'],
 	disciplines: ['FR', 'BA', 'BR', 'FL', 'IM', 'FRR', 'MR'],
 	courses:     ['LCM', 'SCM'],
@@ -154,7 +155,7 @@ function validateManual(input) {
 		}
 
 		const record = {
-			isMasters: false,
+			isMasters: MANUAL.mastersTypes.includes(type),
 			gender, course, distance, type, discipline,
 			time,
 			name: str('name'),
@@ -220,7 +221,7 @@ async function applyManual(records, keys) {
 function validateOriginal(original) {
 	const errors = [];
 	if (!original || typeof original !== 'object') return { key: null, errors: [{ index: null, field: 'original', message: '수정할 기록 정보가 없습니다.' }] };
-	const norm = { isMasters: false };
+	const norm = {};
 	const rules = [
 		['type', MANUAL.types, (v) => v.toUpperCase()],
 		['gender', MANUAL.genders, (v) => v.toLowerCase()],
@@ -252,7 +253,7 @@ async function updateManual(original, record) {
 		}
 		// key 가 바뀌었으니 원래 기록은 지우고, 새 key 로 추가(createdAt 은 원래 기록 것을 유지)
 		await mongodb.deleteMany(mongoCFG.Breaststroke.records, {
-			isMasters: false, gender: origin.original.gender, discipline: origin.original.discipline,
+			gender: origin.original.gender, discipline: origin.original.discipline,
 			course: origin.original.course, distance: origin.original.distance, type: origin.original.type,
 		});
 		await applyItems([{ key: newKey, status: 'new', record, previous: null }], [newKey]);
