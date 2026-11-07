@@ -426,8 +426,14 @@ function customizingTimesORG(timeArr, competition) {
       if (!time.distance	) time.distance	= discipline.distance	|| '';
       if (!time.category	) time.category	= discipline.category	|| '';
       if (!time.round 		) time.round 		= discipline.round		|| '';
-  
-      
+
+			// ageGroup 이 없고 heat 가 있으면 heat 를 ageGroup 으로 쓰고 heat 는 지운다
+			// (헤더 행 "성인5그룹 여자 자유형 100M" 에서 이어받은 discipline.heat 도 포함)
+			if (!time.ageGroup && time.heat) {
+				time.ageGroup = time.heat.toString().trim();
+				delete time.heat;
+			}
+
       //-----> null check
       time.name			= time.name ? time.name.trim() : "";
       time.names		= time.names || [];
