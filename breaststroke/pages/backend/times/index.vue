@@ -1,6 +1,6 @@
 <!-- pages/times/list.vue -->
 <template>
-  <div class="pl-5 pl-5 pr-5">
+  <div class="pl-5 pr-5">
     <!-- 페이지 헤더 -->
     <div class="page-header mb-6">
       <h1 class="text-2xl font-bold text-gray-800">Times</h1>
@@ -18,6 +18,13 @@
       <!----------------------->
       <!-- DataTable 컴포넌트 -->
       <!----------------------->
+      <p v-if="timeStore.searchQuery" class="mb-2 text-sm text-gray-600">
+        조건에 맞는 기록 <strong>{{ timeStore.pagination.totalItems.toLocaleString() }}</strong>건 중
+        <strong>{{ timeStore.timeList.length.toLocaleString() }}</strong>건 표시
+        <template v-if="timeStore.pagination.totalPages > 1">
+          · {{ currentPage }} / {{ timeStore.pagination.totalPages }} 페이지 (페이지당 최대 {{ UI_CONFIG.backendTimesLimit.toLocaleString() }}건)
+        </template>
+      </p>
       <TimesDataTable
         :times="timeStore.timeList"
         :totalPages="timeStore.pagination.totalPages"
@@ -117,7 +124,7 @@ async function loadServerData() {
     distance: '50M',
     type: 'event',
   };
-  timeStore.pagination.rowsPerPage = UI_CONFIG.backendRowsLimit;
+  timeStore.pagination.rowsPerPage = UI_CONFIG.backendTimesLimit;
 }
 
 // 컴포저블 함수 사용
@@ -135,7 +142,7 @@ const clickCell = async (item: TimeModel) => {
 const handlePageChange = async (page: number) => {
   if (!timeStore.searchQuery) return;
   currentPage.value = page;
-  await timeStore.fetchTimeList(page, UI_CONFIG.backendRowsLimit, timeStore.searchQuery);
+  await timeStore.fetchTimeList(page, UI_CONFIG.backendTimesLimit, timeStore.searchQuery);
 };
 //======================================================================
 // Button
@@ -175,7 +182,7 @@ const onSearch = async (inputs: { competitionID: string; timeID: string; time: s
     return;
   }
   currentPage.value = 1;
-  await timeStore.fetchTimeList(1, UI_CONFIG.backendRowsLimit, buildQuery(inputs));
+  await timeStore.fetchTimeList(1, UI_CONFIG.backendTimesLimit, buildQuery(inputs));
 };
 
 

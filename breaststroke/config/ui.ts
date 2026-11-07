@@ -1,6 +1,7 @@
 export const UI_CONFIG = {
   rowsPerPage: 10,
-  backendRowsLimit: 3000, // backend 목록 조회 시 한 번에 가져오는 최대 행 수
+  backendRowsLimit: 5000, // backend 목록(records) 조회 시 한 번에 가져오는 최대 행 수 (넘으면 pagination, 서버 상한 MAX_ROWS 와 같다)
+  backendTimesLimit: 5000, // backend/times 조회 시 한 번에 가져오는 최대 행 수 (넘으면 pagination, 서버 상한 timsLimit 과 같다)
   paginationSizes: [10, 20, 50, 100],
   dateFormat: 'YYYY-MM-DD',
   timeFormat: 'HH:mm:ss.SS',

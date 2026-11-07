@@ -140,7 +140,7 @@ const sortColumnChanged = async (column: string) => {
   timeStore.sortDirection = timeStore.sortDirection === SortDirection.ASC ? SortDirection.DESC : SortDirection.ASC;
   // 조회한 적이 없으면 호출하지 않고, 있으면 마지막 조회 조건을 유지한다
   if (!timeStore.searchQuery) return;
-  await timeStore.fetchTimeList(1, UI_CONFIG.backendRowsLimit, timeStore.searchQuery);
+  await timeStore.fetchTimeList(1, UI_CONFIG.backendTimesLimit, timeStore.searchQuery);
 };
 
 const clickTableCell = async (item: TimeModel, column: string) => {
@@ -295,17 +295,7 @@ const closeDetailDialog = () => {
 <!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
 <!-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ -->
 <style scoped>
-/* 페이지가 아니라 table 영역에서만 스크롤 (헤더 고정, 페이지네이션은 아래에 유지) */
-.times-table-scroll :deep(.overflow-x-auto) {
-  max-height: calc(100vh - 280px);
-  overflow: auto;
-}
-.times-table-scroll :deep(.datatable thead th) {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background-color: #e5e7eb; /* gray-200 */
-}
+/* table 안쪽 스크롤 없이 모든 행을 펼치고, 스크롤은 페이지 전체에서만 한다 */
 
 .main-container {
   display: flex;
