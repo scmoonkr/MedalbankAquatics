@@ -8,6 +8,9 @@
     "medalbank": "npm --prefix medalbank run dev",
     "breaststroke": "npm --prefix breaststroke run dev",
     "sse": "npm --prefix sse run dev",
-    "install:all": "npm --prefix server install && npm --prefix aquatics install && npm --prefix medalbank install && npm --prefix breaststroke install && npm --prefix sse install"
+    "erp": "npm --prefix server run erp",
+    "swimmingPhotography": "npm --prefix swimmingPhotography run dev",
+    "swimmingPhotographyDashboard": "npm --prefix swimmingPhotographyDashboard run dev",
+    "install:all": "npm --prefix server install && npm --prefix aquatics install && npm --prefix medalbank install && npm --prefix breaststroke install && npm --prefix sse install && npm --prefix swimmingPhotography install && npm --prefix swimmingPhotographyDashboard install"
   }
 }

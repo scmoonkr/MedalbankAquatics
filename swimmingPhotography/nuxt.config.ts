@@ -1,0 +1,67 @@
+export default defineNuxtConfig({
+  // devtools 는 프로덕션 빌드에서 rolldown 네이티브 바이너리를 요구해 서버 빌드를 깨뜨림.
+  // 개발 때만 켜고 빌드에서는 끈다. (nuxt build 시 NODE_ENV=production)
+  devtools: { enabled: process.env.NODE_ENV !== 'production' },
+
+  devServer: {
+    port: 6641,
+  },
+
+  // 사이트 전역 스타일 (디자인 토큰 + 리셋 + 본문 타이포)
+  css: ['~/assets/css/main.css'],
+
+  // 관리자(대시보드) 링크 URL — 환경별로 다름.
+  //   dev : http://localhost:6642
+  //   prod: https://backend.swimmingphotography.com (nginx 가 backend 서브도메인 → 6642 프록시)
+  // 런타임에 NUXT_PUBLIC_ADMIN_URL 로 덮어쓸 수 있음.
+  runtimeConfig: {
+    public: {
+      adminUrl: process.env.NUXT_PUBLIC_ADMIN_URL
+        || (process.env.NODE_ENV === 'production'
+          ? 'https://backend.swimmingphotography.com'
+          : 'http://localhost:6642'),
+      // 이미지 스토리지(R2/iDrive) 공개 베이스 — 기사 이미지 url 이 http 가 아니면 이 값을 앞에 붙인다.
+      cloudPublicUrl: process.env.NUXT_PUBLIC_CLOUD_PUBLIC_URL
+        || 'https://f3t1.c6.e2-9.dev/swimmingphotography-bucket',
+    },
+  },
+
+  app: {
+    head: {
+      htmlAttrs: { lang: 'ko' },
+      title: 'Swimming Photography',
+      meta: [
+        { charset: 'UTF-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
+        {
+          name: 'description',
+          content:
+            'Swimming Photography by Medalbank. 우리나라 대한민국의 수영 이야기와 수영대회 이야기를 전합니다. 운영, 촬영, 취재, 작성, 배포까지 오직 수영인의 마음으로만 운영됩니다.',
+        },
+      ],
+      link: [
+        // 사파리는 <link rel=icon> 보다 루트 /favicon.ico 를 먼저 본다 — 없으면 아이콘이 안 나온다.
+        // (원본 favicon.png 은 256x235 로 정사각이 아니라 사파리가 더 까다롭게 군다)
+        { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
+        { rel: 'icon', type: 'image/png', href: '/favicon-32.png', sizes: '32x32' },
+        { rel: 'icon', type: 'image/png', href: '/favicon-192.png', sizes: '192x192' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png', sizes: '180x180' },
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap',
+        },
+      ],
+    },
+  },
+
+  // /api/** 를 통합 서버(6630)의 /sp로 프록시 (dev·프로덕션 공통). SSE 스트림 포함.
+  nitro: {
+    routeRules: {
+      // redirect: 'manual' — 서버가 보낸 리다이렉트(302)를 프록시가 대신 따라가지 않고 브라우저에 그대로 넘긴다.
+      // (네이버 로그인의 왕복 · 영상 내려받기 주소가 리다이렉트다. 따라가 버리면 주소도 쿠키도 브라우저에 닿지 않는다)
+      '/api/**': { proxy: { to: 'http://127.0.0.1:6630/sp/api/**', fetchOptions: { redirect: 'manual' } } },
+    },
+  },
+})

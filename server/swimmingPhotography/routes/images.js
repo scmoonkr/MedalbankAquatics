@@ -1,0 +1,697 @@
+// 이미지(images) — SwimmingPhotography DB 의 images 컬렉션 조회.
+// 대회(competitionID)·영법(discipline)·선수명(name)으로 필터. url·thumbnail 은 CLOUD_PUBLIC_URL 붙인 전체 URL.
+import { Router } from 'express'
+import multer from 'multer'
+import { ObjectId } from 'mongodb'
+import { SP } from '../db.js'
+import { publicUrl, putObject, deleteObject } from '../r2.js'
+import { canAny, userFromRequest } from '../auth.js'
+
+const router = Router()
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024, files: 2000 } })
+// 파일명 정리 — 한글은 살리고 나머지 특수문자만 '_' 로 바꾼다.
+// NFC 로 먼저 맞춘다: 자모 분리(NFD)로 온 한글은 '가-힣' 범위 밖이라 통째로 '_' 가 돼버린다.
+const safeName = (s) => String(s).normalize('NFC').replace(/[^\w.\-가-힣]/g, '_')
+// multer 는 multipart 의 filename 을 latin1 로 읽는다 — 한글이 깨진 바이트열로 들어온다.
+// UTF-8 로 되돌려 보고, 되돌린 값이 다시 latin1 로 원본과 같을 때(= 유효한 UTF-8 바이트열)만 쓴다.
+// (이미 제대로 디코딩된 파일명을 두 번 건드리지 않도록 하는 안전장치)
+const utf8Name = (v) => {
+  const raw = String(v ?? '')
+  const fixed = Buffer.from(raw, 'latin1').toString('utf8')
+  return Buffer.from(fixed, 'utf8').toString('latin1') === raw ? fixed : raw
+}
+const coll = async () => (await SP()).collection('images')
+const toId = (v) => { try { return new ObjectId(String(v)) } catch { return null } }
+
+// 사진 한 장에 찍힌 선수들 — images.athletes: [{ name, team, ageGroup, timeID }].
+// 한 사진의 선수는 모두 같은 종목(영법·성별·거리)이다. 선수마다 자기 기록(times)에 따로 붙는다.
+// name·team·ageGroup·timeID(단일 필드)는 첫 번째 선수 값으로 함께 저장해 둔다 — 예전 화면·필터가 그대로 읽는다.
+// athletes 가 없는 예전 사진은 그 단일 필드를 한 명짜리 목록으로 본다.
+// 선수마다 contributor(그 선수를 고른 계정의 username)를 남긴다 — 남이 고른 선수는 빼거나 고칠 수 없다.
+// 예전 사진의 선수는 사진을 저장한 사람(images.contributor)이 고른 것으로 본다.
+const athletesOf = (im) => {
+  if (Array.isArray(im?.athletes) && im.athletes.length) return im.athletes
+  const name = String(im?.name || '').trim()
+  return name ? [{ name, team: im.team ?? '', ageGroup: im.ageGroup ?? '', timeID: im.timeID ?? null, contributor: im.contributor ?? '' }] : []
+}
+// username → 표시 이름
+const userNames = async (usernames) => {
+  const who = [...new Set((usernames || []).filter(Boolean))]
+  const map = new Map()
+  if (who.length) {
+    const us = await (await SP()).collection('users').find({ username: { $in: who } }, { projection: { username: 1, name: 1 } }).toArray()
+    for (const u of us) map.set(u.username, u.name || u.username)
+  }
+  return map
+}
+// 응답용 선수 목록 — 고른 사람의 표시 이름을 붙인다
+const athletesOut = (im, nameOf) => athletesOf(im).map((a) => ({
+  name: a.name ?? '', team: a.team ?? '', ageGroup: a.ageGroup ?? '', timeID: a.timeID ?? null,
+  contributor: a.contributor ?? '', contributorName: a.contributor ? (nameOf.get(a.contributor) || a.contributor) : '',
+}))
+
+// 대회 select 옵션 — SP.competitions 에 등록된 대회 '전부', 최신순.
+// (images 에 있는 대회만 뽑으면 아직 사진을 안 올린 대회를 고를 수 없어 업로드 대상 선택이 안 된다.)
+// count 는 그 대회에 등록된 이미지 수(없으면 0).
+router.get('/competitions', async (req, res) => {
+  try {
+    const docs = await (await SP()).collection('competitions').aggregate([
+      { $match: { competitionID: { $ne: null } } },
+      { $lookup: { from: 'images', localField: 'competitionID', foreignField: 'competitionID', as: '_i' } },
+      {
+        $project: {
+          _id: 0,
+          competitionID: 1,
+          competitionName: { $ifNull: ['$competitionName', ''] },
+          datetime: { $ifNull: ['$datetime', ''] },
+          count: { $size: '$_i' },
+        },
+      },
+      // 일자 내림차순 — competitionID 순으로 하면 나중에 등록된 옛 대회가 맨 위로 와서
+      // '최근 대회 자동 선택'이 엉뚱한 대회를 고른다.
+      { $sort: { datetime: -1, competitionID: -1 } },
+    ]).toArray()
+    res.json(docs)
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// 파일명 파싱 결과 → times 매칭 (업로드 전 확인용)
+// POST { competitionID, items: [{ filename, name, team, gender, discipline, distance }] }
+// 매칭 키
+//   개인       : competitionID + name_unique + gender + discipline + distance
+//   계영(FRR·MR): competitionID + name_unique + discipline + distance
+//     계영은 gender 를 보지 않는다 — 멤버 명단(name_unique)이 이미 그 팀의 조합이라
+//     男/女/혼성 표기가 파일명과 달라도 같은 팀으로 봐야 한다.
+//   team 은 파일명에 있지만 1차 키로 쓰지 않는다 — 파일명의 팀 표기가 times.team 과
+//   글자 그대로 같다는 보장이 없어(약칭·공백) 키로 걸면 오히려 못 찾는다.
+//   대신 두 군데서 '가르는 힌트' 로 쓴다.
+//     ① 여러 건이 잡혔을 때 좁힌다 (좁혀서 0건이면 좁히지 않는다)
+//     ② 한 건도 못 찾았을 때 — 동명이인이라 name_unique 에 번호가 붙은 경우다.
+//        times.name 은 번호를 붙이기 전의 원래 이름이므로 (원래 이름 + 팀) 으로 다시 찾는다.
+//        팀으로 '한 선수' 로 좁혀질 때만 쓴다 — 못 좁히면 그대로 '없음' 이다.
+//        (파일명에 홍길동1 처럼 번호를 적는 방법도 그대로 쓸 수 있다)
+//   times.name_unique 는 names 와 같은 문자열 배열이다.
+//   개인 ["홍길동1"] 은 그 값 하나로 맞추고,
+//   계영 ["임승욱","주의현","신우진","최성호"] 은 파일명에 멤버 한 명만 적히므로
+//   '멤버 각각'으로 맞춘다(명단 전체를 적은 파일명도 받도록 join 값도 함께 건다).
+// 같은 종목을 예선·결선 두 번 뛰면 여러 건이 잡힌다 → times 를 모두 돌려주고 화면에서 판단.
+const RELAY = ['FRR', 'MR']
+const isRelay = (d) => RELAY.includes(String(d || '').toUpperCase())
+const nuStr = (v) => (Array.isArray(v) ? v.join(',') : String(v ?? ''))
+router.post('/match', async (req, res) => {
+  try {
+    const { competitionID, items } = req.body || {}
+    if (!Array.isArray(items) || !items.length) return res.status(400).json({ error: '대상이 없습니다.' })
+    const cid = (competitionID != null && competitionID !== '') ? Number(competitionID) : null
+    if (cid == null) return res.status(400).json({ error: '대회를 선택하세요.' })
+
+    // 이름은 NFC 로 정규화한다 — 파일명은 이미 NFC 지만, 대시보드에서 직접 타이핑/붙여넣기한
+    // 이름이 자모분리(NFD)면 DB(NFC)의 name_unique 와 $in 이 안 맞아 후보가 0건이 된다.
+    const names = [...new Set(items.map((i) => String(i?.name || '').trim().normalize('NFC')).filter(Boolean))]
+    // 배열 필드라 $in 은 '원소' 매칭이다. 개인은 원소가 곧 이름이라 그대로 걸리고,
+    // 계영("A,B,C,D")은 콤마로 끊은 배열 전체 일치로 따로 건다. 최종 판정은 아래 join 비교로 한다.
+    const or = []
+    const singles = names.filter((n) => !n.includes(','))
+    // name 으로도 건다 — 동명이인이면 name_unique 는 "김수정2" 인데 name 은 "김수정" 이라
+    // name_unique 만 걸면 후보 자체가 안 잡힌다(아래 팀 폴백용).
+    if (singles.length) or.push({ name_unique: { $in: singles } }, { name: { $in: singles } })
+    for (const n of names.filter((x) => x.includes(','))) {
+      or.push({ name_unique: n.split(',').map((s) => s.trim().normalize('NFC')).filter(Boolean) })
+    }
+    const rows = or.length
+      ? await (await SP()).collection('times').find(
+        { competitionID: cid, $or: or },
+        { projection: { timeID: 1, name: 1, name_unique: 1, gender: 1, ageGroup: 1, team: 1, discipline: 1, distance: 1, round: 1, time: 1, rank: 1 } },
+      ).limit(20000).toArray()
+      : []
+
+    // 계영은 gender 를 키에서 뺀다 — 이름·영법·거리만. 이름은 NFC 로 맞춰 키를 비교한다.
+    const nfc = (v) => String(v ?? '').normalize('NFC')
+    const keyOf = (nm, g, d, dist) => (isRelay(d)
+      ? ['R', nfc(nm), d, dist]
+      : ['I', nfc(nm), g, d, dist]).map((v) => String(v ?? '')).join('|')
+    // name_unique.includes(파일명의 name) 이 되도록 '원소 각각'을 키로 건다.
+    // (개인은 원소가 하나라 그 이름 하나, 계영은 멤버 각각. 명단 전체를 적은 파일명도 받도록 join 도 함께.)
+    const idx = new Map()
+    const put = (m, k, r) => { if (!m.has(k)) m.set(k, []); m.get(k).push(r) }
+    // 번호를 붙이기 전의 원래 이름(times.name) 인덱스 — 개인 기록만. 위 ② 폴백에 쓴다.
+    const baseIdx = new Map()
+    for (const r of rows) {
+      const arr = Array.isArray(r.name_unique) ? r.name_unique : (r.name_unique ? [String(r.name_unique)] : [])
+      const keys = new Set([...arr, ...(arr.length > 1 ? [arr.join(',')] : [])].filter(Boolean))
+      for (const k of keys) put(idx, keyOf(k, r.gender, r.discipline, r.distance), r)
+      if (!isRelay(r.discipline) && r.name) put(baseIdx, keyOf(r.name, r.gender, r.discipline, r.distance), r)
+    }
+
+    // 팀 비교는 공백·대소문자를 무시한다 ("Sunday Burning" ↔ "sundayburning")
+    const normTeam = (v) => String(v ?? '').replace(/\s+/g, '').toLowerCase()
+    const out = items.map((it) => {
+      const key = keyOf(String(it?.name || '').trim(), it?.gender, it?.discipline, it?.distance)
+      let hit = idx.get(key) || []
+      let by = 'name'                      // 무엇으로 찾았는지 — 화면 표시용
+      const tm = normTeam(it?.team)
+      // ① 여러 건이면 파일명의 team 으로 좁혀 본다 — 같은 이름의 다른 팀(계영·동명이인)을 가른다.
+      //    하나도 안 남으면 표기가 다른 것뿐이니 좁히기 전 결과를 그대로 둔다.
+      if (hit.length > 1 && tm) {
+        const narrowed = hit.filter((r) => normTeam(r.team) === tm)
+        if (narrowed.length) { hit = narrowed; by = 'team' }
+      }
+      // ② 한 건도 없으면 (원래 이름 + 팀) 으로 다시 — 파일명에 동명이인 번호가 없는 경우다.
+      //    같은 선수(name_unique 하나)로 좁혀질 때만 쓴다. 서로 다른 선수가 남으면 고를 수 없다.
+      if (!hit.length && tm) {
+        const narrowed = (baseIdx.get(key) || []).filter((r) => normTeam(r.team) === tm)
+        if (narrowed.length && new Set(narrowed.map((r) => nuStr(r.name_unique))).size === 1) {
+          hit = narrowed; by = 'team'
+        }
+      }
+      return {
+        filename: it?.filename ?? '',
+        status: hit.length === 1 ? 'ok' : (hit.length ? 'multi' : 'none'),
+        // 팀으로 가른 결과면 화면에서 알려준다(파일명 이름과 name_unique 가 다르다)
+        by,
+        name_unique: nuStr(hit[0]?.name_unique) || '',
+        // 여러 건이어도 같은 선수라 ageGroup·team 은 동일하다
+        ageGroup: hit[0]?.ageGroup ?? '',
+        team: hit[0]?.team ?? '',
+        timeIDs: hit.map((r) => r.timeID ?? null),
+        times: hit.map((r) => ({
+          timeID: r.timeID ?? null, round: r.round || '', time: r.time || '', rank: r.rank ?? null,
+        })),
+      }
+    })
+    const count = (s) => out.filter((o) => o.status === s).length
+    // 하나도 안 맞을 때 '대회를 잘못 골랐는지' 화면에서 판단할 수 있도록 그 대회의 기록 수를 함께 준다
+    const timesInCompetition = await (await SP()).collection('times').countDocuments({ competitionID: cid })
+    res.json({ total: out.length, ok: count('ok'), multi: count('multi'), none: count('none'), timesInCompetition, items: out })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// 사진 저장 — 원본·썸네일을 R2 에 올리고 images 컬렉션에 upsert.
+// multipart: files[](원본) · thumbs[](썸네일, files 와 같은 순서) ·
+//   competitionID · competitionName ·
+//   meta(JSON: [{ filename, name, gender, discipline, distance, type, timeID, ageGroup, team }])
+// 키: (competitionID, filename) — 같은 파일을 다시 올리면 덮어쓴다.
+router.post('/import', upload.fields([{ name: 'files', maxCount: 1000 }, { name: 'thumbs', maxCount: 1000 }]), async (req, res) => {
+  try {
+    const files = (req.files && req.files.files) || []
+    const thumbs = (req.files && req.files.thumbs) || []
+    let meta = []
+    try { meta = JSON.parse(req.body.meta || '[]') } catch { meta = [] }
+    if (!files.length) return res.status(400).json({ error: '파일이 없습니다.' })
+    if (meta.length !== files.length) return res.status(400).json({ error: 'files 와 meta 개수가 맞지 않습니다.' })
+
+    const competitionID = (req.body.competitionID != null && req.body.competitionID !== '') ? Number(req.body.competitionID) : null
+    if (competitionID == null) return res.status(400).json({ error: '대회를 선택하세요.' })
+    const competition = req.body.competitionName || ''
+    // mode=dir — Images Dir 페이지의 폴더별 가져오기 (폴더명 {discipline}_{gender}_{distance} 로 분류된 사진)
+    const dirMode = req.body.mode === 'dir'
+    const folder = `SP-images-${competitionID}`
+
+    const now = new Date()
+    const failed = []
+
+    // R2 업로드 — 한 장씩 순차로 올리면 (원본+썸네일) 왕복이 직렬로 쌓여 느리다.
+    // 동시 실행 수를 제한한 워커풀로 병렬 처리한다.
+    const uploadOne = async (i) => {
+      const m = meta[i] || {}
+      // 파일명은 meta(JSON 본문)에 담겨 오므로 인코딩이 온전하다 — 없을 때만 originalname 을 되살려 쓴다
+      const fname = safeName(m.filename || utf8Name(files[i].originalname))
+      const key = `${folder}/${fname}`
+      const thumbKey = `${folder}/thumb/${fname}`
+      try {
+        await putObject(key, files[i].buffer, files[i].mimetype)
+      } catch (e) {
+        failed.push({ filename: fname, error: e.message })
+        return null
+      }
+      let thumbnail = key
+      if (thumbs[i] && thumbs[i].buffer) {
+        try { await putObject(thumbKey, thumbs[i].buffer, thumbs[i].mimetype || 'image/jpeg'); thumbnail = thumbKey } catch { /* 썸네일 실패는 원본으로 대체 */ }
+      }
+      return { fname, key, thumbnail }
+    }
+    const uploaded = new Array(files.length).fill(null)
+    let cursor = 0
+    const workers = Math.min(Number(process.env.R2_CONCURRENCY) || 6, files.length)
+    await Promise.all(Array.from({ length: workers }, async () => {
+      for (let i = cursor++; i < files.length; i = cursor++) uploaded[i] = await uploadOne(i)
+    }))
+
+    const ops = []
+    for (let i = 0; i < files.length; i++) {
+      const up = uploaded[i]
+      if (!up) continue                      // R2 업로드 실패 — failed 에 이미 담겼다
+      const { fname, key, thumbnail } = up
+      const m = meta[i] || {}
+      if (dirMode) {
+        // 폴더별 가져오기 — 이 8개 값만 update 한다. 선수명·timeID 등 다른 필드는 건드리지 않는다.
+        ops.push({
+          updateOne: {
+            filter: { competitionID, filename: fname },
+            update: {
+              $set: {
+                competitionID, competition, filename: fname,
+                discipline: String(m.discipline ?? ''), gender: String(m.gender ?? ''), distance: String(m.distance ?? ''),
+                url: key, thumbnail,
+                updatedAt: now,
+              },
+            },
+            upsert: true,
+          },
+        })
+        continue
+      }
+      const timeID = (m.timeID != null && m.timeID !== '') ? Number(m.timeID) : null
+      ops.push({
+        updateOne: {
+          filter: { competitionID, filename: fname },
+          update: {
+            $set: {
+              competitionID, competition, filename: fname, timeID,
+              // name 은 선수 매칭 키(times.name_unique). 드로어에서 확인·수정한 값을 그대로 쓴다.
+              name: String(m.name ?? ''), gender: String(m.gender ?? ''),
+              discipline: String(m.discipline ?? ''), distance: String(m.distance ?? ''),
+              type: String(m.type ?? ''),
+              ageGroup: String(m.ageGroup ?? ''), team: String(m.team ?? ''),
+              // url·thumbnail 은 CLOUD_PUBLIC_URL 을 뺀 상대경로(=R2 key)로 저장. 조회 시 붙인다.
+              url: key, thumbnail,
+              updatedAt: now,          // 저장 일자 — images 일자 필터가 이 값의 날짜(KST)로 거른다
+            },
+          },
+          upsert: true,
+        },
+      })
+    }
+    if (!ops.length) return res.status(500).json({ error: '업로드에 모두 실패했습니다.', failed })
+    const rw = await (await coll()).bulkWrite(ops, { ordered: false })
+    res.json({
+      count: ops.length,
+      upserted: rw.upsertedCount || 0,
+      modified: rw.modifiedCount || 0,
+      failed,
+    })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// discipline select 옵션 — distinct(빈 값 제외)
+router.get('/disciplines', async (req, res) => {
+  try {
+    const arr = await (await coll()).distinct('discipline', { discipline: { $nin: [null, ''] } })
+    res.json(arr.sort())
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// 클라이언트 이미지 필터별 건수.
+// 각 항목은 자기 필터를 제외한 나머지 선택을 반영한다.
+// 예: 성별 건수에는 대회·영법·식별 상태를, 영법 건수에는 대회·성별·식별 상태를,
+// 식별 건수에는 대회·성별·영법을 적용한다.
+router.get('/facets', async (req, res) => {
+  try {
+    const { competitionID, discipline, gender, matched } = req.query
+    const base = {}
+    if (competitionID) base.competitionID = Number(competitionID)
+
+    const identifiedFilter = { $and: [{ timeID: { $ne: null } }, { gender: { $type: 'string', $ne: '' } }] }
+    const unidentifiedFilter = { $or: [{ timeID: null }, { gender: { $exists: false } }, { gender: null }, { gender: '' }] }
+    const matchedFilter = matched === 'none'
+      ? unidentifiedFilter
+      : (matched === 'has' ? identifiedFilter : null)
+
+    const genderPipeline = []
+    if (matchedFilter) genderPipeline.push({ $match: matchedFilter })
+    if (discipline) genderPipeline.push({ $match: { discipline: String(discipline) } })
+    genderPipeline.push({ $group: { _id: '$gender', count: { $sum: 1 } } })
+
+    const disciplinePipeline = []
+    if (matchedFilter) disciplinePipeline.push({ $match: matchedFilter })
+    if (gender) disciplinePipeline.push({ $match: { gender: String(gender) } })
+    disciplinePipeline.push({ $group: { _id: '$discipline', count: { $sum: 1 } } })
+
+    const identificationPipeline = []
+    if (gender) identificationPipeline.push({ $match: { gender: String(gender) } })
+    if (discipline) identificationPipeline.push({ $match: { discipline: String(discipline) } })
+    identificationPipeline.push({
+      $group: {
+        _id: {
+          $cond: [{
+            $and: [
+              { $ne: [{ $ifNull: ['$timeID', null] }, null] },
+              { $ne: [{ $ifNull: ['$gender', ''] }, ''] },
+            ],
+          }, 'has', 'none'],
+        },
+        count: { $sum: 1 },
+      },
+    })
+
+    // 영법 분포 바는 현재 선택된 필터를 모두 반영한다.
+    // 드롭다운 옵션 수량과 달리 선택 중인 영법도 적용해야 선택 결과의 실제 비율이 된다.
+    const distributionPipeline = []
+    if (matchedFilter) distributionPipeline.push({ $match: matchedFilter })
+    if (gender) distributionPipeline.push({ $match: { gender: String(gender) } })
+    if (discipline) distributionPipeline.push({ $match: { discipline: String(discipline) } })
+    distributionPipeline.push({ $group: { _id: '$discipline', count: { $sum: 1 } } })
+
+    const [result = {}] = await (await coll()).aggregate([
+      { $match: base },
+      {
+        $facet: {
+          genders: genderPipeline,
+          disciplines: disciplinePipeline,
+          identification: identificationPipeline,
+          distribution: distributionPipeline,
+        },
+      },
+    ]).toArray()
+    const toCounts = (items) => Object.fromEntries((items || []).map((item) => [String(item._id ?? ''), item.count]))
+    const sum = (items) => (items || []).reduce((total, item) => total + item.count, 0)
+    res.json({
+      genders: toCounts(result.genders),
+      genderTotal: sum(result.genders),
+      disciplines: toCounts(result.disciplines),
+      disciplineTotal: sum(result.disciplines),
+      identification: toCounts(result.identification),
+      identificationTotal: sum(result.identification),
+      distribution: toCounts(result.distribution),
+      distributionTotal: sum(result.distribution),
+    })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// 목록 — competitionID·discipline·name·matched 필터
+// matched: 'none' = timeID 가 없는(기록에 못 붙은) 사진만 · 'has' = 붙은 것만
+router.get('/', async (req, res) => {
+  try {
+    const { competitionID, discipline, gender, distance, name, q, mine, matched, saved, date, skip, withTotal, limit = 2000 } = req.query
+    const filter = {}
+    // 마이페이지 전용 — 요청자가 직접 저장했거나 선수 식별에 참여한 사진만.
+    // 클라이언트가 username 을 보내지 않고 세션 계정을 서버에서 확인한다.
+    if (mine === '1' || mine === 'true') {
+      const me = await userFromRequest(req)
+      if (!me) return res.status(401).json({ error: '로그인이 필요합니다.' })
+      filter.$and = [{ $or: [{ contributor: me.username }, { 'athletes.contributor': me.username }] }]
+    }
+    if (competitionID) filter.competitionID = Number(competitionID)
+    if (discipline) filter.discipline = String(discipline)
+    if (gender) filter.gender = String(gender)
+    if (distance) filter.distance = String(distance)
+    if (name) filter.name = { $regex: String(name), $options: 'i' }
+    // q — 선수명 또는 저장한 사람(contributor)으로 찾는다. contributor 는 username 으로 저장돼 있어
+    // 표시 이름으로도 찾을 수 있게, 이름이 맞는 계정의 username 도 함께 건다.
+    if (q && String(q).trim()) {
+      const rx = { $regex: String(q).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' }
+      const us = await (await SP()).collection('users').find({ name: rx }, { projection: { username: 1 } }).toArray()
+      filter.$or = [{ name: rx }, { 'athletes.name': rx }, { contributor: rx }]
+      if (us.length) filter.$or.push({ contributor: { $in: us.map((u) => u.username) } })
+    }
+    // 저장 일자 — 기존 updatedAt(문자열/Date 혼재)을 KST 날짜(yyyy-mm-dd)로 바꿔 일치 비교
+    if (date) {
+      filter.$expr = {
+        $eq: [
+          { $dateToString: { date: { $convert: { input: '$updatedAt', to: 'date', onError: null, onNull: null } }, format: '%Y-%m-%d', timezone: 'Asia/Seoul' } },
+          String(date),
+        ],
+      }
+    }
+    // times 매칭 여부 — timeID
+    const addCondition = (condition) => {
+      if (!Array.isArray(filter.$and)) filter.$and = []
+      filter.$and.push(condition)
+    }
+    if (matched === 'none') addCondition({ $or: [{ timeID: null }, { gender: { $exists: false } }, { gender: null }, { gender: '' }] })
+    else if (matched === 'has') addCondition({ timeID: { $ne: null }, gender: { $type: 'string', $ne: '' } })
+    // 기사 저장 여부(saved) 는 아래에서 기사의 media.images 를 보고 거른다.
+    // 거르기 전에 limit 을 걸면 해당 사진이 잘려 나가므로, 그때는 거른 뒤에 자른다.
+    const requestedLimit = Number(limit)
+    const max = Math.min(Number.isFinite(requestedLimit) && requestedLimit > 0 ? Math.floor(requestedLimit) : 2000, 10000)
+    const requestedSkip = Number(skip)
+    const offset = Number.isFinite(requestedSkip) && requestedSkip > 0 ? Math.floor(requestedSkip) : 0
+    const wantsTotal = withTotal === '1' || withTotal === 'true'
+    const savedMode = saved === 'has' || saved === 'none'
+    const images = await coll()
+    let total
+    let cur = images.find(filter).sort({ _id: 1 })
+    if (!savedMode) {
+      cur = cur.skip(offset).limit(max)
+      if (wantsTotal) total = await images.countDocuments(filter)
+    }
+    const docs = await cur.toArray()
+    // 기사 사진 여부 — 이 사진의 기사(competitionID + unique==name)에 media.images 가 1장 이상 있는가
+    const cids = [...new Set(docs.map((d) => d.competitionID).filter((v) => v != null))]
+    const namesOf = (d) => athletesOf(d).map((a) => String(a.name || '').trim()).filter(Boolean)
+    const names = [...new Set(docs.flatMap(namesOf))]
+    const withImages = new Set()
+    if (cids.length && names.length) {
+      const arts = await (await SP()).collection('articles')
+        .find({ competitionID: { $in: cids }, unique: { $in: names }, 'media.images.0': { $exists: true } },
+          { projection: { competitionID: 1, unique: 1 } })
+        .toArray()
+      for (const a of arts) withImages.add(`${a.competitionID}|${a.unique}`)
+    }
+    // 저장한 사람(contributor=username) 의 표시 이름 — 카드에 이름으로 보여준다
+    const nameOf = await userNames(docs.flatMap((d) => [d.contributor, ...athletesOf(d).map((a) => a.contributor)]))
+    // 저장은 상대경로 → 표시용 url·thumbnail 은 CLOUD_PUBLIC_URL 붙인 전체 URL. path/thumbPath 는 상대경로 보존.
+    const abs = (p) => (!p ? '' : (/^https?:\/\//.test(p) ? p : publicUrl(p)))
+    // 여러 명이 찍힌 사진은 그중 한 명의 기사에라도 사진이 있으면 '있음'
+    const hasArt = (d) => namesOf(d).some((nm) => withImages.has(`${d.competitionID}|${nm}`))
+    let picked = docs
+    if (savedMode) {
+      const filtered = docs.filter((d) => hasArt(d) === (saved === 'has'))
+      if (wantsTotal) total = filtered.length
+      picked = filtered.slice(offset, offset + max)
+    }
+    const out = picked.map((d) => ({
+      ...d,
+      url: abs(d.url),
+      thumbnail: abs(d.thumbnail || d.url),
+      path: d.url || '',
+      thumbPath: d.thumbnail || d.url || '',
+      articleHasImages: hasArt(d),
+      contributorName: d.contributor ? (nameOf.get(d.contributor) || d.contributor) : '',
+      athletes: athletesOut(d, nameOf),
+    }))
+    res.json(wantsTotal ? { rows: out, total: total ?? out.length } : out)
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// ── 기사 저장 — 체크한 이미지를 해당 기사(articles)의 media 에 추가한다 ──
+//   media: { thumb, coverImage, images: [{ type, url, thumbnail, discipline, distance, timeID }] }
+// 이미지.name 은 times.name_unique(=articles.unique) 와 같으므로, (competitionID + unique==name) 으로 기사를 찾는다.
+// 계영(이름에 콤마) 등 단일 선수 기사에 안 붙는 것은 건너뛴다. 같은 url 은 중복 없이 누적.
+// media.thumb 가 비어 있으면 첫 사진의 썸네일로 채운다.
+router.post('/save-articles', async (req, res) => {
+  try {
+    const sp = await SP()
+    const { ids, competitionID } = req.body || {}
+    const filter = {}
+    if (Array.isArray(ids) && ids.length) filter._id = { $in: ids.map(toId).filter(Boolean) }
+    else if (competitionID != null && String(competitionID).trim() !== '') filter.competitionID = Number(competitionID)
+    else return res.status(400).json({ error: '대상이 없습니다(ids 또는 competitionID).' })
+    const proj = { competitionID: 1, filename: 1, ageGroup: 1, competition: 1, discipline: 1, distance: 1, gender: 1, name: 1, team: 1, thumbnail: 1, timeID: 1, type: 1, url: 1, athletes: 1 }
+    const ims = await sp.collection('images').find(filter, { projection: proj }).toArray()
+    if (!ims.length) return res.json({ total: 0, articles: 0, matched: 0, saved: 0, skipped: 0 })
+
+    // timeID 는 그 기사 선수의 기록 — 여러 명이 찍힌 사진은 선수마다 다르다
+    const imgObj = (im, timeID) => ({
+      type: im.type ?? '', url: im.url ?? '', thumbnail: im.thumbnail ?? '',
+      discipline: im.discipline ?? '', distance: im.distance ?? '', timeID: timeID ?? null,
+    })
+    // (competitionID + unique==name) 로 기사를 묶는다. 여러 명이 찍힌 사진은 선수 각각의 기사에 넣는다.
+    // 이름 없거나 계영(콤마)은 건너뛴다 — 한 명도 못 넣은 사진만 skipped 로 센다.
+    const usable = (im) => (im.competitionID == null || String(im.competitionID).trim() === '' ? []
+      : athletesOf(im).filter((a) => { const nm = String(a.name || '').trim(); return nm && !nm.includes(',') }))
+    const byArticle = new Map()
+    let skipped = 0
+    for (const im of ims) {
+      const list = usable(im)
+      if (!list.length) { skipped++; continue }
+      const cid = Number(im.competitionID)
+      for (const a of list) {
+        const nm = String(a.name).trim()
+        const key = `${cid}|${nm}`
+        if (!byArticle.has(key)) byArticle.set(key, { cid, nm, imgs: [] })
+        byArticle.get(key).imgs.push(imgObj(im, a.timeID))
+      }
+    }
+    // 대상 기사를 먼저 읽어 기존 media 와 합친다 (url 기준 중복 제거, thumb 는 비었을 때만 채움)
+    const byCid = new Map()
+    for (const { cid, nm } of byArticle.values()) { if (!byCid.has(cid)) byCid.set(cid, new Set()); byCid.get(cid).add(nm) }
+    const existKeys = new Set()
+    const bulk = []
+    let saved = 0
+    for (const [cid, names] of byCid) {
+      const arts = await sp.collection('articles')
+        .find({ competitionID: cid, unique: { $in: [...names] } }, { projection: { unique: 1, media: 1 } }).toArray()
+      for (const art of arts) {
+        const key = `${cid}|${art.unique}`
+        existKeys.add(key)
+        const add = byArticle.get(key)?.imgs || []
+        const cur = Array.isArray(art.media?.images) ? art.media.images : []
+        const seen = new Set(cur.map((im) => im?.url).filter(Boolean))
+        const fresh = add.filter((im) => im.url && !seen.has(im.url) && seen.add(im.url))
+        if (!fresh.length) continue
+        const images = [...cur, ...fresh]
+        const thumb = art.media?.thumb || (images.find((im) => im?.thumbnail) || {}).thumbnail || ''
+        const $set = { updatedAt: new Date() }
+        // media 가 없거나 null 이면 점 표기 $set 이 실패하므로 통째로 넣는다
+        if (!art.media || typeof art.media !== 'object') $set.media = { thumb, coverImage: '', images }
+        else {
+          $set['media.images'] = images
+          $set['media.thumb'] = thumb
+          if (art.media.coverImage === undefined) $set['media.coverImage'] = ''
+        }
+        bulk.push({ updateOne: { filter: { _id: art._id }, update: { $set } } })
+      }
+    }
+    if (bulk.length) {
+      const r = await sp.collection('articles').bulkWrite(bulk)
+      saved = r.modifiedCount || 0
+    }
+    const matched = existKeys.size
+    const savedImgIds = ims
+      .filter((im) => usable(im).some((a) => existKeys.has(`${Number(im.competitionID)}|${String(a.name).trim()}`)))
+      .map((im) => im._id)
+    if (savedImgIds.length) await sp.collection('images').updateMany({ _id: { $in: savedImgIds } }, { $set: { articleSaved: true } })
+
+    res.json({ total: ims.length, articles: byArticle.size, matched, saved, noArticle: byArticle.size - matched, skipped, flagged: savedImgIds.length })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// 수정 — 편집 가능한 필드만 받는다. competitionID·competition·url·thumbnail 은 가져오기가 정하므로 제외.
+// name 은 선수 매칭 키(times.name_unique)라 동명이인이면 "홍길동1" 처럼 번호가 붙은 이름을 넣어야 한다.
+const EDITABLE = ['name', 'team', 'gender', 'discipline', 'distance', 'type']
+router.put('/:id', async (req, res) => {
+  try {
+    const _id = toId(req.params.id)
+    if (!_id) return res.status(400).json({ error: 'invalid id' })
+    const body = req.body || {}
+    const $set = { updatedAt: new Date() }
+    const $unset = {}
+    // 저장한 사람 — 로그인 계정의 username (쓰기 게이트(app.js)가 req.user 를 채운다)
+    if (req.user?.username) $set.contributor = req.user.username
+    // 운영진(data)은 모든 값을 고친다. 회원(media)은 선수 선택(athletes) · 장면(type) · 캡션만 —
+    // 종목(영법·성별·거리)이나 이름·팀·timeID 단일 필드는 보내도 무시한다.
+    const staff = canAny(req.user, ['data'])
+    for (const k of (staff ? EDITABLE : ['type'])) if (body[k] !== undefined) $set[k] = String(body[k] ?? '').trim()
+    // 종목(영법·성별·거리)은 회원도 값이 있어도 항상 고칠 수 있다 (빈 값으로는 지우지 않는다)
+    if (!staff) {
+      for (const k of ['discipline', 'gender', 'distance']) {
+        const v = String(body[k] ?? '').trim()
+        if (v !== '') $set[k] = v
+      }
+    }
+    // 빈 이름은 막는다 — 단 Images Dir(폴더별 가져오기) 사진은 이름 없이 올라오므로 allowEmptyName 이면 허용
+    if ($set.name === '' && !body.allowEmptyName && !Array.isArray(body.athletes)) return res.status(400).json({ error: '선수명을 입력하세요.' })
+    // ageGroup — Images Dir 의 선수 찾기에서 고른 기록의 값 (timeID 와 함께 온다)
+    if (staff && body.ageGroup !== undefined) $set.ageGroup = String(body.ageGroup ?? '').trim()
+    // 캡션 — 목록·기사가 읽는 translations.ko.caption 에 저장
+    if (body.caption !== undefined) $set['translations.ko.caption'] = String(body.caption ?? '').trim()
+    // 선수 목록 — 여러 명이 찍힌 사진. 오면 이것이 기준이고, 단일 필드(name·team·ageGroup·timeID)는
+    // 첫 번째 선수 값으로 맞춘다. timeIDs 는 기록 화면이 이 사진을 찾는 조인 키.
+    if (Array.isArray(body.athletes)) {
+      const me = req.user?.username || ''
+      const cur = await (await coll()).findOne({ _id }, { projection: { athletes: 1, name: 1, team: 1, ageGroup: 1, timeID: 1, contributor: 1, gender: 1 } })
+      if (!cur) return res.status(404).json({ error: 'not found' })
+      const finalGender = String(Object.prototype.hasOwnProperty.call($set, 'gender') ? $set.gender : cur.gender ?? '').trim()
+      const submittedAthletes = finalGender ? body.athletes : []
+      const isAdmin = canAny(req.user, ['users'])          // 관리자는 누가 고른 선수든 정리할 수 있다
+      // 내 것인가 — 고른 사람이 나이거나, 고른 사람 기록이 없는(예전) 선수
+      const mine = (x) => isAdmin || !x.contributor || x.contributor === me
+      const before = athletesOf(cur)
+      const beforeBy = new Map(before.map((x) => [String(x.name || '').trim(), x]))   // 같은 종목 안에서 이름(name_unique)은 유일
+
+      const list = []
+      const seen = new Set()
+      for (const a of submittedAthletes) {
+        const name = String(a?.name ?? '').normalize('NFC').trim()
+        if (!name || seen.has(name)) continue
+        seen.add(name)
+        const old = beforeBy.get(name)
+        // 남이 고른 선수는 보낸 값과 상관없이 원래대로 둔다
+        if (old && !mine(old)) { list.push({ ...old }); continue }
+        const tv = String(a?.timeID ?? '').trim()
+        if (tv !== '' && !Number.isFinite(Number(tv))) return res.status(400).json({ error: 'timeID 는 숫자여야 합니다.' })
+        list.push({
+          name, team: String(a?.team ?? '').normalize('NFC').trim(), ageGroup: String(a?.ageGroup ?? '').trim(),
+          timeID: tv === '' ? null : Number(tv),
+          contributor: old ? (old.contributor || me) : me,   // 새로 고른 선수는 내 이름으로
+        })
+      }
+      // 빠진 선수 — 남이 고른 선수면 막는다 (이름을 고친 것도 '빼고 새로 넣은 것'이라 여기서 걸린다)
+      const blocked = finalGender ? before.filter((x) => !seen.has(String(x.name || '').trim()) && !mine(x)) : []
+      if (blocked.length) {
+        return res.status(403).json({ error: `다른 사람이 선택한 선수는 뺄 수 없습니다: ${blocked.map((x) => x.name).join(', ')}` })
+      }
+      const first = list[0] || { name: '', team: '', ageGroup: '', timeID: null }
+      $set.athletes = list
+      $set.timeIDs = [...new Set(list.map((a) => a.timeID).filter((v) => v != null))]
+      $set.name = first.name; $set.team = first.team; $set.ageGroup = first.ageGroup; $set.timeID = first.timeID
+      // 선수가 한 명도 남지 않으면 사진의 contributor 도 지운다 — 아무도 고르지 않은 사진으로 돌아간다
+      if (!list.length) { delete $set.contributor; $unset.contributor = '' }
+    }
+    // timeID 는 숫자(또는 미매칭이면 null) — 문자열로 저장하면 times 조인이 깨진다
+    if (staff && body.timeID !== undefined && !Array.isArray(body.athletes)) {
+      const v = String(body.timeID ?? '').trim()
+      if (v === '') $set.timeID = null
+      else if (Number.isFinite(Number(v))) $set.timeID = Number(v)
+      else return res.status(400).json({ error: 'timeID 는 숫자여야 합니다.' })
+    }
+    // 선수 목록 없이 단일 필드만 고친 경우(Images 페이지의 드로어) — 이미 선수 목록이 있는 사진이면
+    // 첫 번째 선수와 timeIDs 를 함께 맞춘다. 안 그러면 name 과 athletes[0] 이 서로 달라진다.
+    if (!Array.isArray(body.athletes) && ['name', 'team', 'ageGroup', 'timeID'].some((k) => $set[k] !== undefined)) {
+      const cur = await (await coll()).findOne({ _id }, { projection: { athletes: 1 } })
+      if (Array.isArray(cur?.athletes) && cur.athletes.length) {
+        const list = cur.athletes.map((x) => ({ ...x }))
+        for (const k of ['name', 'team', 'ageGroup', 'timeID']) if ($set[k] !== undefined) list[0][k] = $set[k]
+        $set.athletes = list
+        $set.timeIDs = [...new Set(list.map((x) => x.timeID).filter((v) => v != null))]
+      }
+    }
+    const update = Object.keys($unset).length ? { $set, $unset } : { $set }
+    const r = await (await coll()).findOneAndUpdate({ _id }, update, { returnDocument: 'after' })
+    const doc = r && (r.value || r)
+    if (!doc || !doc._id) return res.status(404).json({ error: 'not found' })
+    const nameOf = await userNames([doc.contributor, ...athletesOf(doc).map((a) => a.contributor)])
+    res.json({ ok: true, ...Object.fromEntries(EDITABLE.map((k) => [k, doc[k] ?? ''])), timeID: doc.timeID ?? null, ageGroup: doc.ageGroup ?? '', caption: doc.translations?.ko?.caption ?? '',
+      athletes: athletesOut(doc, nameOf), updatedAt: doc.updatedAt, contributor: doc.contributor ?? '',
+      contributorName: doc.contributor ? (nameOf.get(doc.contributor) || doc.contributor) : '',
+    })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// 삭제 — images 문서 + R2 오브젝트(원본·썸네일). url/thumbnail 은 상대경로(=R2 key)로 저장돼 있다.
+router.delete('/:id', async (req, res) => {
+  try {
+    const _id = toId(req.params.id)
+    if (!_id) return res.status(400).json({ error: 'invalid id' })
+    const c = await coll()
+    const cur = await c.findOne({ _id }, { projection: { url: 1, thumbnail: 1 } })
+    if (!cur) return res.status(404).json({ error: 'not found' })
+    await c.deleteOne({ _id })
+    // 전체 URL 로 저장된 예전 문서는 R2 key 를 알 수 없으므로 건너뛴다.
+    for (const key of [...new Set([cur.url, cur.thumbnail].filter((k) => k && !/^https?:\/\//.test(k)))]) {
+      try { await deleteObject(key) } catch { /* R2 없음/권한 이상 시 무시 */ }
+    }
+    res.json({ deleted: 1 })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+export default router

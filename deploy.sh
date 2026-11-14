@@ -35,6 +35,16 @@ cd "$PROJECT_DIR/sse"
 npm install
 npm run build
 
+echo "=== [4/6] swimmingPhotography 패키지 설치 & 빌드 ==="
+cd "$PROJECT_DIR/swimmingPhotography"
+npm install
+npm run build
+
+echo "=== [4/6] swimmingPhotographyDashboard 패키지 설치 & 빌드 ==="
+cd "$PROJECT_DIR/swimmingPhotographyDashboard"
+npm install
+npm run build
+
 echo "=== [5/6] PM2 재시작 ==="
 cd "$PROJECT_DIR"
 
@@ -71,6 +81,30 @@ if pm2 list | grep -q "medalbank-sse"; then
 else
   PORT=6634 pm2 start "$PROJECT_DIR/sse/.output/server/index.mjs" \
     --name medalbank-sse --env production
+fi
+
+# erp (API + 관리 화면, port 6643). 코드는 server/erp, 이미지는 ERP_UPLOAD_DIR 에 저장된다.
+if pm2 list | grep -q "medalbank-erp"; then
+  pm2 restart medalbank-erp --update-env
+else
+  ERP_PORT=6643 pm2 start "$PROJECT_DIR/server/erp/index.js" \
+    --name medalbank-erp --cwd "$PROJECT_DIR/server"
+fi
+
+# swimmingPhotography 공개 사이트 (API 는 server 6630 의 /sp)
+if pm2 list | grep -q "medalbank-swimmingphotography"; then
+  pm2 restart medalbank-swimmingphotography --update-env
+else
+  PORT=6641 pm2 start "$PROJECT_DIR/swimmingPhotography/.output/server/index.mjs" \
+    --name medalbank-swimmingphotography --cwd "$PROJECT_DIR/swimmingPhotography" --env production
+fi
+
+# swimmingPhotography 관리 대시보드
+if pm2 list | grep -q "medalbank-swimmingphotography-dashboard"; then
+  pm2 restart medalbank-swimmingphotography-dashboard --update-env
+else
+  PORT=6642 pm2 start "$PROJECT_DIR/swimmingPhotographyDashboard/.output/server/index.mjs" \
+    --name medalbank-swimmingphotography-dashboard --cwd "$PROJECT_DIR/swimmingPhotographyDashboard" --env production
 fi
 
 echo "=== [6/6] PM2 저장 ==="

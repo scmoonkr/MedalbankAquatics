@@ -1,0 +1,366 @@
+<script setup lang="ts">
+// 기록(Times) — 대상: SwimmingPhotography DB 의 times 컬렉션.
+// 필터: 대회(SP.competitions)·일자·성별·영법·거리 + 검색. row 클릭 편집/삭제, 기록추가(수동).
+// 기록가져오기(모달): 원본 Breaststroke.competitions 를 검색해 선택 → 가져오기
+//   (대회정보가 SP 에 없으면 추가 + mergedTimes → SP.times upsert).
+import { computed, onMounted, ref, watch } from 'vue'
+import type { Column, Field } from '~/composables/useMock'
+
+const api = (p = '') => `${useRuntimeConfig().public.apiBase}/api/times${p}`
+
+// ── 필터 옵션 ──
+const GENDERS = [{ v: '', l: '성별 전체' }, { v: 'men', l: '남자' }, { v: 'women', l: '여자' }, { v: 'mixed', l: '혼성' }]
+const DISCIPLINE_LABEL: Record<string, string> = {
+  FR: '자유형', BA: '배영', BR: '평영', FL: '접영', IM: '개인혼영', FRR: '계영', MR: '혼계영',
+  BK: '배영(BK)', BRMS: '평영(MS)', BROS: '평영(OS)', BROW: '평영(OW)', BRUW: '평영(UW)', BRZS: '평영(ZS)',
+}
+const DISCIPLINES = ['', 'FR', 'BA', 'BR', 'FL', 'IM', 'FRR', 'MR', 'BK', 'BRMS', 'BROS', 'BROW', 'BRUW', 'BRZS']
+const disciplineLabel = (v: string) => (v ? (DISCIPLINE_LABEL[v] ? `${DISCIPLINE_LABEL[v]} (${v})` : v) : '영법 전체')
+const DISTANCES = ['', '25M', '50M', '100M', '200M', '400M', '500M', '800M', '1000M', '1500M', '3000M', '5000M', '10000M']
+const genderLabel = (v: string) => ({ men: '남자', women: '여자', mixed: '혼성' } as Record<string, string>)[v] || v
+
+const name = ref('')
+const gender = ref('')
+const discipline = ref('')
+const distance = ref('')
+const competitionID = ref<number | ''>('')
+
+// ── 대회 select 옵션 (SP.competitions) ──
+const competitions = ref<any[]>([])
+const loadCompetitions = async () => {
+  try { competitions.value = await $fetch<any[]>(api('/competitions'), { params: { limit: 2000 } }) } catch { competitions.value = [] }
+}
+
+// ── 결과 테이블 컬럼 ──
+const ROUND_KO: Record<string, string> = { preliminaries: '예선', finals: '결선', semiFinals: '준결선' }
+const roundLabel = (v: string) => ROUND_KO[v] || v || ''
+const imageNames = (r: any) => (r.images || []).slice(0, 5).map((im: any) => (im && (im.filename || im.name)) || im).filter(Boolean).join('|')
+// name_unique 는 names 와 같은 문자열 배열 — 표시용으로 ','.join 한다.
+const nuStr = (r: any) => (Array.isArray(r?.name_unique) ? r.name_unique.join(',') : (r?.name_unique || ''))
+// 이름 표기 — 동명이인이라 name_unique 에 번호가 붙은 경우에만 "이름/name_unique"
+const nameWithUnique = (r: any) => {
+  const nu = nuStr(r)
+  return (nu && nu !== r?.name) ? `${r.name}/${nu}` : (r?.name || '')
+}
+const columns: Column[] = [
+  { key: 'timeID', label: 'timeID', cls: 'mono' },
+  { key: 'name', label: '선수명', cls: 'strong', get: (r) => nameWithUnique(r) },
+  // 성별 · 부
+  { key: 'genderAge', label: '성별·부', cls: 'muted', get: (r) => [genderLabel(r.gender), r.ageGroup].filter(Boolean).join(' · ') },
+  { key: 'team', label: '소속', cls: 'muted' },
+  // 영법 · 거리 · 라운드
+  { key: 'event', label: '종목', get: (r) => [disciplineLabel(r.discipline).replace(/ \(.*\)$/, ''), r.distance, roundLabel(r.round)].filter(Boolean).join(' ') },
+  { key: 'time', label: '기록', cls: 'mono' },
+  { key: 'rank', label: '순위', cls: 'num' },
+  { key: 'images', label: '이미지', cls: 'muted', get: imageNames },
+]
+
+// ── 목록 (SP.times) ──
+const rows = ref<any[]>([])
+const loading = ref(false)
+const errorMsg = ref('')
+const notice = ref('')
+
+const load = async () => {
+  errorMsg.value = ''
+  loading.value = true
+  try {
+    const params: Record<string, any> = { limit: 3000 }
+    if (name.value.trim()) params.name = name.value.trim()
+    if (competitionID.value) params.competitionID = competitionID.value
+    if (gender.value) params.gender = gender.value
+    if (discipline.value) params.discipline = discipline.value
+    if (distance.value) params.distance = distance.value
+    const data = await $fetch<any[]>(api(), { params })
+    // 정렬: 선수명 → ageGroup(부, 숫자 인식) → heat → rank
+    // 선수명은 영문 먼저, 그다음 한글. ('ko' 로케일은 한글을 라틴보다 앞에 두므로 직접 가른다)
+    const toN = (v: any) => { const n = Number(v); return Number.isFinite(n) ? n : Infinity }
+    const ko = (a: any, b: any) => String(a || '').localeCompare(String(b || ''), 'ko', { numeric: true })
+    const isHangul = (v: any) => /^[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(String(v || ''))
+    const byName = (a: any, b: any) => {
+      const ha = isHangul(a.name), hb = isHangul(b.name)
+      return (ha === hb) ? ko(a.name, b.name) : (ha ? 1 : -1)
+    }
+    rows.value = (data || []).slice().sort((a, b) =>
+      byName(a, b)
+      || ko(a.ageGroup, b.ageGroup)
+      || (toN(a.heat) - toN(b.heat))
+      || (toN(a.rank) - toN(b.rank)),
+    )
+    selectedRows.value = []
+  } catch (err: any) {
+    rows.value = []
+    errorMsg.value = err?.data?.error || err?.message || '조회 실패'
+  } finally {
+    loading.value = false
+  }
+}
+watch([competitionID, gender, discipline, distance], load)
+
+// ── 체크박스 선택 + 일괄삭제 ──
+const selectedRows = ref<any[]>([])
+const deleteSelected = async () => {
+  if (!selectedRows.value.length) return
+  if (!confirm(`선택한 ${selectedRows.value.length}건을 삭제하시겠습니까?`)) return
+  try {
+    const ids = selectedRows.value.map((r) => r._id).filter(Boolean)
+    const r = await $fetch<any>(api('/delete-many'), { method: 'POST', body: { ids } })
+    notice.value = `${r.deleted}건 삭제됨`
+    selectedRows.value = []
+    await load()
+  } catch (err: any) {
+    errorMsg.value = '삭제 실패: ' + (err?.data?.error || err?.message || '')
+  }
+}
+
+// ── 드로어 (생성/편집) ──
+const blankTime = () => ({
+  competitionName: '', competitionID: null as number | null, datetime: '', discipline: '', distance: '',
+  course: 'LCM', gender: '', ageGroup: '', round: 'finals', name: '', team: '', sido: '',
+  lane: null as number | null, rank: null as number | null, time: '', timeID: null as number | null,
+  heat: null as number | null, status: null as string | null,
+})
+const numOrNull = (v: any) => (v === '' || v == null ? null : Number(v))
+const fields: Field[] = [
+  // 1행: 선수(2/4) · name_unique(1/4) · status(1/4)
+  { key: 'name', label: '선수', span: 2, get: (r) => r.name ?? '', set: (r, v) => { r.name = v } },
+  // name_unique 는 names 와 같은 문자열 배열 — 콤마로 보여주고, 저장할 때 다시 배열로 되돌린다
+  { key: 'name_unique', label: 'name_unique (콤마 구분)', span: 1, get: (r) => nuStr(r), set: (r, v) => { r.name_unique = String(v ?? '').split(',').map((s) => s.trim()).filter(Boolean) } },
+  // status — 실격(DQ)·불참(DNS). 비우면 정상 기록(null) — 선수 요약 집계는 DQ·DNS 를 뺀다
+  { key: 'status', label: 'status', type: 'select', options: ['', 'DQ', 'DNS'], span: 1, get: (r) => r.status ?? '', set: (r, v) => { r.status = v || null } },
+  // 2행: 부(1/4) · 영법(1/4) · 코스(1/4) · 거리(1/4)
+  { key: 'ageGroup', label: '부(ageGroup)', span: 1, get: (r) => r.ageGroup ?? '', set: (r, v) => { r.ageGroup = v } },
+  { key: 'discipline', label: '영법', type: 'select', options: DISCIPLINES, span: 1, get: (r) => r.discipline ?? '', set: (r, v) => { r.discipline = v } },
+  { key: 'course', label: '코스', type: 'select', options: ['LCM', 'SCM'], span: 1, get: (r) => r.course ?? '', set: (r, v) => { r.course = v } },
+  { key: 'distance', label: '거리', type: 'select', options: DISTANCES, span: 1, get: (r) => r.distance ?? '', set: (r, v) => { r.distance = v } },
+
+  { key: 'gender', label: '성별', type: 'select', options: ['', 'men', 'women', 'mixed'], span: 1, get: (r) => r.gender ?? '', set: (r, v) => { r.gender = v } },
+  { key: 'time', label: '기록', span: 1, get: (r) => r.time ?? '', set: (r, v) => { r.time = v } },
+  { key: 'rank', label: '순위', span: 1, get: (r) => r.rank ?? '', set: (r, v) => { r.rank = numOrNull(v) } },
+  { key: 'timeID', label: 'timeID', span: 1, get: (r) => r.timeID ?? '', set: (r, v) => { r.timeID = numOrNull(v) } },
+
+  // 3행: 기록(1/4) · 순위(1/4) · 일자(1/4) · heat(1/4)
+  { key: 'datetime', label: '일자', span: 1, get: (r) => r.datetime ?? '', set: (r, v) => { r.datetime = v } },
+  { key: 'heat', label: 'heat', span: 1, get: (r) => r.heat ?? '', set: (r, v) => { r.heat = v } },
+  { key: 'pool', label: 'pool', span: 2, get: (r) => r.pool ?? '', set: (r, v) => { r.pool = v } },
+
+  // 4행: 대회 ID(1/4) · 대회명(3/4)
+  { key: 'competitionID', label: '대회 ID', span: 1, get: (r) => r.competitionID ?? '', set: (r, v) => { r.competitionID = numOrNull(v) } },
+  { key: 'competitionName', label: '대회', span: 3, get: (r) => r.competitionName ?? '', set: (r, v) => { r.competitionName = v } },
+  // 5행: 소속·시도·라운드·레인 (요청 외 필드 — 편집 유지)
+  { key: 'team', label: '소속', span: 1, get: (r) => r.team ?? '', set: (r, v) => { r.team = v } },
+  { key: 'sido', label: '시도', span: 1, get: (r) => r.sido ?? '', set: (r, v) => { r.sido = v } },
+  { key: 'round', label: '라운드', span: 1, get: (r) => r.round ?? '', set: (r, v) => { r.round = v } },
+  { key: 'lane', label: '레인', span: 1, get: (r) => r.lane ?? '', set: (r, v) => { r.lane = numOrNull(v) } },
+  // 이미지 — 썸네일 + 이미지명 (최대 5)
+  { key: 'images', label: '이미지', type: 'imagelist', span: 4, get: (r) => r.images ?? [], set: () => {} },
+]
+
+// ── CSV 내보내기/가져오기 ──
+// 내보내기·가져오기 공통 컬럼 — 기본 11 + image1~5 + 메모/인용(선수·기록)
+const BASE_COLS = ['timeID', 'name', 'gender', 'heat', 'ageGroup', 'team', 'discipline', 'distance', 'round', 'time', 'rank']
+const IMAGE_COLS = ['image1', 'image2', 'image3', 'image4', 'image5']
+const NOTE_COLS = ['notesAthlete', 'notesTime', 'quotesAthlete', 'quotesTime']
+const EXPORT_COLS = [...BASE_COLS, ...IMAGE_COLS, ...NOTE_COLS]
+const IMPORT_COLS = EXPORT_COLS
+
+const csvCell = (v: any) => {
+  const s = v == null ? '' : String(v)
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+}
+// image1~5 → r.images[0..4] 의 filename (timeID 로 조인된 images 컬렉션)
+const IMAGE_IDX: Record<string, number> = { image1: 0, image2: 1, image3: 2, image4: 3, image5: 4 }
+// time(예: 00:23.78)은 Excel 이 시간/숫자로 바꾸지 않도록 아포스트로피 접두 → 문자열 강제
+const cellFor = (r: any, c: string) => {
+  if (c === 'time') return r[c] ? `'${r[c]}` : r[c]
+  if (c in IMAGE_IDX) { const im = (r.images || [])[IMAGE_IDX[c]]; return (im && (im.filename || im.name)) || '' }
+  return r[c]
+}
+const exportCSV = () => {
+  const header = EXPORT_COLS.join(',')
+  const body = rows.value.map((r) => EXPORT_COLS.map((c) => csvCell(cellFor(r, c))).join(',')).join('\r\n')
+  const blob = new Blob(['﻿' + header + '\r\n' + body], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = 'times.csv'; a.click()
+  URL.revokeObjectURL(url)
+}
+
+// 따옴표·쉼표·개행을 처리하는 최소 CSV 파서
+const parseCSV = (text: string): string[][] => {
+  const out: string[][] = []
+  let field = '', rec: string[] = [], q = false
+  const t = text.replace(/^﻿/, '')
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i]
+    if (q) {
+      if (ch === '"') { if (t[i + 1] === '"') { field += '"'; i++ } else q = false }
+      else field += ch
+    } else if (ch === '"') q = true
+    else if (ch === ',') { rec.push(field); field = '' }
+    else if (ch === '\n') { rec.push(field); out.push(rec); rec = []; field = '' }
+    else if (ch !== '\r') field += ch
+  }
+  if (field.length || rec.length) { rec.push(field); out.push(rec) }
+  return out
+}
+
+// 가져오기: 엑셀(CSV) 선택 → 파싱 → 이미지 가져오기 드로어 열기
+const importInput = ref<HTMLInputElement | null>(null)
+const importRows = ref<any[]>([])
+const importDrawerOpen = ref(false)
+const onImportFile = async (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (importInput.value) importInput.value.value = ''
+  if (!file) return
+  notice.value = ''; errorMsg.value = ''
+  try {
+    const grid = parseCSV(await file.text()).filter((r) => r.some((c) => c.trim() !== ''))
+    if (grid.length < 2) throw new Error('데이터 행이 없습니다.')
+    const header = grid[0].map((h) => h.trim())
+    importRows.value = grid.slice(1).map((cells) => {
+      const o: Record<string, string> = {}
+      header.forEach((h, i) => { o[h] = (cells[i] ?? '').trim() })
+      return o
+    })
+    importDrawerOpen.value = true
+  } catch (err: any) {
+    errorMsg.value = '파일 읽기 실패: ' + (err?.data?.error || err?.message || '')
+  }
+}
+// 드로어에서 선택할 대회 (현재 필터에서 선택된 대회)
+const selectedComp = computed(() => {
+  const c = competitions.value.find((x) => x.competitionID === competitionID.value)
+  return { id: (competitionID.value || null) as number | null, name: c?.competitionName || '' }
+})
+const onImportDone = (r: any) => {
+  importDrawerOpen.value = false
+  notice.value = `이미지 ${r.count}장 업로드 완료 (신규 ${r.upserted} · 수정 ${r.modified})`
+  load()
+}
+
+const selected = ref<Record<string, any> | null>(null)
+const open = ref(false)
+const isNew = ref(false)
+const openRow = (r: Record<string, any>) => { isNew.value = false; selected.value = r; open.value = true }
+const openNew = () => { isNew.value = true; selected.value = blankTime(); open.value = true }
+
+const onSave = async (form: Record<string, any>) => {
+  try {
+    const base = isNew.value ? blankTime() : { ...selected.value }
+    for (const f of fields) f.set(base, form[f.key])
+    if (isNew.value) {
+      await $fetch(api(), { method: 'POST', body: base })
+    } else {
+      const body = { ...base }; delete body._id
+      await $fetch(api(`/${selected.value!._id}`), { method: 'PUT', body })
+    }
+    open.value = false; isNew.value = false
+    await load()
+  } catch (err: any) {
+    alert('저장 실패: ' + (err?.data?.error || err?.message || ''))
+  }
+}
+const onDelete = async (r: Record<string, any>) => {
+  if (!confirm('이 기록을 삭제하시겠습니까?')) return false
+  try {
+    await $fetch(api(`/${r._id}`), { method: 'DELETE' })
+    await load()
+    return true
+  } catch (err: any) {
+    alert('삭제 실패: ' + (err?.data?.error || err?.message || ''))
+    return false
+  }
+}
+const onDrawerDelete = async () => { if (selected.value && (await onDelete(selected.value))) open.value = false }
+
+onMounted(async () => {
+  await loadCompetitions()
+  // 처음에는 최근 대회(competitionID 내림차순 첫 항목)를 자동 선택 → watch 가 load 실행
+  if (competitions.value.length) competitionID.value = competitions.value[0].competitionID
+  else load()
+})
+</script>
+
+<template>
+  <div>
+    <!-- 툴바: 필터 + 액션 (한 줄) — 선수명·성별·영법·거리·대회명·일자 순 -->
+    <div class="toolbar">
+      <input v-model="name" class="filter-input filter-name" type="search" placeholder="선수명 검색…" @keydown.enter="load">
+      <select v-model="gender" class="filter-select" aria-label="성별">
+        <option v-for="g in GENDERS" :key="g.v" :value="g.v">{{ g.l }}</option>
+      </select>
+      <select v-model="discipline" class="filter-select" aria-label="영법">
+        <option v-for="d in DISCIPLINES" :key="d" :value="d">{{ disciplineLabel(d) }}</option>
+      </select>
+      <select v-model="distance" class="filter-select" aria-label="거리">
+        <option v-for="d in DISTANCES" :key="d" :value="d">{{ d || '거리 전체' }}</option>
+      </select>
+      <select v-model="competitionID" class="filter-select filter-comp" aria-label="대회명">
+        <option value="">대회 전체</option>
+        <option v-for="c in competitions" :key="c.competitionID" :value="c.competitionID">
+          {{ c.competitionName }}<span v-if="c.datetime"> ({{ c.datetime }})</span>
+        </option>
+      </select>
+      <button class="btn btn-ghost" type="button" @click="load">검색</button>
+      <button class="btn btn-danger" type="button" :disabled="!selectedRows.length" @click="deleteSelected">
+        삭제<span v-if="selectedRows.length"> ({{ selectedRows.length }})</span>
+      </button>
+      <span class="t-spacer" />
+      <button class="btn btn-ghost t-add" type="button" @click="openNew">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14" /></svg>
+        기록추가
+      </button>
+      <button class="btn btn-ghost" type="button" :disabled="!rows.length" @click="exportCSV">내보내기</button>
+      <input ref="importInput" type="file" accept=".csv,text/csv" hidden @change="onImportFile">
+      <button class="btn btn-ghost" type="button" @click="importInput?.click()">가져오기</button>
+    </div>
+
+    <p v-if="errorMsg" class="load-error">{{ errorMsg }}</p>
+    <p v-if="notice" class="notice">{{ notice }}</p>
+    <p v-if="!loading" class="result-note">총 {{ rows.length }}건 · 선수명 · 부 · heat · 순위 순</p>
+
+    <DataTable
+      :columns="columns" :rows="rows" clickable hide-search hide-actions selectable
+      v-model:selected="selectedRows"
+      @row-click="openRow"
+    />
+
+    <DetailDrawer
+      :open="open" :title="isNew ? '기록추가' : '기록 편집'"
+      :fields="fields" :row="selected"
+      @close="open = false" @save="onSave" @delete="onDrawerDelete"
+    />
+
+    <ImportImagesDrawer
+      :open="importDrawerOpen" :rows="importRows" :competition="selectedComp"
+      @close="importDrawerOpen = false" @done="onImportDone"
+    />
+  </div>
+</template>
+
+<style scoped>
+.toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.t-spacer { flex: 1 1 auto; }
+.t-add svg { width: 15px; height: 15px; }
+
+.filter-select {
+  font-family: var(--sans); font-size: 13.5px; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 9px 12px; cursor: pointer;
+}
+.filter-comp { flex: 0 1 340px; max-width: 340px; }
+.filter-input {
+  font-family: var(--sans); font-size: 13.5px; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 9px 12px;
+}
+.filter-date { flex: 0 1 220px; }
+.filter-name { flex: 0 1 180px; }
+.filter-input:focus, .filter-select:focus { outline: none; border-color: var(--orange); }
+.btn-danger { background: var(--bad-bg); color: var(--bad); }
+.btn-danger:hover:not(:disabled) { background: var(--bad); color: #fff; }
+.btn-danger:disabled { opacity: .5; cursor: default; }
+
+.load-error { margin-bottom: 14px; padding: 10px 14px; border-radius: 6px; background: var(--bad-bg); color: var(--bad); font-size: 13px; }
+.notice { margin-bottom: 12px; padding: 10px 14px; border-radius: 6px; background: var(--good-bg); color: var(--good); font-size: 13px; }
+.result-note { font-size: 12.5px; color: var(--ink-mute); margin: 0 0 12px; }
+</style>

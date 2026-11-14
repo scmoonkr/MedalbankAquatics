@@ -1,0 +1,472 @@
+<script setup lang="ts">
+// 이미지 — SwimmingPhotography DB(images) 조회. 대회·영법·선수명 필터, 행 클릭 시 상세 드로어.
+import { computed, onMounted, ref, watch } from 'vue'
+import type { Column } from '~/composables/useMock'
+
+const api = (p = '') => `${useRuntimeConfig().public.apiBase}/api/images${p}`
+
+// ── 필터 ──
+const competitionID = ref<number | ''>('')
+const discipline = ref('')
+const name = ref('')
+// times 매칭 여부 — timeID 가 없는 사진은 기록(times)에 붙지 못한 것
+const matched = ref<'' | 'none' | 'has'>('')
+// 기사 저장 여부 — 이 사진의 기사에 media.images 가 1장 이상 있는가 ('기사' 열과 같은 기준)
+const savedFilter = ref<'' | 'none' | 'has'>('')
+// 저장 일자 — updatedAt 의 날짜(KST)가 이 날짜인 이미지만
+const dateFilter = ref('')
+
+const competitions = ref<any[]>([])
+const disciplines = ref<string[]>([])
+
+// 영법 코드 → 한글
+const DISC_KO: Record<string, string> = { FR: '자유형', BA: '배영', BR: '평영', FL: '접영', IM: '개인혼영', FRR: '계영', MR: '혼계영' }
+const discLabel = (d: string) => DISC_KO[d] || d || ''
+const genderLabel = (v: string) => ({ men: '남자', women: '여자', mixed: '혼성' } as Record<string, string>)[v] || v || ''
+// updatedAt(저장일) → KST yyyy-mm-dd
+const fmtDate = (v: any) => {
+  if (!v) return ''
+  const d = new Date(v)
+  if (Number.isNaN(d.getTime())) return String(v).slice(0, 10)
+  return new Date(d.getTime() + 9 * 3600 * 1000).toISOString().slice(0, 10)
+}
+
+// ── 테이블 ──
+const columns: Column[] = [
+  { key: 'filename', label: '파일', cls: 'mono' },
+  { key: 'name', label: '선수명', cls: 'strong' },
+  { key: 'genderAge', label: '성별·부', cls: 'muted', get: (r) => [genderLabel(r.gender), r.ageGroup].filter(Boolean).join(' · ') },
+  { key: 'team', label: '팀', cls: 'muted' },
+  { key: 'discipline', label: '영법', get: (r) => discLabel(r.discipline) },
+  // 기록(times) 연결 — 비어 있으면 미매칭
+  { key: 'timeID', label: 'timeID', cls: 'mono', get: (r) => r.timeID ?? '—' },
+  { key: 'scene', label: '장면', cls: 'muted', get: (r) => r.sceneType || r.type || '' },
+  { key: 'caption', label: '캡션', get: (r) => r.translations?.ko?.caption || '' },
+  // 기사 사진 여부 — 이 사진의 기사에 media.images 가 1장 이상 있으면 ○
+  { key: 'articleHasImages', label: '기사', get: (r) => (r.articleHasImages ? '○' : '') },
+  { key: 'updatedAt', label: '저장일', cls: 'mono', get: (r) => fmtDate(r.updatedAt) },
+]
+
+const rows = ref<any[]>([])
+const loading = ref(false)
+const errorMsg = ref('')
+const importOpen = ref(false)   // 사진 가져오기 드로어
+const notice = ref('')
+const checked = ref<any[]>([])          // 체크한 이미지 — 기사 저장 대상
+const savingArticles = ref(false)
+const onImportDone = async (r: any) => {
+  importOpen.value = false
+  notice.value = `${r.count}장 저장 완료 — 신규 ${r.upserted} · 수정 ${r.modified}`
+    + (r.failed?.length ? ` · 실패 ${r.failed.length}` : '')
+  await loadFilters()   // 대회 옵션의 장수 갱신
+  await load()
+}
+
+// 기사 저장 — 체크한 이미지를 (competitionID + name==unique) 로 찾은 기사의 media.images 에 추가.
+const saveArticles = async () => {
+  if (savingArticles.value) return
+  if (!checked.value.length) { notice.value = '체크한 이미지가 없습니다.'; return }
+  if (!confirm(`체크한 ${checked.value.length}장을 해당 기사의 media 에 저장합니다. 계속할까요?`)) return
+  savingArticles.value = true; errorMsg.value = ''; notice.value = ''
+  try {
+    const ids = checked.value.map((r) => r._id).filter(Boolean)
+    const res = await $fetch<any>(api('/save-articles'), { method: 'POST', body: { ids } })
+    await load()          // '기사' 열 갱신 (load 가 체크도 비운다)
+    notice.value = `기사 저장 — 이미지 ${res.total} · 대상 기사 ${res.articles} · 저장 ${res.saved} · 기사없음 ${res.noArticle}${res.skipped ? ` · 제외 ${res.skipped}` : ''}`
+  } catch (err: any) {
+    errorMsg.value = '기사 저장 실패: ' + (err?.data?.error || err?.message || '')
+  } finally {
+    savingArticles.value = false
+  }
+}
+
+const loadFilters = async () => {
+  try { competitions.value = await $fetch<any[]>(api('/competitions')) } catch { competitions.value = [] }
+  try { disciplines.value = await $fetch<string[]>(api('/disciplines')) } catch { disciplines.value = [] }
+}
+const load = async () => {
+  loading.value = true; errorMsg.value = ''
+  try {
+    const params: Record<string, any> = { limit: 3000 }
+    if (competitionID.value) params.competitionID = competitionID.value
+    if (discipline.value) params.discipline = discipline.value
+    if (name.value.trim()) params.name = name.value.trim()
+    if (matched.value) params.matched = matched.value
+    if (savedFilter.value) params.saved = savedFilter.value
+    if (dateFilter.value) params.date = dateFilter.value
+    rows.value = await $fetch<any[]>(api(), { params })
+    checked.value = []
+  } catch (err: any) {
+    rows.value = []
+    errorMsg.value = err?.data?.error || err?.message || '조회 실패'
+  } finally {
+    loading.value = false
+  }
+}
+onMounted(async () => {
+  await loadFilters()
+  // 처음에는 최근 대회(competitionID 내림차순 첫 항목)를 자동 선택 → watch 가 load 실행 (times 와 동일)
+  if (competitions.value.length) competitionID.value = competitions.value[0].competitionID
+  else await load()
+})
+watch([competitionID, discipline, matched, savedFilter, dateFilter], load)
+
+// ── 상세 드로어 (편집) ──
+const selected = ref<any | null>(null)
+const open = ref(false)
+const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') open.value = false }
+useEscClose(() => open.value, () => { open.value = false })
+
+// 편집 대상 필드 — 서버 PUT /api/images/:id 의 EDITABLE 과 같은 목록.
+// name 은 선수 매칭 키(times.name_unique)라 동명이인이면 "홍길동1" 처럼 번호가 붙은 이름을 넣어야 한다.
+// timeID 도 저장 대상 — 동명이인 후보를 고르면 (영법·거리)가 맞는 기록으로 채워진다
+const EDIT_FIELDS = ['name', 'team', 'gender', 'discipline', 'distance', 'type', 'timeID'] as const
+const GENDER_OPTS = ['', 'men', 'women', 'mixed']
+const DIST_OPTS = ['', '25M', '50M', '100M', '200M', '400M', '800M', '1500M']
+const draft = ref<Record<string, string>>({})
+const saving = ref(false)
+const deleting = ref(false)
+const drawerMsg = ref('')
+
+const openRow = (r: any) => {
+  selected.value = r
+  draft.value = Object.fromEntries(EDIT_FIELDS.map((k) => [k, r?.[k] ?? '']))
+  drawerMsg.value = ''
+  closeHomonyms()
+  open.value = true
+}
+
+// ── 동명이인 — 이미지의 name 은 times.name_unique 와 같아야 매칭된다.
+// (competitionID + name_unique) 가 없으면 번호가 붙은 이름을 써야 하는 상태이므로 후보를 보여준다.
+const timesApi = (p = '') => `${useRuntimeConfig().public.apiBase}/api/times${p}`
+const homOpen = ref(false)
+const homLoading = ref(false)
+const homRows = ref<any[]>([])
+const homIsHomonym = ref(false)
+const homMsg = ref('')
+const closeHomonyms = () => { homOpen.value = false; homRows.value = []; homMsg.value = ''; homIsHomonym.value = false }
+
+// 후보를 기록 단위로 펼친다 — 화면에는 timeID · 종목 · 소속 · 거리를 보여준다.
+// (동명이인은 영법·거리가 같은 기록이 여럿이라 소속까지 봐야 어느 선수인지 갈린다.)
+// (계영은 후보마다 같은 기록이 붙으므로 timeID 로 중복을 없앤다)
+const homTimes = computed(() => {
+  const out: any[] = []
+  const seen = new Set<string>()
+  for (const h of homRows.value) {
+    for (const t of (h.times || [])) {
+      const k = String(t.timeID)
+      if (t.timeID == null || seen.has(k)) continue
+      seen.add(k)
+      out.push({ h, t })
+    }
+  }
+  return out
+})
+
+// 행 클릭 → 그 기록으로 확정. 파일명의 영법·거리가 틀렸으면 기록 값으로 바로잡는다.
+const applyTime = (h: any, t: any) => {
+  if (t?.timeID == null) return
+  if (h?.name_unique) draft.value.name = h.name_unique
+  // 계영 기록은 후보 여럿에 붙으므로 기록 자체의 team 을 우선한다
+  if (t?.team || h?.team) draft.value.team = t?.team || h.team
+  draft.value.timeID = String(t.timeID)
+  if (t.discipline) draft.value.discipline = t.discipline
+  if (t.distance) draft.value.distance = t.distance
+  homIsHomonym.value = false
+  homMsg.value = ''
+}
+const showHomonyms = async () => {
+  const r = selected.value
+  const nm = String(draft.value.name || '').trim()
+  if (!nm) { homMsg.value = '선수명이 비어 있습니다.'; homOpen.value = true; return }
+  homOpen.value = true; homLoading.value = true; homMsg.value = ''
+  try {
+    const res = await $fetch<any>(timesApi('/homonyms'), { params: { competitionID: r?.competitionID ?? '', name: nm } })
+    homRows.value = res.candidates || []
+    homIsHomonym.value = !!res.isHomonym
+    if (!homRows.value.length) homMsg.value = `'${nm}' 에 해당하는 기록을 찾지 못했습니다.`
+  } catch (err: any) {
+    homRows.value = []
+    homMsg.value = '조회 실패: ' + (err?.data?.error || err?.message || '')
+  } finally {
+    homLoading.value = false
+  }
+}
+
+// 읽기전용 라벨 — 가져오기가 정하는 값이라 편집하지 않는다
+const labelRows = () => {
+  const r = selected.value
+  if (!r) return [] as [string, any][][]
+  return [
+    [['competitionName', r.competition], ['파일', r.filename]],
+    [['thumbnail', r.thumbPath || r.thumbnail], ['url', r.path || r.url]],
+  ]
+}
+
+const onSave = async () => {
+  const r = selected.value
+  if (!r?._id || saving.value) return
+  if (!String(draft.value.name || '').trim()) { drawerMsg.value = '선수명을 입력하세요.'; return }
+  saving.value = true; drawerMsg.value = ''
+  try {
+    const res = await $fetch<any>(api(`/${r._id}`), { method: 'PUT', body: { ...draft.value } })
+    for (const k of EDIT_FIELDS) r[k] = res[k]   // 목록 즉시 반영(같은 객체 참조)
+    open.value = false                            // 저장했으면 드로어를 닫는다
+    notice.value = `${r.filename} 저장됨`
+  } catch (err: any) {
+    drawerMsg.value = '저장 실패: ' + (err?.data?.error || err?.message || '')
+  } finally {
+    saving.value = false
+  }
+}
+
+const onDelete = async () => {
+  const r = selected.value
+  if (!r?._id || deleting.value) return
+  if (!confirm(`'${r.filename}' 이미지를 삭제하시겠습니까?\n원본·썸네일 파일도 함께 삭제됩니다.`)) return
+  deleting.value = true; drawerMsg.value = ''
+  try {
+    await $fetch(api(`/${r._id}`), { method: 'DELETE' })
+    open.value = false
+    await load()
+  } catch (err: any) {
+    drawerMsg.value = '삭제 실패: ' + (err?.data?.error || err?.message || '')
+  } finally {
+    deleting.value = false
+  }
+}
+</script>
+
+<template>
+  <div>
+    <!-- 툴바: 필터 -->
+    <div class="toolbar">
+      <select v-model="competitionID" class="filter-select filter-comp" aria-label="대회">
+        <option value="">대회 전체</option>
+        <option v-for="c in competitions" :key="c.competitionID" :value="c.competitionID">
+          {{ c.competitionName || c.competitionID }}<span v-if="c.datetime"> ({{ c.datetime }})</span> · {{ c.count }}장
+        </option>
+      </select>
+      <select v-model="discipline" class="filter-select" aria-label="영법">
+        <option value="">영법 전체</option>
+        <option v-for="d in disciplines" :key="d" :value="d">{{ discLabel(d) }}</option>
+      </select>
+      <select v-model="matched" class="filter-select" aria-label="times 매칭 여부">
+        <option value="">times매칭 전체</option>
+        <option value="has">timeID 있음</option>
+        <option value="none">timeID 없음</option>
+      </select>
+      <select v-model="savedFilter" class="filter-select" aria-label="기사 저장 여부">
+        <option value="">기사저장 전체</option>
+        <option value="has">기사저장됨</option>
+        <option value="none">미저장</option>
+      </select>
+      <input v-model="dateFilter" class="filter-select" type="date" aria-label="저장 일자" title="저장 일자(updatedAt 기준, yyyy-mm-dd)">
+      <button v-if="dateFilter" class="btn btn-ghost" type="button" title="일자 지우기" @click="dateFilter = ''">일자 해제</button>
+      <input v-model="name" class="filter-input" type="search" placeholder="선수명 검색…" @keydown.enter="load">
+      <button class="btn btn-ghost" type="button" @click="load">검색</button>
+      <span class="toolbar-spacer" />
+      <button class="btn btn-primary" type="button" @click="importOpen = true">Import</button>
+      <button class="btn btn-ghost" type="button" :disabled="savingArticles || !checked.length" @click="saveArticles">
+        {{ savingArticles ? '기사 저장 중…' : (checked.length ? `기사 저장 (${checked.length})` : '기사 저장') }}
+      </button>
+    </div>
+
+    <p v-if="errorMsg" class="load-error">{{ errorMsg }}</p>
+    <p v-if="notice" class="result-note notice">{{ notice }}</p>
+    <p v-if="!loading" class="result-note">총 {{ rows.length }}장</p>
+
+    <DataTable
+      :columns="columns" :rows="rows" clickable hide-search hide-actions
+      selectable :selected="checked" @update:selected="checked = $event"
+      @row-click="openRow"
+    />
+
+    <!-- 사진 가져오기 드로어 (1단계: 파일명 → times 매칭 확인) -->
+    <ImageImportDrawer
+      :open="importOpen" :competitions="competitions" :competition-i-d="competitionID"
+      @close="importOpen = false" @done="onImportDone"
+    />
+
+    <!-- 상세 드로어 -->
+    <div class="drawer-root" :class="{ open }" @keydown="onKey">
+      <div class="drawer-ov" @click="open = false" />
+      <aside class="drawer" role="dialog" aria-modal="true" aria-label="이미지 상세">
+        <header class="drawer-head">
+          <h2>{{ selected?.filename || '이미지' }}</h2>
+          <button class="drawer-x" aria-label="닫기" @click="open = false">×</button>
+        </header>
+        <div class="drawer-body">
+          <div v-if="selected" class="img-wrap">
+            <img :src="selected.url" :alt="selected.filename">
+          </div>
+
+          <!-- 편집 필드 -->
+          <div v-if="selected" class="edit-grid">
+            <div class="fld">
+              <span class="info-l">name</span>
+              <div class="name-ctl">
+                <input v-model="draft.name" class="fld-input" type="text" placeholder="선수명 (동명이인이면 홍길동1)">
+                <button class="btn btn-ghost btn-sm" type="button" :disabled="homLoading" @click="showHomonyms">
+                  {{ homLoading ? '조회 중…' : '동명이인' }}
+                </button>
+                <button v-if="homOpen" class="btn btn-ghost btn-sm" type="button" @click="closeHomonyms">닫기</button>
+              </div>
+            </div>
+            <label class="fld">
+              <span class="info-l">team</span>
+              <input v-model="draft.team" class="fld-input" type="text" placeholder="소속">
+            </label>
+
+            <!-- 동명이인 후보 — times 의 같은 이름 선수들 (한 줄 전체) -->
+            <div v-if="homOpen" class="fld fld-wide">
+              <div class="hom-panel">
+                <p v-if="homMsg" class="hom-msg">{{ homMsg }}</p>
+                <p v-else-if="homIsHomonym" class="hom-note">
+                  동명이인입니다 — 이 대회에 <b>{{ draft.name }}</b> 이름의 기록이 없습니다. 아래에서 기록을 고르세요.
+                </p>
+                <!-- 기록 버튼 — timeID · 종목 · 소속 · 거리. 누르면 그 기록으로 확정된다 -->
+                <div v-if="homTimes.length" class="hom-times">
+                  <button
+                    v-for="({ h, t }) in homTimes" :key="t.timeID" class="tbtn" type="button"
+                    :class="{ cur: String(t.timeID) === String(draft.timeID) }"
+                    :title="`${h.name_unique}${h.ageGroup ? ` · ${h.ageGroup}` : ''} — timeID ${t.timeID} 로 연결하고 영법·소속·거리를 맞춥니다`"
+                    @click="applyTime(h, t)"
+                  >
+                    <b>{{ t.timeID }}</b> {{ discLabel(t.discipline) }}
+                    <span v-if="t.team || h.team" class="tteam">{{ t.team || h.team }}</span>
+                    {{ t.distance }}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <label class="fld">
+              <span class="info-l">gender</span>
+              <select v-model="draft.gender" class="fld-input">
+                <option v-for="g in GENDER_OPTS" :key="g" :value="g">{{ g ? genderLabel(g) : '—' }}</option>
+              </select>
+            </label>
+            <label class="fld">
+              <span class="info-l">discipline</span>
+              <select v-model="draft.discipline" class="fld-input">
+                <option value="">—</option>
+                <option v-for="d in disciplines" :key="d" :value="d">{{ discLabel(d) }} ({{ d }})</option>
+              </select>
+            </label>
+            <label class="fld">
+              <span class="info-l">distance</span>
+              <select v-model="draft.distance" class="fld-input">
+                <option v-for="d in DIST_OPTS" :key="d" :value="d">{{ d || '—' }}</option>
+              </select>
+            </label>
+            <label class="fld">
+              <span class="info-l">type</span>
+              <input v-model="draft.type" class="fld-input" type="text" placeholder="BLOCK · SWIM …">
+            </label>
+            <label class="fld">
+              <span class="info-l">timeID <span v-if="!draft.timeID" class="bad">미매칭</span></span>
+              <input v-model="draft.timeID" class="fld-input" type="text" placeholder="기록 연결 (동명이인 후보를 고르면 채워짐)">
+            </label>
+          </div>
+
+          <!-- 읽기전용 라벨 -->
+          <div v-for="(row, ri) in labelRows()" :key="ri" class="info-duo">
+            <div v-for="([label, val], ci) in row" :key="ci" class="info-cell">
+              <span class="info-l">{{ label }}</span>
+              <span class="info-v">{{ (val ?? '') === '' ? '—' : val }}</span>
+            </div>
+          </div>
+        </div>
+
+        <footer class="drawer-foot">
+          <button class="btn btn-danger" type="button" :disabled="!selected || deleting || saving" @click="onDelete">
+            {{ deleting ? '삭제 중…' : '삭제' }}
+          </button>
+          <span class="foot-msg">{{ drawerMsg }}</span>
+          <button class="btn btn-primary" type="button" :disabled="!selected || saving || deleting" @click="onSave">
+            {{ saving ? '저장 중…' : '저장' }}
+          </button>
+        </footer>
+      </aside>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.toolbar-spacer { flex: 1; }
+.filter-select, .filter-input {
+  font-family: var(--sans); font-size: 13.5px; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 9px 12px;
+}
+.filter-input { flex: 0 1 240px; }
+.filter-comp { max-width: 320px; }
+.filter-select:focus, .filter-input:focus { outline: none; border-color: var(--orange); }
+.result-note { font-size: 12.5px; color: var(--ink-mute); margin: 0 0 12px; }
+.result-note.notice { color: var(--orange); font-weight: 600; }
+.load-error { margin-bottom: 14px; padding: 10px 14px; border-radius: 6px; background: var(--bad-bg); color: var(--bad); font-size: 13px; }
+
+/* 드로어 */
+.drawer-root { position: fixed; inset: 0; z-index: 1000; pointer-events: none; }
+.drawer-ov { position: absolute; inset: 0; background: rgba(26, 26, 26, .34); opacity: 0; transition: opacity .22s ease; }
+.drawer {
+  position: absolute; top: 0; right: 0; height: 100%; width: min(1120px, 96vw); background: var(--paper);
+  border-left: 1px solid var(--line); box-shadow: -18px 0 50px rgba(26, 26, 26, .12);
+  display: flex; flex-direction: column; transform: translateX(100%); transition: transform .26s cubic-bezier(.4, 0, .2, 1);
+}
+.drawer-root.open { pointer-events: auto; }
+.drawer-root.open .drawer-ov { opacity: 1; }
+.drawer-root.open .drawer { transform: translateX(0); }
+.drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.drawer-head h2 { font-size: 15px; font-weight: 700; color: var(--ink); word-break: break-all; }
+.drawer-x { border: none; background: none; cursor: pointer; font-size: 22px; line-height: 1; color: var(--ink-light); padding: 0; }
+.drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.img-wrap { margin-bottom: 14px; background: var(--paper-deep); border-radius: 6px; overflow: hidden; }
+.img-wrap img { display: block; width: 100%; height: auto; }
+/* 편집 필드 — name 은 한 줄 전체, 나머지는 2열 */
+.edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; padding: 10px 0 14px; border-bottom: 1px solid var(--line-soft); }
+.fld { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.fld-wide { grid-column: 1 / -1; }
+.fld-input {
+  font-family: var(--sans); font-size: 13.5px; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 8px 11px; width: 100%;
+}
+.fld-input:focus { outline: none; border-color: var(--orange); }
+.name-ctl { display: flex; align-items: center; gap: 6px; }
+.name-ctl .fld-input { flex: 1; min-width: 0; }
+.name-ctl .btn-sm { padding: 7px 9px; font-size: 12px; white-space: nowrap; }
+
+/* 동명이인 후보 패널 */
+.hom-panel { margin-top: 8px; padding: 10px 12px; background: var(--paper-deep); border-radius: 6px; }
+.hom-note { margin: 0 0 8px; font-size: 12.5px; color: var(--bad); line-height: 1.5; }
+
+/* 기록 버튼 — timeID · 종목 · 소속 · 거리. 누르면 그 기록으로 확정된다 */
+.hom-times { display: flex; flex-wrap: wrap; gap: 6px; }
+.tbtn {
+  font-family: var(--sans); font-size: 12px; color: var(--ink); cursor: pointer; white-space: nowrap;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 6px 11px;
+}
+.tbtn:hover { border-color: var(--orange); }
+.tbtn.cur { border-color: var(--orange); box-shadow: inset 0 0 0 1px var(--orange); }
+.tbtn b { font-variant-numeric: tabular-nums; margin-right: 5px; }
+/* 소속 — 동명이인을 가르는 값이라 눈에 띄게 둔다 */
+.tbtn .tteam { color: var(--orange); font-weight: 600; }
+
+/* 드로어 하단 액션 */
+.drawer-foot {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 20px; border-top: 1px solid var(--line); background: var(--paper);
+}
+.foot-msg { flex: 1; font-size: 12px; color: var(--ink-mute); }
+/* btn-danger 는 전역(dashboard.css)에 없어 페이지마다 정의한다 */
+.btn-danger { background: var(--bad-bg); color: var(--bad); }
+.btn-danger:hover:not(:disabled) { background: var(--bad); color: #fff; }
+.btn:disabled { opacity: .5; cursor: default; }
+.info-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+.info-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.info-l { font-size: 11.5px; color: var(--ink-light); }
+.info-l .bad { color: var(--bad); font-weight: 700; margin-left: 4px; }
+.info-v { font-size: 13.5px; color: var(--ink); word-break: break-all; }
+.cap-block { padding: 10px 0; border-bottom: 1px solid var(--line-soft); }
+.cap-text { margin: 4px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--ink); }
+</style>

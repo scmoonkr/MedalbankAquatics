@@ -36,5 +36,28 @@ module.exports = {
       env_file: '../.env',
       env: { PORT: '6634', NODE_ENV: 'production' },
     },
+    // erp (API + 관리 화면). 코드는 server/erp 이지만 업무 시스템이라 별도 프로세스로 띄운다 (server 의 ERP_MOUNT 는 끈다).
+    {
+      name:     'medalbank-aquatics-erp',
+      script:   './erp/index.js',
+      cwd:      './server',
+      env_file: '../.env',
+      env: { ERP_PORT: '6643', NODE_ENV: 'production' },
+    },
+    // swimmingPhotography 공개 사이트 / 관리 대시보드. API 는 위 server(6630)의 /sp 로 프록시된다.
+    {
+      name:     'medalbank-aquatics-swimmingphotography',
+      script:   './swimmingPhotography/.output/server/index.mjs',
+      cwd:      './swimmingPhotography',
+      env_file: '../.env',
+      env: { PORT: '6641', NODE_ENV: 'production' },
+    },
+    {
+      name:     'medalbank-aquatics-swimmingphotography-dashboard',
+      script:   './swimmingPhotographyDashboard/.output/server/index.mjs',
+      cwd:      './swimmingPhotographyDashboard',
+      env_file: '../.env',
+      env: { PORT: '6642', NODE_ENV: 'production' },
+    },
   ],
 }
